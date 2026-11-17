@@ -253,10 +253,10 @@ export default function StoreSettingsPage() {
             <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-950 border border-slate-800">
               <div>
                 <p className="text-xs font-bold text-white">
-                  Pass Payment Gateway Fee to Buyer
+                  Pass Payment Protection Fee to Buyer (Pro &amp; Business Only)
                 </p>
                 <p className="text-[11px] text-slate-400 mt-0.5">
-                  When enabled, checkout adds the small payment processing fee so you receive 100% of your product price.
+                  When enabled on Pro or Business plans, checkout adds a 1.5% Escrow &amp; Payment Protection fee (capped at ₦2,000) so you receive 100% of your product price. On the Starter plan, buyers always pay the exact product price.
                 </p>
               </div>
               <input

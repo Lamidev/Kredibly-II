@@ -68,7 +68,7 @@ model Store {
   subscriptionTier  SubscriptionTier @default(STARTER)
   subscriptionEnd   DateTime?
   payFromWallet     Boolean          @default(true)
-  passFeeToCustomer Boolean          @default(true)
+  passFeeToCustomer Boolean          @default(false)
 
   bankCode               String?
   bankName               String?
