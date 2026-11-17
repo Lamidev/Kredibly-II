@@ -90,10 +90,13 @@ export class EmailService {
       </div>
     `;
 
+    const text = `Hi ${data.fullName},\n\nCongratulations on creating ${data.storeName} on Kredibly! Your storefront is live and ready to accept orders.\n\nYour Store Link: ${storeUrl}\nMerchant Dashboard: ${dashboardUrl}\n\n— The Kredibly Team`;
+
     return this.send({
       to: data.to,
-      subject: `🎉 Your store "${data.storeName}" is live on Kredibly!`,
+      subject: `Welcome to Kredibly — ${data.storeName} is live`,
       html,
+      text,
     });
   }
 
@@ -126,10 +129,13 @@ export class EmailService {
       </div>
     `;
 
+    const text = `Hi ${data.customerName},\n\nYour payment for order #${data.orderNumber} from ${data.storeName} has been received.\n\nOrder: #${data.orderNumber}\nTotal Paid: NGN ${Number(data.totalAmount).toLocaleString()}\nItems: ${data.itemsSummary}\n\nThe seller has been notified to prepare your delivery.`;
+
     return this.send({
       to: data.to,
-      subject: `Order Confirmation #${data.orderNumber} - ${data.storeName}`,
+      subject: `Order confirmation #${data.orderNumber} - ${data.storeName}`,
       html,
+      text,
     });
   }
 
@@ -160,10 +166,13 @@ export class EmailService {
       </div>
     `;
 
+    const text = `Hi ${data.merchantName},\n\nYou just received a new paid order on ${data.storeName}.\n\nOrder Number: #${data.orderNumber}\nCustomer: ${data.customerName}\nAmount: NGN ${Number(data.totalAmount).toLocaleString()}\n\nLog in to your Kredibly dashboard (${ENV.FRONTEND_URL}/dashboard/orders) to fulfill the order.`;
+
     return this.send({
       to: data.to,
-      subject: `💰 New Order #${data.orderNumber} received for ${data.storeName}!`,
+      subject: `New order #${data.orderNumber} for ${data.storeName}`,
       html,
+      text,
     });
   }
 
@@ -206,10 +215,13 @@ export class EmailService {
       </div>
     `;
 
+    const text = `Hi ${data.fullName},\n\nWe received a request to reset your Kredibly password. Open the link below to set a new password (expires in 1 hour):\n\n${resetUrl}\n\nIf you did not request this, you can safely ignore this email.`;
+
     return this.send({
       to: data.to,
       subject: "Reset your Kredibly password",
       html,
+      text,
     });
   }
 
@@ -248,10 +260,13 @@ export class EmailService {
       </div>
     `;
 
+    const text = `Hi ${data.fullName},\n\nYour confirmation code to change the payout bank account for ${data.storeName} is: ${data.otp}\n\nThis code expires in 10 minutes. Note: Changing your bank account pauses withdrawals for 24 hours for your protection.`;
+
     return this.send({
       to: data.to,
-      subject: `🔐 ${data.otp} is your Kredibly bank change confirmation code`,
+      subject: `${data.otp} is your Kredibly bank change confirmation code`,
       html,
+      text,
     });
   }
 
@@ -285,10 +300,13 @@ export class EmailService {
       </div>
     `;
 
+    const text = `Hi ${data.fullName},\n\nYour payout bank account for ${data.storeName} was updated to ${data.bankName} (${maskedAcc}).\n\nFor security, withdrawals are paused for 24 hours until ${data.lockedUntil.toUTCString()}.\n\nIf you did not authorize this change, contact ${ENV.ADMIN_EMAIL} immediately.`;
+
     return this.send({
       to: data.to,
-      subject: `⚠️ Payout bank account changed for ${data.storeName}`,
+      subject: `Security notice: Payout bank account updated for ${data.storeName}`,
       html,
+      text,
     });
   }
 }
