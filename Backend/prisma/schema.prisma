@@ -36,14 +36,16 @@ enum PaymentStatus {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  phoneNumber   String    @unique
-  passwordHash  String
-  fullName      String
-  role          Role      @default(MERCHANT)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  phoneNumber          String    @unique
+  passwordHash         String
+  fullName             String
+  role                 Role      @default(MERCHANT)
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   stores        Store[]
 

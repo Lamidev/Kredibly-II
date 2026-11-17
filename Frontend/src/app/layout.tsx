@@ -11,7 +11,25 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://usekredibly.com"),
   title: "Kredibly — Build Your Official Online Store in 2 Minutes",
   description:
-    "The storefront builder for Instagram, TikTok, and WhatsApp sellers. Showcase products, accept card & bank transfer payments with built-in buyer trust, and get paid directly to your bank account.",
+    "The simple online store builder for social media sellers in Nigeria. Add your goods, share your link on WhatsApp, Instagram, or TikTok, and let customers place orders and pay online.",
+  keywords: [
+    "online store builder Nigeria",
+    "sell on WhatsApp",
+    "sell on Instagram Nigeria",
+    "e-commerce storefront",
+    "social commerce Nigeria",
+    "bio link shop",
+    "Bumpa alternative",
+    "Catlog alternative",
+    "create free online store",
+    "Kredibly",
+  ],
+  verification: {
+    google: "google4d682cf168a8ae73",
+    other: {
+      "facebook-domain-verification": "2s0jt80h2mu4iv9nt4dbvkriibdva2",
+    },
+  },
   icons: {
     icon: [
       { url: "/favicon.ico" },
@@ -26,7 +44,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Kredibly — The E-Commerce Storefront Builder",
     description:
-      "Create your online store, accept verified payments, and sell without friction.",
+      "Turn your social media into your online shop. Add products, accept payments online, and sell without friction.",
     url: "https://usekredibly.com",
     siteName: "Kredibly",
     images: [
@@ -40,6 +58,13 @@ export const metadata: Metadata = {
     locale: "en_NG",
     type: "website",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Kredibly — Turn your social media into your online shop",
+    description:
+      "Create your free online store in 2 minutes. Add products and start selling on WhatsApp and Instagram.",
+    images: ["/krediblyoriginal.jpeg"],
+  },
 };
 
 export default function RootLayout({
@@ -47,8 +72,30 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Kredibly",
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web, iOS, Android",
+    url: "https://usekredibly.com",
+    description:
+      "The simple online store builder for social media sellers in Nigeria. Add products, share your store link on WhatsApp and Instagram, and accept direct payments.",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "NGN",
+    },
+  };
+
   return (
     <html lang="en">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className="font-sans antialiased selection:bg-brand-500 selection:text-white">
         {children}
       </body>

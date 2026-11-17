@@ -55,12 +55,16 @@ export async function generateMetadata({
   return {
     title,
     description,
+    alternates: {
+      canonical: `https://kredibly.shop/${params.storeSlug}/p/${params.productSlug}`,
+    },
     openGraph: {
       title,
       description,
-      siteName: "Kredibly",
+      siteName: store.name,
       locale: "en_NG",
       type: "website",
+      url: `https://kredibly.shop/${params.storeSlug}/p/${params.productSlug}`,
       images: primaryImage ? [{ url: primaryImage }] : [],
     },
     twitter: {
@@ -83,7 +87,50 @@ export default async function ProductPage({
     notFound();
   }
 
+  const productUrl = `https://kredibly.shop/${data.store.slug}/p/${data.product.slug}`;
+  const images = (data.product.images || []).map((img: string) =>
+    img.startsWith("http") ? img : `${API_URL.replace("/api", "")}${img}`
+  );
+
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: data.product.title,
+    description:
+      data.product.description || `${data.product.title} from ${data.store.name}`,
+    image: images,
+    sku: data.product.id,
+    brand: {
+      "@type": "Brand",
+      name: data.store.name,
+    },
+    offers: {
+      "@type": "Offer",
+      url: productUrl,
+      priceCurrency: data.store.currency || "NGN",
+      price: data.product.basePrice,
+      priceValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0],
+      itemCondition: "https://schema.org/NewCondition",
+      availability:
+        data.product.stockQuantity > 0
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
+      seller: {
+        "@type": "Organization",
+        name: data.store.name,
+      },
+    },
+  };
+
   return (
-    <ProductDetailClient store={data.store} product={data.product} />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
+      <ProductDetailClient store={data.store} product={data.product} />
+    </>
   );
 }

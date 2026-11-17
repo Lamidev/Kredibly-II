@@ -7,6 +7,8 @@ const RESERVED_PATHS = new Set([
   "/",
   "/login",
   "/register",
+  "/forgot-password",
+  "/reset-password",
   "/dashboard",
   "/api",
   "/terms",

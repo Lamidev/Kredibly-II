@@ -9,10 +9,18 @@ import { errorHandler } from "./middleware/errorHandler";
 const app = express();
 
 // Security & Parsing Middleware
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(
   cors({
-    origin: [ENV.FRONTEND_URL, "http://localhost:3000", "http://localhost:3001"],
+    origin: [
+      ENV.FRONTEND_URL,
+      "https://usekredibly.com",
+      "https://www.usekredibly.com",
+      "https://kredibly.shop",
+      "https://www.kredibly.shop",
+      "http://localhost:3000",
+      "http://localhost:3001",
+    ],
     credentials: true,
   })
 );
