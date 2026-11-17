@@ -22,6 +22,7 @@ export const bankDetailsSchema = z.object({
   bankName: z.string().min(2, "Bank name is required"),
   accountNumber: z.string().length(10, "Account number must be exactly 10 digits"),
   accountName: z.string().min(2, "Account name is required"),
+  otp: z.string().optional(),
 });
 
 export const forgotPasswordSchema = z.object({

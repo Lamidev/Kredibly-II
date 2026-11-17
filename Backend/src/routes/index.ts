@@ -8,6 +8,8 @@ import checkoutRouter from "./checkout.routes";
 import webhookRouter from "./webhook.routes";
 import orderAdminRouter from "./order-admin.routes";
 import walletRouter from "./wallet.routes";
+import customerRouter from "./customer.routes";
+import storeRouter from "./store.routes";
 
 const router = Router();
 
@@ -34,6 +36,12 @@ router.use("/orders", orderAdminRouter);
 
 // Merchant Financial Wallet & Payouts (authenticated)
 router.use("/wallet", walletRouter);
+
+// Merchant Customers & Purchase Records (authenticated)
+router.use("/customers", customerRouter);
+
+// Merchant Store Settings & Profile (authenticated)
+router.use("/store", storeRouter);
 
 // Local VPS Image Upload (authenticated)
 router.use("/upload", uploadRouter);

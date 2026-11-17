@@ -1,7 +1,9 @@
+import crypto from "crypto";
 import { prisma } from "../config/db";
 import { ENV } from "../config/env";
 import { AppError } from "../middleware/errorHandler";
 import { NombaService } from "./nomba.service";
+import { EmailService } from "./email.service";
 
 export class WalletService {
   /**
@@ -17,6 +19,7 @@ export class WalletService {
         bankCode: true,
         accountNumber: true,
         accountName: true,
+        withdrawalLockedUntil: true,
         wallet: {
           include: {
             transactions: {
@@ -52,6 +55,7 @@ export class WalletService {
         accountNumber: store.accountNumber,
         accountName: store.accountName,
       },
+      withdrawalLockedUntil: store.withdrawalLockedUntil,
       availableBalance: store.wallet.availableBalance,
       escrowBalance: store.wallet.escrowBalance,
       transactions: store.wallet.transactions,
@@ -86,7 +90,51 @@ export class WalletService {
   }
 
   /**
-   * Update and save verified bank payout details
+   * Send 6-digit OTP to merchant email before changing an existing bank account
+   */
+  static async requestBankChangeOtp(storeId: string) {
+    const store = await prisma.store.findUnique({
+      where: { id: storeId },
+      include: { owner: { select: { email: true, fullName: true } } },
+    });
+
+    if (!store || !store.owner) {
+      throw new AppError("Store or merchant account not found", 404);
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpHash = crypto.createHash("sha256").update(otp).digest("hex");
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    await prisma.store.update({
+      where: { id: storeId },
+      data: {
+        bankChangeOtpHash: otpHash,
+        bankChangeOtpExpires: expiresAt,
+      },
+    });
+
+    EmailService.sendBankChangeOtpEmail({
+      to: store.owner.email,
+      fullName: store.owner.fullName,
+      storeName: store.name,
+      otp,
+    }).catch((err) => console.error("Bank change OTP email failed:", err));
+
+    const maskedEmail = store.owner.email.replace(
+      /(^.)(.*)(@.*$)/,
+      (_, first, middle, domain) => `${first}${"*".repeat(Math.min(middle.length, 5))}${domain}`
+    );
+
+    return {
+      message: `A 6-digit confirmation code has been sent to ${maskedEmail}`,
+      maskedEmail,
+    };
+  }
+
+  /**
+   * Update and save verified bank payout details.
+   * Changing an existing bank account requires email OTP and triggers a 24-hour withdrawal lock.
    */
   static async updateBankDetails(
     storeId: string,
@@ -95,10 +143,56 @@ export class WalletService {
       bankCode: string;
       accountNumber: string;
       accountName: string;
+      otp?: string;
     }
   ) {
     if (!data.accountNumber || data.accountNumber.length !== 10) {
       throw new AppError("Valid 10-digit account number required", 400);
+    }
+
+    const existingStore = await prisma.store.findUnique({
+      where: { id: storeId },
+      include: { owner: { select: { email: true, fullName: true } } },
+    });
+
+    if (!existingStore) {
+      throw new AppError("Store not found", 404);
+    }
+
+    const isChangingExistingBank = Boolean(
+      existingStore.accountNumber && existingStore.accountNumber !== data.accountNumber
+    ) || Boolean(
+      existingStore.accountNumber && existingStore.bankCode !== data.bankCode
+    );
+
+    let lockedUntil: Date | undefined;
+
+    if (isChangingExistingBank) {
+      if (!data.otp || data.otp.trim().length !== 6) {
+        throw new AppError(
+          "A 6-digit email confirmation code is required to change your payout bank account.",
+          400
+        );
+      }
+
+      const providedHash = crypto
+        .createHash("sha256")
+        .update(data.otp.trim())
+        .digest("hex");
+
+      if (
+        !existingStore.bankChangeOtpHash ||
+        existingStore.bankChangeOtpHash !== providedHash ||
+        !existingStore.bankChangeOtpExpires ||
+        existingStore.bankChangeOtpExpires < new Date()
+      ) {
+        throw new AppError(
+          "Invalid or expired confirmation code. Please request a new code.",
+          400
+        );
+      }
+
+      lockedUntil = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24-hour fraud lock
     }
 
     const updatedStore = await prisma.store.update({
@@ -108,6 +202,9 @@ export class WalletService {
         bankCode: data.bankCode,
         accountNumber: data.accountNumber,
         accountName: data.accountName,
+        bankChangeOtpHash: null,
+        bankChangeOtpExpires: null,
+        ...(lockedUntil ? { withdrawalLockedUntil: lockedUntil } : {}),
       },
       select: {
         id: true,
@@ -115,8 +212,20 @@ export class WalletService {
         bankCode: true,
         accountNumber: true,
         accountName: true,
+        withdrawalLockedUntil: true,
       },
     });
+
+    if (lockedUntil && existingStore.owner) {
+      EmailService.sendBankChangedAlertEmail({
+        to: existingStore.owner.email,
+        fullName: existingStore.owner.fullName,
+        storeName: existingStore.name,
+        bankName: data.bankName,
+        accountNumber: data.accountNumber,
+        lockedUntil,
+      }).catch((err) => console.error("Bank changed alert email failed:", err));
+    }
 
     return updatedStore;
   }
@@ -142,6 +251,17 @@ export class WalletService {
       throw new AppError(
         "Please link and verify your payout bank details before requesting a withdrawal",
         400
+      );
+    }
+
+    if (store.withdrawalLockedUntil && store.withdrawalLockedUntil > new Date()) {
+      const unlockStr = store.withdrawalLockedUntil.toLocaleString("en-NG", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
+      throw new AppError(
+        `Withdrawals are temporarily locked for 24 hours after a bank account change. Unlocks on ${unlockStr}.`,
+        403
       );
     }
 

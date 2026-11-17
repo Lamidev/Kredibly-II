@@ -9,6 +9,7 @@ router.use(requireAuth);
 
 router.get("/", WalletController.getWallet);
 router.post("/verify-bank", WalletController.verifyBank);
+router.post("/request-bank-otp", WalletController.requestBankChangeOtp);
 router.put("/bank-details", WalletController.updateBankDetails);
 router.post("/withdraw", WalletController.withdraw);
 

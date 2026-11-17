@@ -38,6 +38,7 @@ interface Transaction {
 interface WalletData {
   availableBalance: number | string;
   escrowBalance: number | string;
+  withdrawalLockedUntil?: string | null;
   bank: {
     bankName?: string | null;
     bankCode?: string | null;
@@ -90,6 +91,10 @@ export default function WalletPage() {
   const [verifyingBank, setVerifyingBank] = useState(false);
   const [bankError, setBankError] = useState("");
   const [savingBank, setSavingBank] = useState(false);
+  const [bankOtp, setBankOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpMessage, setOtpMessage] = useState("");
+  const [sendingOtp, setSendingOtp] = useState(false);
 
   const fetchWallet = async () => {
     try {
@@ -135,9 +140,28 @@ export default function WalletPage() {
     }
   };
 
+  const handleRequestBankOtp = async () => {
+    setSendingOtp(true);
+    setBankError("");
+    setOtpMessage("");
+    try {
+      const res = await api.post("/wallet/request-bank-otp");
+      setOtpSent(true);
+      setOtpMessage(res.data.message || "Confirmation code sent to your email.");
+    } catch (err: any) {
+      setBankError(err.response?.data?.message || "Failed to send confirmation code");
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
   const handleSaveBank = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resolvedAccountName) return;
+    if (hasBankDetails && bankOtp.trim().length !== 6) {
+      setBankError("Please enter the 6-digit confirmation code sent to your email.");
+      return;
+    }
 
     setSavingBank(true);
     setBankError("");
@@ -148,10 +172,14 @@ export default function WalletPage() {
         bankCode: selectedBank.code,
         accountNumber: accountNumber.trim(),
         accountName: resolvedAccountName,
+        ...(hasBankDetails ? { otp: bankOtp.trim() } : {}),
       });
 
       await fetchWallet();
       setBankModalOpen(false);
+      setBankOtp("");
+      setOtpSent(false);
+      setOtpMessage("");
     } catch (err: any) {
       setBankError(err.response?.data?.message || "Failed to save bank details");
     } finally {
@@ -220,6 +248,12 @@ export default function WalletPage() {
   const hasBankDetails = Boolean(
     wallet?.bank?.bankName && wallet?.bank?.accountNumber
   );
+  const lockedUntilDate = wallet?.withdrawalLockedUntil
+    ? new Date(wallet.withdrawalLockedUntil)
+    : null;
+  const isWithdrawalLocked = Boolean(
+    lockedUntilDate && lockedUntilDate > new Date()
+  );
 
   return (
     <div className="min-h-screen bg-slate-950 text-white pb-16">
@@ -237,16 +271,36 @@ export default function WalletPage() {
 
         <button
           onClick={() => setWithdrawModalOpen(true)}
-          disabled={available < 1000 || !hasBankDetails}
+          disabled={available < 1000 || !hasBankDetails || isWithdrawalLocked}
           className="px-4 py-2 bg-purple-900 hover:bg-purple-800 disabled:opacity-40 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition shadow-md shadow-purple-950/30 active:scale-[0.98]"
         >
           <ArrowUpRight className="w-4 h-4" />
-          <span>Withdraw to Bank</span>
+          <span>{isWithdrawalLocked ? "Withdrawals Locked (24h)" : "Withdraw to Bank"}</span>
         </button>
       </header>
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 sm:px-8 py-8 space-y-8">
+        {isWithdrawalLocked && lockedUntilDate && (
+          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <div className="text-xs space-y-1">
+              <p className="font-bold text-amber-300">
+                24-Hour Security Withdrawal Lock Active
+              </p>
+              <p className="text-slate-300 leading-relaxed">
+                Because your payout bank account was recently changed, withdrawals are temporarily paused until{" "}
+                <strong className="text-white">
+                  {lockedUntilDate.toLocaleString("en-NG", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </strong>{" "}
+                to protect your funds against unauthorized transfers.
+              </p>
+            </div>
+          </div>
+        )}
         {loading ? (
           <div className="py-20 flex justify-center">
             <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
@@ -494,15 +548,73 @@ export default function WalletPage() {
                 )}
               </div>
 
+              {hasBankDetails && resolvedAccountName && (
+                <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 space-y-3">
+                  <div className="text-[11.5px] text-amber-300 leading-relaxed">
+                    <strong>Security Check:</strong> Changing your payout bank account requires an email confirmation code and triggers a <strong>24-hour withdrawal lock</strong>.
+                  </div>
+
+                  {!otpSent ? (
+                    <button
+                      type="button"
+                      onClick={handleRequestBankOtp}
+                      disabled={sendingOtp}
+                      className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition flex items-center justify-center gap-2"
+                    >
+                      {sendingOtp ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <span>Send Confirmation Code to Email</span>
+                      )}
+                    </button>
+                  ) : (
+                    <div className="space-y-2">
+                      {otpMessage && (
+                        <p className="text-[11px] text-emerald-400 font-medium">
+                          {otpMessage}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          maxLength={6}
+                          required
+                          placeholder="Enter 6-digit code"
+                          value={bankOtp}
+                          onChange={(e) => setBankOtp(e.target.value.replace(/\D/g, ""))}
+                          className="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white font-mono tracking-[0.25em] text-center focus:outline-none focus:border-purple-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleRequestBankOtp}
+                          disabled={sendingOtp}
+                          className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-200 font-semibold transition shrink-0"
+                        >
+                          {sendingOtp ? "..." : "Resend"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <button
                 type="submit"
-                disabled={!resolvedAccountName || savingBank}
+                disabled={
+                  !resolvedAccountName ||
+                  savingBank ||
+                  (hasBankDetails && bankOtp.trim().length !== 6)
+                }
                 className="w-full py-3 bg-purple-900 hover:bg-purple-800 disabled:opacity-40 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-md shadow-purple-950/20"
               >
                 {savingBank ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <span>Save Verified Bank Details</span>
+                  <span>
+                    {hasBankDetails
+                      ? "Confirm Bank Change (24h Lock)"
+                      : "Save Verified Bank Details"}
+                  </span>
                 )}
               </button>
             </form>

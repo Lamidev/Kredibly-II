@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { api, API_BASE_URL } from "@/lib/api";
+import { useAuthStore } from "@/store/useAuthStore";
 import { formatCurrency } from "@/lib/utils";
 import { compressProductImage } from "@/lib/compressor";
 import {
@@ -20,6 +21,9 @@ import {
   Tag,
   Layers,
   Sparkles,
+  Edit2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 interface Variant {
@@ -52,12 +56,15 @@ interface Product {
 
 export default function ProductsPage() {
   const router = useRouter();
+  const { store } = useAuthStore();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
 
   // Form State
   const [title, setTitle] = useState("");
@@ -141,11 +148,86 @@ export default function ProductsPage() {
   };
 
   const removeImage = (index: number) => {
-    const updatedFiles = selectedFiles.filter((_, i) => i !== index);
-    const updatedPreviews = imagePreviews.filter((_, i) => i !== index);
-    setSelectedFiles(updatedFiles);
-    setImagePreviews(updatedPreviews);
-    if (updatedFiles.length === 0) setCompressionStats("");
+    const previewToRemove = imagePreviews[index];
+    if (previewToRemove && !previewToRemove.startsWith("blob:")) {
+      // It's an existing saved URL
+      setExistingImages((prev) =>
+        prev.filter((url) => getFullImageUrl(url) !== previewToRemove)
+      );
+    } else {
+      // It's a newly selected file (calculate index within selectedFiles)
+      const existingCount = existingImages.length;
+      const fileIndex = index - existingCount;
+      if (fileIndex >= 0) {
+        setSelectedFiles((prev) => prev.filter((_, i) => i !== fileIndex));
+      }
+    }
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const resetForm = () => {
+    setEditingProduct(null);
+    setExistingImages([]);
+    setTitle("");
+    setDescription("");
+    setCategory("");
+    setBrand("");
+    setIsFeatured(false);
+    setBasePrice("");
+    setComparePrice("");
+    setStockQuantity("1");
+    setSelectedFiles([]);
+    setImagePreviews([]);
+    setCompressionStats("");
+    setHasVariants(false);
+    setVariants([{ name: "Size: M", price: 0, stockQuantity: 1 }]);
+    setErrorMsg("");
+  };
+
+  const openCreateModal = () => {
+    resetForm();
+    setModalOpen(true);
+  };
+
+  const openEditModal = (product: Product) => {
+    setEditingProduct(product);
+    setTitle(product.title);
+    setDescription(product.description || "");
+    setCategory(product.category || "");
+    setBrand(product.brand || "");
+    setIsFeatured(Boolean(product.isFeatured));
+    setBasePrice(String(product.basePrice));
+    setComparePrice(product.comparePrice ? String(product.comparePrice) : "");
+    setStockQuantity(String(product.stockQuantity));
+    setHasVariants(Boolean(product.hasVariants));
+    setVariants(
+      product.variants && product.variants.length > 0
+        ? product.variants.map((v) => ({
+            name: v.name,
+            price: Number(v.price),
+            stockQuantity: v.stockQuantity,
+          }))
+        : [{ name: "Size: M", price: Number(product.basePrice), stockQuantity: 1 }]
+    );
+    const savedImgs = product.images || [];
+    setExistingImages(savedImgs);
+    setImagePreviews(savedImgs.map((img) => getFullImageUrl(img)));
+    setSelectedFiles([]);
+    setCompressionStats("");
+    setErrorMsg("");
+    setModalOpen(true);
+  };
+
+  const handleToggleDraft = async (product: Product) => {
+    try {
+      const nextActive = !product.isActive;
+      await api.put(`/products/${product.id}`, { isActive: nextActive });
+      setProducts((prev) =>
+        prev.map((p) => (p.id === product.id ? { ...p, isActive: nextActive } : p))
+      );
+    } catch {
+      alert("Failed to update product visibility.");
+    }
   };
 
   const addVariantRow = () => {
@@ -181,7 +263,9 @@ export default function ProductsPage() {
         uploadedUrls = uploadRes.data.urls;
       }
 
-      // 2. Create product in database
+      const finalImages = [...existingImages, ...uploadedUrls].slice(0, 2);
+
+      // 2. Create or update product in database
       const payload = {
         title,
         description,
@@ -190,33 +274,25 @@ export default function ProductsPage() {
         isFeatured,
         basePrice: Number(basePrice),
         comparePrice: comparePrice ? Number(comparePrice) : null,
-        images: uploadedUrls,
+        images: finalImages,
         stockQuantity: Number(stockQuantity),
         hasVariants,
         variants: hasVariants ? variants : undefined,
       };
 
-      await api.post("/products", payload);
+      if (editingProduct) {
+        await api.put(`/products/${editingProduct.id}`, payload);
+      } else {
+        await api.post("/products", payload);
+      }
 
-      // Reset form & reload
-      setTitle("");
-      setDescription("");
-      setCategory("");
-      setBrand("");
-      setIsFeatured(false);
-      setBasePrice("");
-      setComparePrice("");
-      setStockQuantity("1");
-      setSelectedFiles([]);
-      setImagePreviews([]);
-      setCompressionStats("");
-      setHasVariants(false);
+      resetForm();
       setModalOpen(false);
-
       await fetchProducts();
     } catch (err: any) {
       setErrorMsg(
-        err.response?.data?.message || "Failed to create product. Check inputs."
+        err.response?.data?.message ||
+          `Failed to ${editingProduct ? "update" : "create"} product. Check inputs.`
       );
     } finally {
       setSubmitting(false);
@@ -262,11 +338,22 @@ export default function ProductsPage() {
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
-          <h1 className="text-base font-bold text-white">Product Catalog</h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-base font-bold text-white">Product Catalog</h1>
+            {!loading && (
+              <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-900 border border-slate-800 text-slate-300">
+                {store?.subscriptionTier === "BUSINESS"
+                  ? `${products.length} products`
+                  : `${products.length} / ${
+                      store?.subscriptionTier === "PRO" ? 300 : 20
+                    } used (incl. drafts)`}
+              </span>
+            )}
+          </div>
         </div>
 
         <button
-          onClick={() => setModalOpen(true)}
+          onClick={openCreateModal}
           className="px-3.5 py-1.5 bg-brand-500 hover:bg-brand-600 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-brand-500/20 transition"
         >
           <Plus className="w-4 h-4" />
@@ -320,7 +407,12 @@ export default function ProductsPage() {
                         <Package className="w-12 h-12" />
                       </div>
                     )}
-                    {product.stockQuantity === 0 && (
+                    {!product.isActive && (
+                      <div className="absolute top-3 left-3 bg-slate-900/90 border border-slate-700 text-amber-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider backdrop-blur">
+                        Draft (Hidden)
+                      </div>
+                    )}
+                    {product.isActive && product.stockQuantity === 0 && (
                       <div className="absolute top-3 left-3 bg-red-500/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider backdrop-blur">
                         Sold Out
                       </div>
@@ -333,13 +425,37 @@ export default function ProductsPage() {
                       <h3 className="font-bold text-white text-sm line-clamp-1">
                         {product.title}
                       </h3>
-                      <button
-                        onClick={() => handleDeleteProduct(product.id)}
-                        className="text-slate-500 hover:text-red-400 transition"
-                        title="Delete product"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          onClick={() => openEditModal(product)}
+                          className="p-1 text-slate-400 hover:text-white transition"
+                          title="Edit product"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleToggleDraft(product)}
+                          className={`p-1 transition ${
+                            product.isActive
+                              ? "text-slate-400 hover:text-amber-400"
+                              : "text-amber-400 hover:text-emerald-400"
+                          }`}
+                          title={product.isActive ? "Move to Draft" : "Publish to Store"}
+                        >
+                          {product.isActive ? (
+                            <EyeOff className="w-3.5 h-3.5" />
+                          ) : (
+                            <Eye className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProduct(product.id)}
+                          className="p-1 text-slate-500 hover:text-red-400 transition"
+                          title="Delete product"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="flex items-baseline gap-2">
@@ -395,7 +511,9 @@ export default function ProductsPage() {
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl my-8 space-y-5">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-bold text-white">Add New Product</h3>
+                <h3 className="text-lg font-bold text-white">
+                  {editingProduct ? "Edit Product" : "Add New Product"}
+                </h3>
                 <p className="text-xs text-slate-400">
                   Quick mobile listing (max 2 compressed images).
                 </p>
@@ -683,7 +801,7 @@ export default function ProductsPage() {
                       Publishing...
                     </>
                   ) : (
-                    "Publish Product"
+                    editingProduct ? "Save Changes" : "Publish Product"
                   )}
                 </button>
               </div>

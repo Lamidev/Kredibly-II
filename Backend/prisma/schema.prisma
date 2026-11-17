@@ -70,10 +70,13 @@ model Store {
   payFromWallet     Boolean          @default(true)
   passFeeToCustomer Boolean          @default(true)
 
-  bankCode         String?
-  bankName         String?
-  accountNumber    String?
-  accountName      String?
+  bankCode               String?
+  bankName               String?
+  accountNumber          String?
+  accountName            String?
+  withdrawalLockedUntil  DateTime?
+  bankChangeOtpHash      String?
+  bankChangeOtpExpires   DateTime?
 
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt

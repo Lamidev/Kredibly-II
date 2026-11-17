@@ -7,6 +7,7 @@ import { AppError } from "../middleware/errorHandler";
 import { RegisterInput, LoginInput, BankDetailsInput } from "../validators/auth.validator";
 import { sanitizeSlug, isValidSlug, RESERVED_SLUGS } from "../utils/slug";
 import { EmailService } from "./email.service";
+import { WalletService } from "./wallet.service";
 
 export class AuthService {
   /**
@@ -301,27 +302,10 @@ export class AuthService {
   }
 
   /**
-   * Update payout bank details for a store
+   * Update payout bank details for a store (enforces OTP & 24h lock if changing)
    */
   static async updateBankDetails(storeId: string, data: BankDetailsInput) {
-    const updated = await prisma.store.update({
-      where: { id: storeId },
-      data: {
-        bankCode: data.bankCode,
-        bankName: data.bankName,
-        accountNumber: data.accountNumber,
-        accountName: data.accountName,
-      },
-      select: {
-        id: true,
-        bankCode: true,
-        bankName: true,
-        accountNumber: true,
-        accountName: true,
-      },
-    });
-
-    return updated;
+    return WalletService.updateBankDetails(storeId, data);
   }
 
   /**
