@@ -345,24 +345,24 @@ export default function HomePage() {
           <div className="hidden sm:block absolute top-6 right-6 w-4 h-4 border-t-2 border-r-2 border-[#3b0764]/30 pointer-events-none" />
 
           <div className="relative z-10 text-center max-w-4xl mx-auto space-y-6">
-            {/* Kredibly Architectural Line + Slash Eyebrow (No Brackets, No Pill) */}
+            {/* Architectural Line + Eyebrow */}
             <div className="inline-flex items-center justify-center gap-3">
               <span className="w-6 h-[2px] bg-[#3b0764]" />
               <span className="text-[11px] font-mono tracking-[0.2em] uppercase font-bold text-[#3b0764]">
-                THE STOREFRONT BUILDER FOR ONLINE SELLERS
+                YOUR BUSINESS, ONLINE
               </span>
               <span className="w-6 h-[2px] bg-[#3b0764]" />
             </div>
 
             {/* Display Headline */}
             <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-[72px] font-display font-extrabold tracking-tight leading-[1.06] text-[#090D16]">
-              Build your official online store in{" "}
-              <span className="text-[#3b0764]">2 minutes.</span>
+              Turn your social media into your{" "}
+              <span className="text-[#3b0764]">online store.</span>
             </h1>
 
             {/* Subhead */}
             <p className="text-base sm:text-lg md:text-xl text-[#525B6C] max-w-2xl mx-auto font-normal leading-relaxed">
-              Give your brand a luxury storefront for Instagram, TikTok, and WhatsApp. List your products, accept automated bank transfers &amp; cards with built-in Escrow buyer trust, and cash out straight to your bank.
+              Create a beautiful online store in 2 minutes. Add your products, share your link on WhatsApp, TikTok or Instagram, and let customers shop and pay with ease.
             </p>
 
             {/* Interactive Domain Claimer with Real-Time Brand Availability Checking */}
@@ -446,6 +446,13 @@ export default function HomePage() {
                   )}
                 </div>
               )}
+
+              {/* Frictionless Assurance */}
+              <div className="flex items-center justify-center gap-2 text-xs sm:text-[13px] text-[#64748B] font-medium pt-1">
+                <span>No coding.</span>
+                <span className="w-1 h-1 rounded-full bg-[#CBD5E1]" />
+                <span>No complicated setup.</span>
+              </div>
             </div>
           </div>
 
