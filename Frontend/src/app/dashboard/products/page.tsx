@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { api, API_BASE_URL } from "@/lib/api";
+import { useAuthStore } from "@/store/useAuthStore";
 import { formatCurrency } from "@/lib/utils";
 import { compressProductImage } from "@/lib/compressor";
 import {
@@ -20,7 +22,13 @@ import {
   Tag,
   Layers,
   Sparkles,
+  Edit2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface Variant {
   name: string;
@@ -52,12 +60,15 @@ interface Product {
 
 export default function ProductsPage() {
   const router = useRouter();
+  const { store } = useAuthStore();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
 
   // Form State
   const [title, setTitle] = useState("");
@@ -141,11 +152,89 @@ export default function ProductsPage() {
   };
 
   const removeImage = (index: number) => {
-    const updatedFiles = selectedFiles.filter((_, i) => i !== index);
-    const updatedPreviews = imagePreviews.filter((_, i) => i !== index);
-    setSelectedFiles(updatedFiles);
-    setImagePreviews(updatedPreviews);
-    if (updatedFiles.length === 0) setCompressionStats("");
+    const previewToRemove = imagePreviews[index];
+    if (previewToRemove && !previewToRemove.startsWith("blob:")) {
+      // It's an existing saved URL
+      setExistingImages((prev) =>
+        prev.filter((url) => getFullImageUrl(url) !== previewToRemove)
+      );
+    } else {
+      // It's a newly selected file (calculate index within selectedFiles)
+      const existingCount = existingImages.length;
+      const fileIndex = index - existingCount;
+      if (fileIndex >= 0) {
+        setSelectedFiles((prev) => prev.filter((_, i) => i !== fileIndex));
+      }
+    }
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const resetForm = () => {
+    setEditingProduct(null);
+    setExistingImages([]);
+    setTitle("");
+    setDescription("");
+    setCategory("");
+    setBrand("");
+    setIsFeatured(false);
+    setBasePrice("");
+    setComparePrice("");
+    setStockQuantity("1");
+    setSelectedFiles([]);
+    setImagePreviews([]);
+    setCompressionStats("");
+    setHasVariants(false);
+    setVariants([{ name: "Size: M", price: 0, stockQuantity: 1 }]);
+    setErrorMsg("");
+  };
+
+  const openCreateModal = () => {
+    resetForm();
+    setModalOpen(true);
+  };
+
+  const openEditModal = (product: Product) => {
+    setEditingProduct(product);
+    setTitle(product.title);
+    setDescription(product.description || "");
+    setCategory(product.category || "");
+    setBrand(product.brand || "");
+    setIsFeatured(Boolean(product.isFeatured));
+    setBasePrice(String(product.basePrice));
+    setComparePrice(product.comparePrice ? String(product.comparePrice) : "");
+    setStockQuantity(String(product.stockQuantity));
+    setHasVariants(Boolean(product.hasVariants));
+    setVariants(
+      product.variants && product.variants.length > 0
+        ? product.variants.map((v) => ({
+            name: v.name,
+            price: Number(v.price),
+            stockQuantity: v.stockQuantity,
+          }))
+        : [{ name: "Size: M", price: Number(product.basePrice), stockQuantity: 1 }]
+    );
+    const savedImgs = product.images || [];
+    setExistingImages(savedImgs);
+    setImagePreviews(savedImgs.map((img) => getFullImageUrl(img)));
+    setSelectedFiles([]);
+    setCompressionStats("");
+    setErrorMsg("");
+    setModalOpen(true);
+  };
+
+  const handleToggleDraft = async (product: Product) => {
+    try {
+      const nextActive = !product.isActive;
+      await api.put(`/products/${product.id}`, { isActive: nextActive });
+      setProducts((prev) =>
+        prev.map((p) => (p.id === product.id ? { ...p, isActive: nextActive } : p))
+      );
+      toast.success(
+        nextActive ? "Product published to your store!" : "Product moved to Drafts."
+      );
+    } catch {
+      toast.error("Failed to update product visibility.");
+    }
   };
 
   const addVariantRow = () => {
@@ -181,7 +270,9 @@ export default function ProductsPage() {
         uploadedUrls = uploadRes.data.urls;
       }
 
-      // 2. Create product in database
+      const finalImages = [...existingImages, ...uploadedUrls].slice(0, 2);
+
+      // 2. Create or update product in database
       const payload = {
         title,
         description,
@@ -190,34 +281,29 @@ export default function ProductsPage() {
         isFeatured,
         basePrice: Number(basePrice),
         comparePrice: comparePrice ? Number(comparePrice) : null,
-        images: uploadedUrls,
+        images: finalImages,
         stockQuantity: Number(stockQuantity),
         hasVariants,
         variants: hasVariants ? variants : undefined,
       };
 
-      await api.post("/products", payload);
+      if (editingProduct) {
+        await api.put(`/products/${editingProduct.id}`, payload);
+        toast.success("Product updated successfully!");
+      } else {
+        await api.post("/products", payload);
+        toast.success("Product published to your store!");
+      }
 
-      // Reset form & reload
-      setTitle("");
-      setDescription("");
-      setCategory("");
-      setBrand("");
-      setIsFeatured(false);
-      setBasePrice("");
-      setComparePrice("");
-      setStockQuantity("1");
-      setSelectedFiles([]);
-      setImagePreviews([]);
-      setCompressionStats("");
-      setHasVariants(false);
+      resetForm();
       setModalOpen(false);
-
       await fetchProducts();
     } catch (err: any) {
-      setErrorMsg(
-        err.response?.data?.message || "Failed to create product. Check inputs."
-      );
+      const msg =
+        err.response?.data?.message ||
+        `Failed to ${editingProduct ? "update" : "create"} product. Check inputs.`;
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -228,8 +314,9 @@ export default function ProductsPage() {
     try {
       await api.delete(`/products/${id}`);
       setProducts((prev) => prev.filter((p) => p.id !== id));
+      toast.success("Product deleted.");
     } catch (err: any) {
-      alert("Failed to delete product.");
+      toast.error(err.response?.data?.message || "Failed to delete product.");
     }
   };
 
@@ -240,8 +327,9 @@ export default function ProductsPage() {
       setProducts((prev) =>
         prev.map((p) => (p.id === id ? { ...p, stockQuantity: newStock } : p))
       );
+      toast.success(`Stock updated to ${newStock}.`);
     } catch {
-      alert("Failed to update stock");
+      toast.error("Failed to update stock.");
     }
   };
 
@@ -252,63 +340,69 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white pb-16">
-      {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-40 px-4 sm:px-8 py-3.5 flex items-center justify-between max-w-6xl mx-auto">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard"
-            className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-          <h1 className="text-base font-bold text-white">Product Catalog</h1>
+    <div className="space-y-6">
+      {/* Page Title & Add Action */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-extrabold text-[#0f172a] tracking-tight">
+              Product Catalog
+            </h1>
+            {!loading && (
+              <Badge variant="secondary">
+                {store?.subscriptionTier === "BUSINESS"
+                  ? `${products.length} products`
+                  : `${products.length} / ${
+                      store?.subscriptionTier === "PRO" ? 300 : 20
+                    } used (incl. drafts)`}
+              </Badge>
+            )}
+          </div>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+            Add products, edit prices, or move items to Draft without losing your data.
+          </p>
         </div>
 
-        <button
-          onClick={() => setModalOpen(true)}
-          className="px-3.5 py-1.5 bg-brand-500 hover:bg-brand-600 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-brand-500/20 transition"
-        >
+        <Button onClick={openCreateModal}>
           <Plus className="w-4 h-4" />
           Add Product
-        </button>
-      </header>
+        </Button>
+      </div>
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-8 py-8">
+      <div>
         {loading ? (
           <div className="py-20 flex justify-center">
-            <Loader2 className="w-6 h-6 animate-spin text-brand-500" />
+            <Loader2 className="w-6 h-6 animate-spin text-[#2e1065]" />
           </div>
         ) : products.length === 0 ? (
-          <div className="text-center py-20 px-4 rounded-3xl bg-slate-900/40 border border-slate-800/80 flex flex-col items-center max-w-lg mx-auto">
-            <div className="h-14 w-14 rounded-2xl bg-brand-500/10 text-brand-500 flex items-center justify-center mb-4">
-              <Package className="w-7 h-7" />
-            </div>
-            <h2 className="text-lg font-bold text-white mb-1">
-              No products added yet
-            </h2>
-            <p className="text-sm text-slate-400 mb-6">
-              Add your first product in 30 seconds. Snap 2 photos, set a price, and start sharing your link.
-            </p>
-            <button
-              onClick={() => setModalOpen(true)}
-              className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-brand-500/20"
-            >
-              <Plus className="w-4 h-4" />
-              Add Your First Product
-            </button>
-          </div>
+          <Card className="max-w-lg mx-auto">
+            <CardContent className="text-center py-14 px-6 flex flex-col items-center">
+              <div className="h-14 w-14 rounded-2xl bg-[#2e1065]/10 text-[#2e1065] flex items-center justify-center mb-4">
+                <Package className="w-7 h-7" />
+              </div>
+              <h2 className="text-base font-bold text-[#0f172a] mb-1">
+                No products added yet
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 mb-6">
+                Add your first product in 30 seconds. Snap 2 photos, set a price, and start sharing your link.
+              </p>
+              <Button onClick={openCreateModal}>
+                <Plus className="w-4 h-4" />
+                Add Your First Product
+              </Button>
+            </CardContent>
+          </Card>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {products.map((product) => (
-              <div
+              <Card
                 key={product.id}
-                className="bg-slate-900/70 border border-slate-800 rounded-2xl overflow-hidden shadow-lg flex flex-col justify-between"
+                className="overflow-hidden flex flex-col justify-between"
               >
                 <div>
                   {/* Image banner */}
-                  <div className="relative aspect-square w-full bg-slate-950">
+                  <div className="relative aspect-square w-full bg-slate-100">
                     {product.images && product.images.length > 0 ? (
                       <img
                         src={getFullImageUrl(product.images[0])}
@@ -316,13 +410,18 @@ export default function ProductsPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-700">
+                      <div className="w-full h-full flex items-center justify-center text-slate-300">
                         <Package className="w-12 h-12" />
                       </div>
                     )}
-                    {product.stockQuantity === 0 && (
-                      <div className="absolute top-3 left-3 bg-red-500/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider backdrop-blur">
-                        Sold Out
+                    {!product.isActive && (
+                      <div className="absolute top-3 left-3">
+                        <Badge variant="warning">Draft (Hidden)</Badge>
+                      </div>
+                    )}
+                    {product.isActive && product.stockQuantity === 0 && (
+                      <div className="absolute top-3 left-3">
+                        <Badge variant="destructive">Sold Out</Badge>
                       </div>
                     )}
                   </div>
@@ -330,64 +429,88 @@ export default function ProductsPage() {
                   {/* Details */}
                   <div className="p-4 space-y-2">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-bold text-white text-sm line-clamp-1">
+                      <h3 className="font-bold text-[#0f172a] text-sm line-clamp-1">
                         {product.title}
                       </h3>
-                      <button
-                        onClick={() => handleDeleteProduct(product.id)}
-                        className="text-slate-500 hover:text-red-400 transition"
-                        title="Delete product"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => openEditModal(product)}
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-[#2e1065] hover:bg-slate-100 transition cursor-pointer"
+                          title="Edit product"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleToggleDraft(product)}
+                          className={`p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer ${
+                            product.isActive
+                              ? "text-slate-500 hover:text-amber-600"
+                              : "text-amber-600 hover:text-emerald-600"
+                          }`}
+                          title={product.isActive ? "Move to Draft" : "Publish to Store"}
+                        >
+                          {product.isActive ? (
+                            <EyeOff className="w-3.5 h-3.5" />
+                          ) : (
+                            <Eye className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProduct(product.id)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                          title="Delete product"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="flex items-baseline gap-2">
-                      <span className="text-base font-extrabold text-brand-400">
+                      <span className="text-base font-extrabold text-[#2e1065]">
                         {formatCurrency(product.basePrice)}
                       </span>
                       {product.comparePrice && (
-                        <span className="text-xs text-slate-500 line-through">
+                        <span className="text-xs text-slate-400 line-through">
                           {formatCurrency(product.comparePrice)}
                         </span>
                       )}
                     </div>
 
                     {product.hasVariants && (
-                      <div className="inline-flex items-center gap-1 text-[11px] text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md">
-                        <Layers className="w-3 h-3 text-brand-500" />
+                      <Badge variant="secondary">
+                        <Layers className="w-3 h-3 text-[#2e1065]" />
                         {product.variants?.length || 0} variants
-                      </div>
+                      </Badge>
                     )}
                   </div>
                 </div>
 
                 {/* Stock Quick Controller */}
-                <div className="p-4 pt-0 border-t border-slate-800/60 mt-3 flex items-center justify-between text-xs">
-                  <span className="text-slate-400">Stock:</span>
+                <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between text-xs bg-slate-50/50">
+                  <span className="text-slate-500 font-medium">Stock:</span>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleStockChange(product.id, product.stockQuantity, -1)}
-                      className="h-6 w-6 rounded-md bg-slate-800 hover:bg-slate-700 flex items-center justify-center font-bold text-white"
+                      className="h-6 w-6 rounded-md bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center font-bold text-[#0f172a] cursor-pointer"
                     >
                       -
                     </button>
-                    <span className="font-mono font-bold text-white px-1">
+                    <span className="font-mono font-bold text-[#0f172a] px-1">
                       {product.stockQuantity}
                     </span>
                     <button
                       onClick={() => handleStockChange(product.id, product.stockQuantity, 1)}
-                      className="h-6 w-6 rounded-md bg-slate-800 hover:bg-slate-700 flex items-center justify-center font-bold text-white"
+                      className="h-6 w-6 rounded-md bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center font-bold text-[#0f172a] cursor-pointer"
                     >
                       +
                     </button>
                   </div>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}
-      </main>
+      </div>
 
       {/* Add Product Modal */}
       {modalOpen && (
@@ -395,7 +518,9 @@ export default function ProductsPage() {
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl my-8 space-y-5">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-bold text-white">Add New Product</h3>
+                <h3 className="text-lg font-bold text-white">
+                  {editingProduct ? "Edit Product" : "Add New Product"}
+                </h3>
                 <p className="text-xs text-slate-400">
                   Quick mobile listing (max 2 compressed images).
                 </p>
@@ -683,7 +808,7 @@ export default function ProductsPage() {
                       Publishing...
                     </>
                   ) : (
-                    "Publish Product"
+                    editingProduct ? "Save Changes" : "Publish Product"
                   )}
                 </button>
               </div>

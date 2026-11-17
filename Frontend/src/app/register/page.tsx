@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
@@ -115,6 +116,7 @@ function RegisterFormContent() {
       });
       const { token, user, store } = res.data.data;
       setAuth(token, user, store);
+      toast.success("Your store is live! Welcome to Kredibly.");
       router.push("/dashboard");
     } catch (err: any) {
       const msg =
@@ -122,6 +124,7 @@ function RegisterFormContent() {
         err.response?.data?.errors?.[0]?.message ||
         "Registration failed. Please check your details.";
       setErrorMessage(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

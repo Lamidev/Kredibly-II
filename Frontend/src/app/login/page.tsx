@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Eye, EyeOff, X, AlertCircle, Loader2 } from "lucide-react";
@@ -30,12 +31,14 @@ export default function LoginPage() {
       const { token, user, stores } = res.data.data;
       const primaryStore = stores[0];
       setAuth(token, user, primaryStore);
+      toast.success("Welcome back!");
       router.push("/dashboard");
     } catch (err: any) {
       const msg =
         err.response?.data?.message ||
         "Invalid login credentials. Please try again.";
       setErrorMessage(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

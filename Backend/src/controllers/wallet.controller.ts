@@ -31,16 +31,32 @@ export class WalletController {
     }
   }
 
+  static async requestBankChangeOtp(req: Request, res: Response, next: NextFunction) {
+    try {
+      const storeId = req.storeId!;
+      const data = await WalletService.requestBankChangeOtp(storeId);
+
+      return res.status(200).json({
+        success: true,
+        message: data.message,
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async updateBankDetails(req: Request, res: Response, next: NextFunction) {
     try {
       const storeId = req.storeId!;
-      const { bankName, bankCode, accountNumber, accountName } = req.body;
+      const { bankName, bankCode, accountNumber, accountName, otp } = req.body;
 
       const data = await WalletService.updateBankDetails(storeId, {
         bankName,
         bankCode,
         accountNumber,
         accountName,
+        otp,
       });
 
       return res.status(200).json({

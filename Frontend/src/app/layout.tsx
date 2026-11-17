@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -98,6 +99,7 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased selection:bg-brand-500 selection:text-white">
         {children}
+        <Toaster />
       </body>
     </html>
   );

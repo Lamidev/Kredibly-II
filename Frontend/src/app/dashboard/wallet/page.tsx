@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import {
-  ArrowLeft,
   TrendingUp,
   ShieldCheck,
   Building2,
@@ -15,11 +14,26 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  X,
   CreditCard,
   Edit2,
   Check,
 } from "lucide-react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 interface Transaction {
   id: string;
@@ -38,6 +52,7 @@ interface Transaction {
 interface WalletData {
   availableBalance: number | string;
   escrowBalance: number | string;
+  withdrawalLockedUntil?: string | null;
   bank: {
     bankName?: string | null;
     bankCode?: string | null;
@@ -58,15 +73,9 @@ const NIGERIAN_BANKS = [
   { name: "Palmpay", code: "999991" },
   { name: "Moniepoint MFB", code: "50515" },
   { name: "Stanbic IBTC Bank", code: "221" },
+  { name: "Wema Bank", code: "035" },
   { name: "Sterling Bank", code: "232" },
   { name: "Fidelity Bank", code: "070" },
-  { name: "Wema Bank / ALAT", code: "035" },
-  { name: "Union Bank of Nigeria", code: "032" },
-  { name: "FCMB", code: "214" },
-  { name: "Polaris Bank", code: "076" },
-  { name: "Ecobank Nigeria", code: "050" },
-  { name: "Taj Bank", code: "302" },
-  { name: "Jaiz Bank", code: "301" },
 ];
 
 export default function WalletPage() {
@@ -79,8 +88,6 @@ export default function WalletPage() {
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawing, setWithdrawing] = useState(false);
-  const [withdrawError, setWithdrawError] = useState("");
-  const [withdrawSuccess, setWithdrawSuccess] = useState("");
 
   // Bank Setup Modal
   const [bankModalOpen, setBankModalOpen] = useState(false);
@@ -90,6 +97,10 @@ export default function WalletPage() {
   const [verifyingBank, setVerifyingBank] = useState(false);
   const [bankError, setBankError] = useState("");
   const [savingBank, setSavingBank] = useState(false);
+  const [bankOtp, setBankOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpMessage, setOtpMessage] = useState("");
+  const [sendingOtp, setSendingOtp] = useState(false);
 
   const fetchWallet = async () => {
     try {
@@ -98,6 +109,8 @@ export default function WalletPage() {
     } catch (err: any) {
       if (err.response?.status === 401) {
         router.push("/login");
+      } else {
+        toast.error("Failed to load wallet data.");
       }
     } finally {
       setLoading(false);
@@ -108,7 +121,6 @@ export default function WalletPage() {
     fetchWallet();
   }, []);
 
-  // Live account name verification when 10 digits are typed
   useEffect(() => {
     if (accountNumber.trim().length === 10) {
       handleVerifyBank(selectedBank.code, accountNumber.trim());
@@ -135,9 +147,34 @@ export default function WalletPage() {
     }
   };
 
+  const handleRequestBankOtp = async () => {
+    setSendingOtp(true);
+    setBankError("");
+    setOtpMessage("");
+    try {
+      const res = await api.post("/wallet/request-bank-otp");
+      setOtpSent(true);
+      const msg = res.data.message || "Confirmation code sent to your email.";
+      setOtpMessage(msg);
+      toast.success(msg);
+    } catch (err: any) {
+      const msg = err.response?.data?.message || "Failed to send confirmation code";
+      setBankError(msg);
+      toast.error(msg);
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
   const handleSaveBank = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resolvedAccountName) return;
+    if (hasBankDetails && bankOtp.trim().length !== 6) {
+      const msg = "Please enter the 6-digit confirmation code sent to your email.";
+      setBankError(msg);
+      toast.error(msg);
+      return;
+    }
 
     setSavingBank(true);
     setBankError("");
@@ -148,12 +185,23 @@ export default function WalletPage() {
         bankCode: selectedBank.code,
         accountNumber: accountNumber.trim(),
         accountName: resolvedAccountName,
+        ...(hasBankDetails ? { otp: bankOtp.trim() } : {}),
       });
 
       await fetchWallet();
       setBankModalOpen(false);
+      setBankOtp("");
+      setOtpSent(false);
+      setOtpMessage("");
+      toast.success(
+        hasBankDetails
+          ? "Bank account updated! Withdrawals are locked for 24 hours for security."
+          : "Payout bank account saved successfully!"
+      );
     } catch (err: any) {
-      setBankError(err.response?.data?.message || "Failed to save bank details");
+      const msg = err.response?.data?.message || "Failed to save bank details";
+      setBankError(msg);
+      toast.error(msg);
     } finally {
       setSavingBank(false);
     }
@@ -161,24 +209,18 @@ export default function WalletPage() {
 
   const handleWithdraw = async (e: React.FormEvent) => {
     e.preventDefault();
-    setWithdrawError("");
-    setWithdrawSuccess("");
     setWithdrawing(true);
 
     try {
       const amount = Number(withdrawAmount);
       const res = await api.post("/wallet/withdraw", { amount });
 
-      setWithdrawSuccess(res.data.data.message);
+      toast.success(res.data.data.message || "Withdrawal dispatched!");
       setWithdrawAmount("");
+      setWithdrawModalOpen(false);
       await fetchWallet();
-
-      setTimeout(() => {
-        setWithdrawModalOpen(false);
-        setWithdrawSuccess("");
-      }, 2500);
     } catch (err: any) {
-      setWithdrawError(
+      toast.error(
         err.response?.data?.message || "Withdrawal failed. Please try again."
       );
     } finally {
@@ -190,28 +232,24 @@ export default function WalletPage() {
     switch (type) {
       case "SALE":
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md">
-            <ArrowDownLeft className="w-3 h-3 text-amber-500" /> Sale (In Escrow)
-          </span>
+          <Badge variant="warning">
+            <ArrowDownLeft className="w-3 h-3" /> Sale (In Escrow)
+          </Badge>
         );
       case "ESCROW_RELEASE":
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md">
-            <CheckCircle2 className="w-3 h-3 text-purple-400" /> Escrow Released
-          </span>
+          <Badge variant="default">
+            <CheckCircle2 className="w-3 h-3" /> Escrow Released
+          </Badge>
         );
       case "WITHDRAWAL":
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md">
-            <ArrowUpRight className="w-3 h-3 text-blue-400" /> Payout to Bank
-          </span>
+          <Badge variant="success">
+            <ArrowUpRight className="w-3 h-3" /> Payout to Bank
+          </Badge>
         );
       default:
-        return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md">
-            {type}
-          </span>
-        );
+        return <Badge variant="secondary">{type}</Badge>;
     }
   };
 
@@ -220,186 +258,218 @@ export default function WalletPage() {
   const hasBankDetails = Boolean(
     wallet?.bank?.bankName && wallet?.bank?.accountNumber
   );
+  const lockedUntilDate = wallet?.withdrawalLockedUntil
+    ? new Date(wallet.withdrawalLockedUntil)
+    : null;
+  const isWithdrawalLocked = Boolean(
+    lockedUntilDate && lockedUntilDate > new Date()
+  );
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white pb-16">
-      {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-30 px-4 sm:px-8 py-3.5 flex items-center justify-between max-w-6xl mx-auto">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard"
-            className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-          <h1 className="text-base font-bold text-white">Wallet &amp; Payouts</h1>
+    <div className="space-y-6">
+      {/* Page Title */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-extrabold text-[#0f172a] tracking-tight">
+            Wallet &amp; Payouts
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+            Track your available balance, escrow funds, and withdraw to your Nigerian bank.
+          </p>
         </div>
 
-        <button
+        <Button
           onClick={() => setWithdrawModalOpen(true)}
-          disabled={available < 1000 || !hasBankDetails}
-          className="px-4 py-2 bg-purple-900 hover:bg-purple-800 disabled:opacity-40 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition shadow-md shadow-purple-950/30 active:scale-[0.98]"
+          disabled={available < 1000 || !hasBankDetails || isWithdrawalLocked}
         >
           <ArrowUpRight className="w-4 h-4" />
-          <span>Withdraw to Bank</span>
-        </button>
-      </header>
+          <span>
+            {isWithdrawalLocked ? "Withdrawals Locked (24h)" : "Withdraw to Bank"}
+          </span>
+        </Button>
+      </div>
 
-      {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-8 py-8 space-y-8">
-        {loading ? (
-          <div className="py-20 flex justify-center">
-            <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
-          </div>
-        ) : (
-          <>
-            {/* 3 Metric Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {/* Card 1: Available Balance */}
-              <div className="p-6 rounded-3xl bg-gradient-to-br from-slate-900 to-purple-950/30 border border-slate-800 shadow-xl space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                    Available for Payout
-                  </span>
-                  <div className="h-8 w-8 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
-                    <TrendingUp className="w-4 h-4" />
-                  </div>
-                </div>
-
-                <p className="text-3xl font-extrabold text-white">
-                  {formatCurrency(available)}
+      {loading ? (
+        <div className="py-20 flex justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-[#2e1065]" />
+        </div>
+      ) : (
+        <>
+          {isWithdrawalLocked && lockedUntilDate && (
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="text-xs space-y-1">
+                <p className="font-bold text-amber-900">
+                  24-Hour Security Withdrawal Lock Active
                 </p>
-
-                <p className="text-xs text-slate-400">
-                  Ready for instant 1-click cashout directly to your verified Nigerian bank account.
+                <p className="text-amber-800 leading-relaxed">
+                  Because your payout bank account was recently changed, withdrawals are temporarily paused until{" "}
+                  <strong>
+                    {lockedUntilDate.toLocaleString("en-NG", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}
+                  </strong>{" "}
+                  to protect your funds against unauthorized transfers.
                 </p>
-              </div>
-
-              {/* Card 2: In Escrow */}
-              <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 shadow-xl space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                    Held in Safe Escrow
-                  </span>
-                  <div className="h-8 w-8 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
-                    <ShieldCheck className="w-4 h-4" />
-                  </div>
-                </div>
-
-                <p className="text-3xl font-extrabold text-amber-400">
-                  {formatCurrency(escrow)}
-                </p>
-
-                <p className="text-xs text-slate-400">
-                  Transfers to your Available Balance as soon as orders are marked delivered.
-                </p>
-              </div>
-
-              {/* Card 3: Payout Bank Account */}
-              <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 shadow-xl space-y-3 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                      Verified Payout Bank
-                    </span>
-                    <div className="h-8 w-8 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
-                      <Building2 className="w-4 h-4" />
-                    </div>
-                  </div>
-
-                  {hasBankDetails ? (
-                    <div className="mt-3">
-                      <p className="text-base font-bold text-white">
-                        {wallet?.bank?.bankName}
-                      </p>
-                      <p className="font-mono text-sm text-purple-400 font-bold">
-                        {wallet?.bank?.accountNumber}
-                      </p>
-                      <p className="text-xs text-slate-300 truncate mt-0.5">
-                        {wallet?.bank?.accountName}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="mt-3">
-                      <p className="text-xs text-amber-400 font-semibold">
-                        No payout bank linked yet
-                      </p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        Link your bank account to enable instant withdrawals.
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setBankModalOpen(true)}
-                  className="mt-4 w-full py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 rounded-xl transition flex items-center justify-center gap-1.5"
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                  <span>{hasBankDetails ? "Change Payout Bank" : "Link Bank Account"}</span>
-                </button>
               </div>
             </div>
+          )}
 
-            {/* Financial Ledger / Transaction History */}
-            <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-bold text-white">
-                  Financial Ledger &amp; History
-                </h3>
-                <span className="text-xs text-slate-500">
-                  {wallet?.transactions?.length || 0} transactions
-                </span>
+          {/* Metric Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="border-[#2e1065]/20">
+              <CardContent className="p-5 sm:p-6 space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <span>Available Balance</span>
+                  <TrendingUp className="w-4 h-4 text-emerald-600" />
+                </div>
+                <p className="text-3xl font-extrabold text-[#0f172a]">
+                  {formatCurrency(available)}
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  Min. withdrawal ₦1,000 via Nomba instant transfer.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-5 sm:p-6 space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <span>In Escrow Hold</span>
+                  <ShieldCheck className="w-4 h-4 text-amber-500" />
+                </div>
+                <p className="text-3xl font-extrabold text-amber-600">
+                  {formatCurrency(escrow)}
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  Automatically clears when orders are marked Delivered.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-5 sm:p-6 flex flex-col justify-between gap-3 h-full">
+                <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <span>Payout Bank Account</span>
+                  <Building2 className="w-4 h-4 text-[#2e1065]" />
+                </div>
+
+                {hasBankDetails ? (
+                  <div className="space-y-1">
+                    <p className="text-sm font-bold text-[#0f172a]">
+                      {wallet?.bank?.bankName}
+                    </p>
+                    <p className="text-xs font-mono text-[#2e1065] font-semibold">
+                      {wallet?.bank?.accountNumber}
+                    </p>
+                    <p className="text-[11px] text-slate-500 truncate">
+                      {wallet?.bank?.accountName}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500">
+                    No Nigerian bank account linked yet.
+                  </p>
+                )}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setBankModalOpen(true)}
+                  className="w-full"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>{hasBankDetails ? "Change Bank Account" : "Link Bank Account"}</span>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Transaction Ledger */}
+          <Card>
+            <CardHeader className="border-b border-slate-100 pb-4 flex flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle>Transaction Ledger</CardTitle>
+                <CardDescription>
+                  Complete record of sales, escrow releases, and bank payouts.
+                </CardDescription>
               </div>
+              <Badge variant="outline">
+                {wallet?.transactions?.length || 0} entries
+              </Badge>
+            </CardHeader>
 
-              {wallet?.transactions?.length === 0 ? (
-                <div className="py-12 text-center text-xs text-slate-500">
-                  No financial activity recorded yet. Transactions will show here when sales occur.
+            <CardContent className="p-0">
+              {!wallet?.transactions || wallet.transactions.length === 0 ? (
+                <div className="p-12 text-center space-y-2">
+                  <CreditCard className="w-8 h-8 text-slate-300 mx-auto" />
+                  <p className="text-sm font-semibold text-[#0f172a]">
+                    No financial transactions yet
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    When customers pay for orders, records appear here automatically.
+                  </p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
+                  <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="border-b border-slate-800 text-slate-500 uppercase tracking-wider text-[10px]">
-                        <th className="pb-3">Type</th>
-                        <th className="pb-3">Reference / Order</th>
-                        <th className="pb-3">Date</th>
-                        <th className="pb-3">Status</th>
-                        <th className="pb-3 text-right">Amount</th>
+                      <tr className="border-b border-slate-100 text-slate-500 bg-slate-50/70">
+                        <th className="py-3 px-4 font-semibold">Date</th>
+                        <th className="py-3 px-4 font-semibold">Type</th>
+                        <th className="py-3 px-4 font-semibold">Reference / Order</th>
+                        <th className="py-3 px-4 font-semibold">Net Amount</th>
+                        <th className="py-3 px-4 font-semibold">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60">
-                      {wallet?.transactions.map((tx) => (
-                        <tr key={tx.id} className="hover:bg-slate-850/50">
-                          <td className="py-3.5 pr-3">
-                            {getTransactionBadge(tx.type)}
-                          </td>
-                          <td className="py-3.5 pr-3 font-mono text-slate-300">
-                            {tx.order ? `#${tx.order.orderNumber}` : tx.reference}
-                          </td>
-                          <td className="py-3.5 pr-3 text-slate-400">
+                    <tbody className="divide-y divide-slate-100">
+                      {wallet.transactions.map((tx) => (
+                        <tr key={tx.id} className="hover:bg-slate-50/60 transition">
+                          <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
                             {new Date(tx.createdAt).toLocaleDateString("en-NG", {
-                              day: "numeric",
                               month: "short",
-                              year: "numeric",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
                             })}
                           </td>
-                          <td className="py-3.5 pr-3">
-                            <span className="text-purple-400 font-semibold">
-                              {tx.status}
-                            </span>
+                          <td className="py-3.5 px-4">
+                            {getTransactionBadge(tx.type)}
                           </td>
-                          <td className="py-3.5 text-right font-bold text-white font-mono">
-                            {tx.type === "WITHDRAWAL" ? (
-                              <span className="text-red-400">
-                                -{formatCurrency(Number(tx.amount))}
-                              </span>
-                            ) : (
-                              <span className="text-emerald-400">
-                                +{formatCurrency(Number(tx.netAmount))}
-                              </span>
+                          <td className="py-3.5 px-4">
+                            <p className="font-mono text-[#0f172a] font-medium">
+                              {tx.reference}
+                            </p>
+                            {tx.order && (
+                              <p className="text-[10.5px] text-slate-500">
+                                Order #{tx.order.orderNumber} • {tx.order.customer.fullName}
+                              </p>
                             )}
+                          </td>
+                          <td
+                            className={`py-3.5 px-4 font-mono font-bold ${
+                              tx.type === "WITHDRAWAL"
+                                ? "text-red-600"
+                                : "text-emerald-600"
+                            }`}
+                          >
+                            {tx.type === "WITHDRAWAL" ? "-" : "+"}
+                            {formatCurrency(tx.netAmount)}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <Badge
+                              variant={
+                                tx.status === "COMPLETED"
+                                  ? "success"
+                                  : tx.status === "FAILED"
+                                  ? "destructive"
+                                  : "warning"
+                              }
+                            >
+                              {tx.status}
+                            </Badge>
                           </td>
                         </tr>
                       ))}
@@ -407,198 +477,228 @@ export default function WalletPage() {
                   </table>
                 </div>
               )}
-            </div>
-          </>
-        )}
-      </main>
-
-      {/* 1. Modal: Link & Verify Bank Details */}
-      {bankModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <div className="flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-purple-400" />
-                <h3 className="text-base font-bold text-white">
-                  Link Nigerian Bank Account
-                </h3>
-              </div>
-              <button
-                onClick={() => setBankModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {bankError && (
-              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{bankError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSaveBank} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Select Commercial Bank / FinTech *
-                </label>
-                <select
-                  value={selectedBank.code}
-                  onChange={(e) => {
-                    const found = NIGERIAN_BANKS.find(
-                      (b) => b.code === e.target.value
-                    );
-                    if (found) setSelectedBank(found);
-                  }}
-                  className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-purple-500"
-                >
-                  {NIGERIAN_BANKS.map((b) => (
-                    <option key={b.code} value={b.code}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  10-Digit NUBAN Account Number *
-                </label>
-                <input
-                  type="text"
-                  maxLength={10}
-                  required
-                  placeholder="0123456789"
-                  value={accountNumber}
-                  onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ""))}
-                  className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white font-mono tracking-wider focus:outline-none focus:border-purple-500"
-                />
-              </div>
-
-              {/* Resolved Name Preview */}
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs min-h-[46px] flex items-center justify-between">
-                <span className="text-slate-400">Account Holder:</span>
-                {verifyingBank ? (
-                  <div className="flex items-center gap-1.5 text-purple-400 font-medium">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Verifying with Nomba...</span>
-                  </div>
-                ) : resolvedAccountName ? (
-                  <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
-                    <Check className="w-3.5 h-3.5" />
-                    <span>{resolvedAccountName}</span>
-                  </div>
-                ) : (
-                  <span className="text-slate-500">Type 10 digits to verify</span>
-                )}
-              </div>
-
-              <button
-                type="submit"
-                disabled={!resolvedAccountName || savingBank}
-                className="w-full py-3 bg-purple-900 hover:bg-purple-800 disabled:opacity-40 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-md shadow-purple-950/20"
-              >
-                {savingBank ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <span>Save Verified Bank Details</span>
-                )}
-              </button>
-            </form>
-          </div>
-        </div>
+            </CardContent>
+          </Card>
+        </>
       )}
 
-      {/* 2. Modal: Withdraw Funds */}
-      {withdrawModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <div className="flex items-center gap-2">
-                <ArrowUpRight className="w-5 h-5 text-purple-400" />
-                <h3 className="text-base font-bold text-white">
-                  Withdraw to Bank Account
-                </h3>
-              </div>
-              <button
-                onClick={() => setWithdrawModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white"
+      {/* Bank Setup Dialog */}
+      <Dialog open={bankModalOpen} onOpenChange={setBankModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-[#2e1065]" />
+              <span>{hasBankDetails ? "Change Bank Account" : "Link Payout Bank Account"}</span>
+            </DialogTitle>
+            <DialogDescription>
+              Verify your Nigerian bank account via Nomba before saving.
+            </DialogDescription>
+          </DialogHeader>
+
+          {bankError && (
+            <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{bankError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSaveBank} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-[#0f172a] mb-1">
+                Select Commercial Bank / FinTech *
+              </label>
+              <select
+                value={selectedBank.code}
+                onChange={(e) => {
+                  const found = NIGERIAN_BANKS.find(
+                    (b) => b.code === e.target.value
+                  );
+                  if (found) setSelectedBank(found);
+                }}
+                className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-[#0f172a] focus:outline-none focus:border-[#2e1065]"
               >
-                <X className="w-5 h-5" />
-              </button>
+                {NIGERIAN_BANKS.map((b) => (
+                  <option key={b.code} value={b.code}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {withdrawError && (
-              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{withdrawError}</span>
-              </div>
-            )}
+            <div>
+              <label className="block text-xs font-semibold text-[#0f172a] mb-1">
+                10-Digit NUBAN Account Number *
+              </label>
+              <input
+                type="text"
+                maxLength={10}
+                required
+                placeholder="0123456789"
+                value={accountNumber}
+                onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ""))}
+                className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-[#0f172a] font-mono tracking-wider focus:outline-none focus:border-[#2e1065]"
+              />
+            </div>
 
-            {withdrawSuccess && (
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>{withdrawSuccess}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleWithdraw} className="space-y-4">
-              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1 text-xs">
-                <p className="text-slate-400">Destination Account:</p>
-                <p className="font-bold text-white">
-                  {wallet?.bank?.bankName} — {wallet?.bank?.accountNumber}
-                </p>
-                <p className="text-[11px] text-slate-400">
-                  {wallet?.bank?.accountName}
-                </p>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <label className="font-semibold text-slate-300">
-                    Withdrawal Amount (₦) *
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setWithdrawAmount(available.toString())}
-                    className="text-purple-400 hover:underline font-bold text-[11px]"
-                  >
-                    Withdraw All ({formatCurrency(available)})
-                  </button>
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs min-h-[46px] flex items-center justify-between">
+              <span className="text-slate-500">Account Holder:</span>
+              {verifyingBank ? (
+                <div className="flex items-center gap-1.5 text-[#2e1065] font-medium">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Verifying...</span>
                 </div>
-                <input
-                  type="number"
-                  min={1000}
-                  max={available}
-                  required
-                  placeholder="Min ₦1,000"
-                  value={withdrawAmount}
-                  onChange={(e) => setWithdrawAmount(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white font-mono focus:outline-none focus:border-purple-500"
-                />
-              </div>
+              ) : resolvedAccountName ? (
+                <div className="flex items-center gap-1.5 text-emerald-700 font-bold">
+                  <Check className="w-3.5 h-3.5" />
+                  <span>{resolvedAccountName}</span>
+                </div>
+              ) : (
+                <span className="text-slate-400">Type 10 digits to verify</span>
+              )}
+            </div>
 
-              <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                <span>Dispatches via Nomba NIP Transfer directly to your bank.</span>
-              </div>
+            {hasBankDetails && resolvedAccountName && (
+              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 space-y-3">
+                <div className="text-[11.5px] text-amber-900 leading-relaxed">
+                  <strong>Security Check:</strong> Changing your payout bank account requires an email confirmation code and triggers a <strong>24-hour withdrawal lock</strong>.
+                </div>
 
-              <button
-                type="submit"
-                disabled={withdrawing || Number(withdrawAmount) < 1000 || Number(withdrawAmount) > available}
-                className="w-full py-3 bg-purple-900 hover:bg-purple-800 disabled:opacity-40 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-md shadow-purple-950/20 active:scale-[0.98]"
-              >
-                {withdrawing ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                {!otpSent ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleRequestBankOtp}
+                    disabled={sendingOtp}
+                    className="w-full bg-amber-600 hover:bg-amber-700"
+                  >
+                    {sendingOtp ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <span>Send Confirmation Code to Email</span>
+                    )}
+                  </Button>
                 ) : (
-                  <span>Confirm Payout</span>
+                  <div className="space-y-2">
+                    {otpMessage && (
+                      <p className="text-[11px] text-emerald-700 font-medium">
+                        {otpMessage}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        maxLength={6}
+                        required
+                        placeholder="6-digit code"
+                        value={bankOtp}
+                        onChange={(e) => setBankOtp(e.target.value.replace(/\D/g, ""))}
+                        className="flex-1 px-3 py-2 rounded-xl bg-white border border-slate-300 text-sm text-[#0f172a] font-mono tracking-[0.25em] text-center focus:outline-none focus:border-[#2e1065]"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRequestBankOtp}
+                        disabled={sendingOtp}
+                      >
+                        {sendingOtp ? "..." : "Resend"}
+                      </Button>
+                    </div>
+                  </div>
                 )}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              disabled={
+                !resolvedAccountName ||
+                savingBank ||
+                (hasBankDetails && bankOtp.trim().length !== 6)
+              }
+              className="w-full"
+            >
+              {savingBank ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <span>
+                  {hasBankDetails
+                    ? "Confirm Bank Change (24h Lock)"
+                    : "Save Verified Bank Details"}
+                </span>
+              )}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Withdraw Funds Dialog */}
+      <Dialog open={withdrawModalOpen} onOpenChange={setWithdrawModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowUpRight className="w-5 h-5 text-[#2e1065]" />
+              <span>Withdraw to Bank Account</span>
+            </DialogTitle>
+            <DialogDescription>
+              Funds are sent immediately via Nomba NIP transfer.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleWithdraw} className="space-y-4">
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1 text-xs">
+              <p className="text-slate-500">Destination Account:</p>
+              <p className="font-bold text-[#0f172a]">
+                {wallet?.bank?.bankName} — {wallet?.bank?.accountNumber}
+              </p>
+              <p className="text-[11px] text-slate-500">
+                {wallet?.bank?.accountName}
+              </p>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between text-xs mb-1">
+                <label className="font-semibold text-[#0f172a]">
+                  Withdrawal Amount (₦) *
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setWithdrawAmount(available.toString())}
+                  className="text-[#2e1065] hover:underline font-bold text-[11px] cursor-pointer"
+                >
+                  Withdraw All ({formatCurrency(available)})
+                </button>
+              </div>
+              <input
+                type="number"
+                min={1000}
+                max={available}
+                required
+                placeholder="Min ₦1,000"
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-[#0f172a] font-mono focus:outline-none focus:border-[#2e1065]"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              disabled={
+                withdrawing ||
+                Number(withdrawAmount) < 1000 ||
+                Number(withdrawAmount) > available
+              }
+              className="w-full"
+            >
+              {withdrawing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <span>Confirm Payout</span>
+              )}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

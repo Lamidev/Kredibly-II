@@ -212,4 +212,83 @@ export class EmailService {
       html,
     });
   }
+
+  /**
+   * Send 6-digit OTP code to confirm a payout bank account change
+   */
+  static async sendBankChangeOtpEmail(data: {
+    to: string;
+    fullName: string;
+    storeName: string;
+    otp: string;
+  }) {
+    const html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h1 style="color: #0f172a; margin: 0; font-size: 22px; font-weight: 800;">Confirm Bank Account Change</h1>
+          <p style="color: #64748b; font-size: 14px; margin-top: 6px;">Security verification for ${data.storeName}</p>
+        </div>
+
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+          <p style="margin: 0 0 12px 0; font-size: 15px;">Hi <strong>${data.fullName}</strong>,</p>
+          <p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">
+            Use the confirmation code below to authorize changing your payout bank account on Kredibly. This code expires in <strong>10 minutes</strong>.
+          </p>
+          <div style="background: #ffffff; border: 1px dashed #3b0764; border-radius: 8px; padding: 16px; text-align: center; margin: 20px 0;">
+            <span style="font-family: monospace; font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #2e1065;">${data.otp}</span>
+          </div>
+          <p style="margin: 0; font-size: 12.5px; color: #b45309; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px;">
+            ⚠️ <strong>24-Hour Security Lock:</strong> For your protection against fraud, withdrawals will be paused for 24 hours after changing your payout bank account.
+          </p>
+        </div>
+
+        <p style="font-size: 12px; color: #64748b; text-align: center;">
+          If you did not request this change, ignore this email and change your password immediately.
+        </p>
+      </div>
+    `;
+
+    return this.send({
+      to: data.to,
+      subject: `🔐 ${data.otp} is your Kredibly bank change confirmation code`,
+      html,
+    });
+  }
+
+  /**
+   * Send security alert when payout bank account is changed
+   */
+  static async sendBankChangedAlertEmail(data: {
+    to: string;
+    fullName: string;
+    storeName: string;
+    bankName: string;
+    accountNumber: string;
+    lockedUntil: Date;
+  }) {
+    const maskedAcc = data.accountNumber.replace(/^(\d{2})\d{4}(\d{4})$/, "$1****$2");
+    const html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b;">
+        <h2 style="color: #0f172a; margin-top: 0;">Payout Bank Account Updated 🔒</h2>
+        <p>Hi <strong>${data.fullName}</strong>,</p>
+        <p>Your payout bank account for <strong>${data.storeName}</strong> was just updated to:</p>
+        <div style="background-color: #f1f5f9; border-radius: 8px; padding: 14px 16px; margin: 16px 0;">
+          <p style="margin: 0 0 6px 0;"><strong>Bank:</strong> ${data.bankName}</p>
+          <p style="margin: 0;"><strong>Account Number:</strong> ${maskedAcc}</p>
+        </div>
+        <p style="font-size: 13.5px; color: #b45309;">
+          For fraud protection, withdrawals are temporarily locked for 24 hours until <strong>${data.lockedUntil.toUTCString()}</strong>.
+        </p>
+        <p style="font-size: 12.5px; color: #64748b;">
+          If you did not authorize this change, contact Kredibly support immediately at ${ENV.ADMIN_EMAIL}.
+        </p>
+      </div>
+    `;
+
+    return this.send({
+      to: data.to,
+      subject: `⚠️ Payout bank account changed for ${data.storeName}`,
+      html,
+    });
+  }
 }

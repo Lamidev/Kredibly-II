@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/dashboard/", "/api/"],
+        disallow: ["/dashboard/", "/api/", "/forgot-password", "/reset-password"],
       },
     ],
     sitemap: "https://usekredibly.com/sitemap.xml",
