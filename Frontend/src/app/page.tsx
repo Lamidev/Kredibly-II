@@ -37,38 +37,38 @@ type BillingCycle = "quarterly" | "biannual" | "annual";
 const FAQS = [
   {
     value: "item-1",
-    q: "How does Kredibly buyer protection work without holding my money hostage?",
-    a: "When a customer pays, funds are secured in your store wallet so you can dispatch with 100% confidence. Once you deliver the package and mark it Delivered in your dashboard, a 24-hour quiet timer runs. Even if the customer forgets to confirm or goes offline, your money automatically unlocks to your Available Balance and can be withdrawn directly to your Nigerian bank account in 1 click.",
+    q: "Do I need a laptop or computer to use Kredibly?",
+    a: "No. You can do everything 100% on your phone. You can create your store, upload photos, set prices, and manage new orders straight from your mobile phone browser without needing a laptop or web designer.",
   },
   {
     value: "item-2",
-    q: "Can shoppers bypass checkout and message me on WhatsApp to haggle or send fake alerts?",
-    a: "Never. To protect you from time-wasters, ghosting, and fake transfer screenshots, your direct WhatsApp order routing only unlocks on the customer's verified receipt AFTER their payment has been confirmed by our automated system. Every message you receive is an already paid, verified order ready for delivery.",
+    q: "How do I receive my money when someone buys from my store?",
+    a: "All your sales go directly into your secure Kredibly store balance. With one tap, you can withdraw your money straight into any Nigerian bank account (GTBank, Zenith, Access, First Bank, Kuda, OPay, Moniepoint, etc.).",
   },
   {
     value: "item-3",
-    q: "Do I have to pay transaction fees or commissions on my sales?",
-    a: "On all paid subscription plans, Kredibly charges 0% platform commission—you keep 100% of your product asking prices. On the Free Starter tier, you can list up to 20 products and test the waters with zero upfront cost, with only a modest 2.5% fee on completed sales until you are ready to upgrade.",
+    q: "Will my customers have to download an app or create a password to buy?",
+    a: "No. Your customers do not need to download any app or remember passwords. They simply tap your link on WhatsApp, Instagram, or TikTok, see all your goods, and checkout with their delivery address in 30 seconds.",
   },
   {
     value: "item-4",
-    q: "Do my customers need to download an app or create a password to buy?",
-    a: "Never. Forcing Instagram or TikTok shoppers to download apps or remember passwords causes over 35% cart abandonment. Shoppers simply enter their delivery address and phone number, pay via instant Bank Transfer or Card in 30 seconds, and can track their delivery status anytime using just their phone number.",
+    q: "What happens if a customer sends a fake transfer alert?",
+    a: "Our system connects directly to the bank. An order is ONLY marked as paid when the money is actually confirmed. You never have to guess, argue with customers, or inspect fake transfer screenshots again.",
   },
   {
     value: "item-5",
-    q: "How do I withdraw my money? Which Nigerian banks and FinTechs are supported?",
-    a: "You can link any Nigerian commercial bank or licensed FinTech account (GTBank, Access, Zenith, UBA, First Bank, OPay, Kuda, Moniepoint, Palmpay). When you request a withdrawal, your money is settled directly into your account in 1 click via automated instant bank transfer.",
+    q: "Can I get my own shop link with my brand name?",
+    a: "Yes. The moment you sign up, you get your own clean link like kredibly.shop/yourbrand. You can put this link in your Instagram bio, WhatsApp status, or TikTok profile. You can also connect your own custom website (like yourbrand.com or yourbrand.ng) on paid plans.",
   },
   {
     value: "item-6",
-    q: "What happens if a customer claims they didn't receive their order or tries to dispute it?",
-    a: "You are fully protected. When fulfilling an order, you can upload waybill slips, rider contact info, or tracking proof directly in your dashboard. Our merchant dispute team reviews delivery confirmation evidence so genuine sellers are never unfairly debited or victimized by false buyer claims.",
+    q: "Do I have to pay before testing Kredibly?",
+    a: "No. You can start completely free. You can add up to 20 products and start receiving customer orders with zero upfront cost. You only choose a paid subscription plan when your business is ready to grow.",
   },
   {
     value: "item-7",
-    q: "Can I connect my own custom website domain (like mybrand.ng or mybrand.com)?",
-    a: "Yes. While every store automatically gets an official, high-speed kredibly.shop/yourbrand link on sign-up, you can also link your own independent domain (like yourbrand.ng or yourbrand.com) on Deluxe and Ultimate plans with free automatic SSL certificates.",
+    q: "How do I know when someone places a new order?",
+    a: "You get an instant alert on your phone and email with the customer's name, phone number, the items they purchased, and their delivery address so you can dispatch with 100% confidence.",
   },
 ];
 
@@ -209,7 +209,7 @@ export default function HomePage() {
               href="#features"
               className="text-[13.5px] font-medium text-[#525B6C] hover:text-[#090D16] transition-colors"
             >
-              Capabilities
+              Features
             </a>
             <a
               href="#how-it-works"
@@ -221,7 +221,7 @@ export default function HomePage() {
               href="#competitive-edge"
               className="text-[13.5px] font-medium text-[#525B6C] hover:text-[#090D16] transition-colors"
             >
-              The Reality
+              Why Kredibly
             </a>
             <a
               href="#pricing"
@@ -233,7 +233,7 @@ export default function HomePage() {
               href="#faq"
               className="text-[13.5px] font-medium text-[#525B6C] hover:text-[#090D16] transition-colors"
             >
-              FAQ
+              Help &amp; Questions
             </a>
           </nav>
 
@@ -248,7 +248,7 @@ export default function HomePage() {
               href="/register"
               className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#2e1065] hover:bg-[#3b0764] text-white text-xs font-semibold rounded-[8px] transition-all hover:-translate-y-0.5 shadow-xs group"
             >
-              <span>Start Free Store</span>
+              <span>Create Free Store</span>
               <ArrowUpRight className="w-3.5 h-3.5 text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
             </Link>
           </div>
@@ -271,7 +271,7 @@ export default function HomePage() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-sm font-medium text-[#090D16] py-1 border-b border-slate-100"
               >
-                Capabilities
+                Features
               </a>
               <a
                 href="#how-it-works"
@@ -285,7 +285,7 @@ export default function HomePage() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-sm font-medium text-[#090D16] py-1 border-b border-slate-100"
               >
-                The Reality
+                Why Kredibly
               </a>
               <a
                 href="#pricing"
@@ -299,7 +299,7 @@ export default function HomePage() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-sm font-medium text-[#090D16] py-1"
               >
-                FAQ
+                Help &amp; Questions
               </a>
             </nav>
             <div className="grid grid-cols-2 gap-2 pt-2">
@@ -313,7 +313,7 @@ export default function HomePage() {
                 href="/register"
                 className="py-2.5 text-center text-xs font-semibold bg-[#2e1065] text-white rounded-[8px]"
               >
-                Start Free
+                Create Free Store
               </Link>
             </div>
           </div>
@@ -357,12 +357,12 @@ export default function HomePage() {
             {/* Display Headline */}
             <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-[72px] font-display font-extrabold tracking-tight leading-[1.06] text-[#090D16]">
               Turn your social media into your{" "}
-              <span className="text-[#3b0764]">online store.</span>
+              <span className="text-[#3b0764]">online shop.</span>
             </h1>
 
             {/* Subhead */}
             <p className="text-base sm:text-lg md:text-xl text-[#525B6C] max-w-2xl mx-auto font-normal leading-relaxed">
-              Create a beautiful online store in 2 minutes. Add your products, share your link on WhatsApp, TikTok or Instagram, and let customers shop and pay with ease.
+              Create a simple online store for your business in 2 minutes. Add your goods, share your link on WhatsApp, Instagram, or TikTok, and let customers place orders and pay you directly.
             </p>
 
             {/* Interactive Domain Claimer with Real-Time Brand Availability Checking */}
@@ -448,10 +448,21 @@ export default function HomePage() {
               )}
 
               {/* Frictionless Assurance */}
-              <div className="flex items-center justify-center gap-2 text-xs sm:text-[13px] text-[#64748B] font-medium pt-1">
-                <span>No coding.</span>
+              <div className="flex items-center justify-center gap-3 text-xs sm:text-[13px] text-[#64748B] font-medium pt-1 flex-wrap">
+                <span className="flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>No coding</span>
+                </span>
                 <span className="w-1 h-1 rounded-full bg-[#CBD5E1]" />
-                <span>No complicated setup.</span>
+                <span className="flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>No computer needed</span>
+                </span>
+                <span className="w-1 h-1 rounded-full bg-[#CBD5E1]" />
+                <span className="flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Works on any phone</span>
+                </span>
               </div>
             </div>
           </div>
@@ -672,10 +683,10 @@ export default function HomePage() {
                   </div>
                   <div>
                     <h5 className="font-display font-bold text-xs sm:text-sm text-[#090D16]">
-                      Your Store in Bio
+                      Your Shop in Bio
                     </h5>
                     <p className="text-[11px] text-[#525B6C] mt-0.5">
-                      Put <code className="font-mono text-[#3b0764]">kredibly.shop/name</code> in your social media bio. No coding needed.
+                      Put your simple shop link on your WhatsApp status and Instagram profile.
                     </p>
                   </div>
                 </div>
@@ -686,10 +697,10 @@ export default function HomePage() {
                   </div>
                   <div>
                     <h5 className="font-display font-bold text-xs sm:text-sm text-[#090D16]">
-                      Instant Automated Payment
+                      Real Bank Alerts Only
                     </h5>
                     <p className="text-[11px] text-[#525B6C] mt-0.5">
-                      Customers pay via bank transfer or card. Confirmed automatically in seconds.
+                      Customers pay via bank transfer or card. Confirmed automatically in 5 seconds.
                     </p>
                   </div>
                 </div>
@@ -700,10 +711,10 @@ export default function HomePage() {
                   </div>
                   <div>
                     <h5 className="font-display font-bold text-xs sm:text-sm text-[#090D16]">
-                      Keep 100% of Your Prices
+                      Money Straight to Your Bank
                     </h5>
                     <p className="text-[11px] text-[#525B6C] mt-0.5">
-                      0% platform fee on paid plans. Withdraw earnings directly to your bank anytime.
+                      No hidden deductions. Transfer your sales directly into your Nigerian bank account anytime.
                     </p>
                   </div>
                 </div>
@@ -723,14 +734,14 @@ export default function HomePage() {
               <div className="inline-flex items-center gap-2.5">
                 <span className="w-5 h-[2px] bg-[#3b0764]" />
                 <span className="text-[11px] font-mono tracking-[0.2em] uppercase font-bold text-[#3b0764]">
-                  01 // BUILT FOR EVERY INDUSTRY
+                  01 // EVERYTHING YOU NEED
                 </span>
               </div>
               <h2 className="text-3xl sm:text-5xl md:text-6xl font-display font-extrabold tracking-tight text-[#090D16] leading-[1.06]">
-                Everything your store needs. Zero technical headaches.
+                Everything you need to sell online. Simple and stress-free.
               </h2>
               <p className="text-sm sm:text-base text-[#525B6C] font-normal leading-relaxed">
-                Whether you sell gadgets, sneakers, bone-straight wigs, skincare, or cakes — Kredibly adapts to your catalog automatically.
+                Whether you sell clothes, shoes, bags, perfumes, phones, wigs, or cakes — Kredibly makes selling online as easy as chatting on your phone.
               </p>
             </div>
 
@@ -741,26 +752,26 @@ export default function HomePage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="w-10 h-10 rounded-lg bg-[#FAF9F5] border border-[#DADDD4] flex items-center justify-center text-[#2e1065]">
-                      <CreditCard className="w-5 h-5" />
+                      <Package className="w-5 h-5" />
                     </div>
                     <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 bg-[#F3F4EF] text-[#090D16] rounded-xs border border-[#DADDD4]">
-                      INSTANT CONFIRMATION
+                      SAVE TIME &amp; ENERGY
                     </span>
                   </div>
 
                   <div>
                     <h3 className="text-xl sm:text-2xl font-display font-bold text-[#090D16]">
-                      Accept Cards &amp; Instant Bank Transfers
+                      Stop Answering &ldquo;How Much?&rdquo; All Day
                     </h3>
                     <p className="mt-2.5 text-xs sm:text-sm text-[#525B6C] leading-relaxed">
-                      Most Nigerian customers prefer direct bank transfers. Kredibly gives your customers automated bank transfer and card options, verifying payments in seconds without you needing to confirm screenshots or check bank apps.
+                      Put all your goods, colors, sizes, and prices in one clean link. Instead of sending 50 pictures and repeating prices in DM every time a customer asks, just share your store link. Customers browse everything themselves.
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-[#F3F4EF] flex items-center justify-between text-xs font-mono text-[#525B6C]">
-                  <span>Zero fake transfer alerts</span>
-                  <span className="font-bold text-[#3b0764]">100% AUTOMATED →</span>
+                  <span>Saves 4+ hours of manual chat every day</span>
+                  <span className="font-bold text-[#3b0764]">BROWSE EASILY →</span>
                 </div>
               </div>
 
@@ -769,26 +780,26 @@ export default function HomePage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="w-10 h-10 rounded-lg bg-[#FAF9F5] border border-[#DADDD4] flex items-center justify-center text-[#2e1065]">
-                      <Package className="w-5 h-5" />
+                      <CreditCard className="w-5 h-5" />
                     </div>
                     <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 bg-[#F3F4EF] text-[#090D16] rounded-xs border border-[#DADDD4]">
-                      SMART CATALOG
+                      100% REAL ALERTS
                     </span>
                   </div>
 
                   <div>
                     <h3 className="text-xl sm:text-2xl font-display font-bold text-[#090D16]">
-                      Custom Categories &amp; Fast Photo Optimizer
+                      No More Fake Bank Transfer Screenshots
                     </h3>
                     <p className="mt-2.5 text-xs sm:text-sm text-[#525B6C] leading-relaxed">
-                      Never get boxed into rigid templates. Type whatever categories match your business—Shoe Sizes, Wig Lengths, Phone Models, or Skincare Types. Photos taken on your phone are automatically optimized so your store loads in less than a second on mobile data.
+                      Most customers prefer direct bank transfers. With Kredibly, customers get an automated transfer account or card option, and our system confirms the real payment in seconds. You will never lose goods to fake transfer alerts again.
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-[#F3F4EF] flex items-center justify-between text-xs font-mono text-[#525B6C]">
-                  <span>Sub-second mobile loading</span>
-                  <span className="font-bold text-[#3b0764]">AUTO-OPTIMIZED →</span>
+                  <span>Zero fake transfer alert losses</span>
+                  <span className="font-bold text-[#3b0764]">100% AUTOMATED →</span>
                 </div>
               </div>
 
@@ -800,22 +811,22 @@ export default function HomePage() {
                       <Smartphone className="w-5 h-5" />
                     </div>
                     <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 bg-[#F3F4EF] text-[#090D16] rounded-xs border border-[#DADDD4]">
-                      ZERO PASSWORDS
+                      30-SECOND CHECKOUT
                     </span>
                   </div>
 
                   <div>
                     <h3 className="text-xl sm:text-2xl font-display font-bold text-[#090D16]">
-                      30-Second Guest Checkout &amp; Order Tracking
+                      Customers Buy Fast with No Passwords
                     </h3>
                     <p className="mt-2.5 text-xs sm:text-sm text-[#525B6C] leading-relaxed">
-                      Forcing shoppers to sign up and remember passwords causes 35% cart abandonment. On Kredibly, customers enter their delivery address and phone number, pay instantly, and track their order live with just their phone number.
+                      Nobody likes remembering passwords or downloading new apps. On your Kredibly store, customers simply pick what they want, enter their name, phone number, and delivery address, and pay in 30 seconds.
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-[#F3F4EF] flex items-center justify-between text-xs font-mono text-[#525B6C]">
-                  <span>Phone-first order tracking</span>
+                  <span>No apps or passwords required</span>
                   <span className="font-bold text-[#3b0764]">FAST CHECKOUT →</span>
                 </div>
               </div>
@@ -825,26 +836,26 @@ export default function HomePage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="w-10 h-10 rounded-lg bg-[#FAF9F5] border border-[#DADDD4] flex items-center justify-center text-[#2e1065]">
-                      <ShieldCheck className="w-5 h-5" />
+                      <Wallet className="w-5 h-5" />
                     </div>
                     <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 bg-[#F3F4EF] text-[#090D16] rounded-xs border border-[#DADDD4]">
-                      BUYER TRUST
+                      DIRECT TO YOUR BANK
                     </span>
                   </div>
 
                   <div>
                     <h3 className="text-xl sm:text-2xl font-display font-bold text-[#090D16]">
-                      Built-In Buyer Trust &amp; 1-Click Bank Payouts
+                      Money Sent Straight to Your Bank Account
                     </h3>
                     <p className="mt-2.5 text-xs sm:text-sm text-[#525B6C] leading-relaxed">
-                      First-time followers buy with total peace of mind because their payment is protected until delivery. Once you fulfill an order, funds are ready for instant 1-click withdrawal to any Nigerian bank (GTBank, Access, Zenith, OPay, Kuda, and more).
+                      Every naira you earn goes into your secure store balance. Withdraw straight to GTBank, Zenith, Access, Kuda, Moniepoint, OPay, or any Nigerian bank account with just one tap anytime you want.
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-[#F3F4EF] flex items-center justify-between text-xs font-mono text-[#525B6C]">
-                  <span>Direct settlement to your bank</span>
-                  <span className="font-bold text-[#3b0764]">1-CLICK WITHDRAWAL →</span>
+                  <span>Direct payout to any Nigerian bank</span>
+                  <span className="font-bold text-[#3b0764]">1-CLICK CASHOUT →</span>
                 </div>
               </div>
             </div>
@@ -858,16 +869,16 @@ export default function HomePage() {
             <div className="inline-flex items-center gap-2.5">
               <span className="w-5 h-[2px] bg-[#3b0764]" />
               <span className="text-[11px] font-mono tracking-[0.2em] uppercase font-bold text-[#3b0764]">
-                02 // EASY 4-STEP SETUP
+                02 // 4 SIMPLE STEPS
               </span>
             </div>
 
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
               <h2 className="text-3xl sm:text-5xl md:text-6xl font-display font-extrabold tracking-tight text-[#090D16] max-w-xl leading-[1.06]">
-                Up and selling in under two minutes.
+                Ready to sell in under two minutes.
               </h2>
               <p className="text-sm sm:text-base text-[#525B6C] max-w-md font-normal leading-relaxed">
-                Designed for busy vendors. If you know how to post a picture on WhatsApp status or Instagram, you already know how to run your Kredibly store.
+                Designed for busy sellers. If you know how to send a photo on WhatsApp, you already know how to run your Kredibly store.
               </p>
             </div>
           </div>
@@ -881,31 +892,31 @@ export default function HomePage() {
               {[
                 {
                   num: "01",
-                  time: "60 SECS",
-                  title: "Claim Your Store Handle",
-                  desc: "Pick your official web address like kredibly.shop/yourbrand. Zero hosting fees or coding required.",
+                  time: "30 SECS",
+                  title: "Choose Your Store Name",
+                  desc: "Pick a simple web address like kredibly.shop/yourbrand. No computer or web designer needed.",
                   footer: "kredibly.shop/yourbrand",
                 },
                 {
                   num: "02",
-                  time: "30 SECS",
-                  title: "Snap & Custom Categorize",
-                  desc: "Upload product photos from your phone camera. Create your own custom categories and set your prices.",
-                  footer: "Auto WebP (<85KB)",
+                  time: "60 SECS",
+                  title: "Snap & Add Your Goods",
+                  desc: "Take photos of your items with your phone camera, type your price, and save. It looks clean and beautiful automatically.",
+                  footer: "Upload from phone",
                 },
                 {
                   num: "03",
                   time: "INSTANT",
-                  title: "Put Link in Social Bio",
-                  desc: "Shoppers browse in under 1 second and pay via instant Bank Transfer or Card with built-in buyer trust.",
-                  footer: "100% Buyer Trust",
+                  title: "Share Link on Social Media",
+                  desc: "Put your link on your WhatsApp status, Instagram bio, or TikTok profile. Customers click and see your goods immediately.",
+                  footer: "Share anywhere",
                 },
                 {
                   num: "04",
                   time: "1-CLICK",
-                  title: "Deliver & Cash Out",
-                  desc: "Buyer receives their verified receipt and order link. Deliver the package and withdraw 100% to your bank.",
-                  footer: "Direct Bank Payout",
+                  title: "Receive Orders & Deliver",
+                  desc: "Get an instant phone notification whenever an order is paid for, with the customer's exact delivery address.",
+                  footer: "Instant cash out",
                 },
               ].map((step) => (
                 <div
@@ -951,16 +962,16 @@ export default function HomePage() {
               <div className="inline-flex items-center gap-2.5">
                 <span className="w-5 h-[2px] bg-[#3b0764]" />
                 <span className="text-[11px] font-mono tracking-[0.2em] uppercase font-bold text-[#3b0764]">
-                  03 // THE COMPETITIVE EDGE
+                  03 // WHY SWITCH?
                 </span>
               </div>
 
               <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
                 <h2 className="text-3xl sm:text-5xl md:text-6xl font-display font-extrabold tracking-tight text-[#090D16] max-w-xl leading-[1.06]">
-                  Why the old way is costing you 60% of your orders.
+                  Selling in DMs is exhausting. There is a better way.
                 </h2>
                 <p className="text-sm sm:text-base text-[#525B6C] max-w-md font-normal leading-relaxed">
-                  Most Nigerian vendors are trapped between messy WhatsApp DM chats and expensive foreign builders that don&apos;t solve buyer scam hesitation.
+                  See why social media sellers are moving from stressful manual chats to a clean Kredibly shop link.
                 </p>
               </div>
             </div>
@@ -972,7 +983,7 @@ export default function HomePage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-700 bg-rose-50 px-2.5 py-1 rounded-xs border border-rose-200">
-                      THE DM TRAP
+                      THE DM HEADACHE
                     </span>
                     <XCircle className="w-5 h-5 text-rose-500" />
                   </div>
@@ -982,33 +993,33 @@ export default function HomePage() {
                       Selling in Social Media DMs
                     </h3>
                     <p className="text-xs text-[#525B6C] mt-1 leading-relaxed">
-                      Manual, stressful, and loses high-value customers.
+                      Stressful, manual, and wastes hours of your day.
                     </p>
                   </div>
 
                   <ul className="space-y-3 pt-3 border-t border-[#F3F4EF] text-xs text-[#525B6C]">
                     <li className="flex items-start gap-2.5">
                       <XCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-                      <span>Spending 6+ hours answering repetitive &ldquo;How much?&rdquo; messages</span>
+                      <span>Spending 6+ hours repeating prices and answering &ldquo;How much?&rdquo;</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <XCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-                      <span>Customers ghost because they fear sending money to personal accounts</span>
+                      <span>Customers ghosting after asking for your bank account number</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <XCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-                      <span>Falling victim to fake payment alert screenshots and bank delays</span>
+                      <span>Scammers sending fake bank transfer screenshots and edited receipts</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <XCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-                      <span>Manually managing stock and orders in paper notebooks</span>
+                      <span>Writing down orders and customer addresses in paper notebooks</span>
                     </li>
                   </ul>
                 </div>
 
                 <div className="mt-8 pt-4 border-t border-[#F3F4EF] text-center">
                   <span className="text-xs font-mono font-bold text-rose-600">
-                    68% First-Time Shopper Drop-Off
+                    Loses 60% of Potential Buyers
                   </span>
                 </div>
               </div>
@@ -1018,43 +1029,43 @@ export default function HomePage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-800 bg-amber-50 px-2.5 py-1 rounded-xs border border-amber-200">
-                      COMPLEX BUILDERS
+                      FOREIGN PLATFORMS
                     </span>
                     <AlertCircle className="w-5 h-5 text-amber-600" />
                   </div>
 
                   <div>
                     <h3 className="font-display text-xl font-bold text-[#090D16]">
-                      Foreign Website Builders
+                      Foreign Website Builders (Shopify)
                     </h3>
                     <p className="text-xs text-[#525B6C] mt-1 leading-relaxed">
-                      Expensive, difficult to manage, and billed in USD.
+                      Expensive, complicated, and billed in US Dollars.
                     </p>
                   </div>
 
                   <ul className="space-y-3 pt-3 border-t border-[#F3F4EF] text-xs text-[#525B6C]">
                     <li className="flex items-start gap-2.5">
                       <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                      <span>$39/month billed in USD + expensive plugins and template fees</span>
+                      <span>$39/month billed in US Dollars that drains your account</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                      <span>Requires hiring a web developer or weeks of complex configuration</span>
+                      <span>Requires hiring expensive web developers to set up</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                      <span>Forces shoppers to create accounts and passwords before buying</span>
+                      <span>Confusing settings made for big American corporations</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                      <span>No built-in escrow trust tailored to Nigerian shoppers</span>
+                      <span>Forces Nigerian shoppers to create passwords before buying</span>
                     </li>
                   </ul>
                 </div>
 
                 <div className="mt-8 pt-4 border-t border-[#F3F4EF] text-center">
                   <span className="text-xs font-mono font-bold text-amber-700">
-                    Overpriced &amp; Too Complicated
+                    Too Complicated &amp; Pricey
                   </span>
                 </div>
               </div>
@@ -1064,7 +1075,7 @@ export default function HomePage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 bg-white/15 rounded-xs text-purple-200">
-                      THE KREDIBLY STANDARD
+                      THE KREDIBLY WAY
                     </span>
                     <ShieldCheck className="w-5 h-5 text-purple-300" />
                   </div>
@@ -1074,30 +1085,30 @@ export default function HomePage() {
                       Your Official Kredibly Store
                     </h3>
                     <p className="text-xs text-purple-200 mt-1 leading-relaxed">
-                      Instant setup, automated payments, and 100% peace of mind.
+                      Made for Nigerian sellers. Simple, fast, and stress-free.
                     </p>
                   </div>
 
                   <ul className="space-y-3 pt-3 border-t border-white/15 text-xs text-purple-100">
                     <li className="flex items-start gap-2.5">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                      <span>Launch your store in 2 minutes with zero coding or developer fees</span>
+                      <span>Set up on your phone in 2 minutes with zero coding</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                      <span>Instant payment confirmation (cards &amp; transfers)—no fake alerts</span>
+                      <span>Real bank alerts confirmed instantly (cards &amp; transfers)</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                      <span>Built-in buyer protection so first-time followers buy with confidence</span>
+                      <span>Customers buy in 30 seconds with no passwords</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                      <span>0% platform commission on paid plans—keep 100% of your prices</span>
+                      <span>Free to start with up to 20 products</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                      <span>1-click instant withdrawal to any Nigerian bank</span>
+                      <span>Withdraw your sales straight to your Nigerian bank</span>
                     </li>
                   </ul>
                 </div>
@@ -1107,7 +1118,7 @@ export default function HomePage() {
                     href="/register"
                     className="w-full py-2.5 bg-white hover:bg-slate-100 text-[#2e1065] font-display font-bold text-xs rounded-[8px] transition inline-flex items-center justify-center gap-1.5"
                   >
-                    <span>Start Free (20 Products)</span>
+                    <span>Create Your Free Store</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
@@ -1122,15 +1133,15 @@ export default function HomePage() {
             <div className="inline-flex items-center justify-center gap-2.5">
               <span className="w-5 h-[2px] bg-[#3b0764]" />
               <span className="text-[11px] font-mono tracking-[0.2em] uppercase font-bold text-[#3b0764]">
-                04 // CHOOSE YOUR SUBSCRIPTION PLAN
+                04 // SIMPLE, HONEST PRICING
               </span>
               <span className="w-5 h-[2px] bg-[#3b0764]" />
             </div>
             <h2 className="text-3xl sm:text-5xl font-display font-extrabold tracking-tight text-[#090D16]">
-              Start free with 20 products. Scale as you grow.
+              Start free today. Pay only as your business grows.
             </h2>
             <p className="text-sm sm:text-base text-[#525B6C]">
-              On paid plans, Kredibly charges <strong>0% platform commission</strong>—you receive 100% of your product asking price.
+              No hidden charges. No surprise monthly deductions from your ATM card.
             </p>
 
             {/* Billing Cycle Selector — Straight single line on desktop/tablet, smooth scroll on mobile */}
@@ -1397,7 +1408,7 @@ export default function HomePage() {
               <div className="inline-flex items-center justify-center gap-2.5">
                 <span className="w-5 h-[2px] bg-[#3b0764]" />
                 <span className="text-[11px] font-mono tracking-[0.2em] uppercase font-bold text-[#3b0764]">
-                  05 // FREQUENTLY ASKED QUESTIONS
+                  05 // QUESTIONS &amp; ANSWERS
                 </span>
                 <span className="w-5 h-[2px] bg-[#3b0764]" />
               </div>
@@ -1405,7 +1416,7 @@ export default function HomePage() {
                 Answers to your questions.
               </h2>
               <p className="text-sm sm:text-base text-[#525B6C]">
-                Everything you need to know about our Escrow protection, payouts, and store setup.
+                Everything you need to know about setting up your shop, receiving orders, and getting paid.
               </p>
             </div>
 
@@ -1467,17 +1478,17 @@ export default function HomePage() {
               <div className="inline-flex items-center justify-center gap-2.5">
                 <span className="w-5 h-[2px] bg-[#3b0764]" />
                 <span className="text-[11px] font-mono tracking-[0.2em] uppercase font-bold text-[#3b0764]">
-                  OFFICIAL SOCIAL COMMERCE
+                  START SELLING TODAY
                 </span>
                 <span className="w-5 h-[2px] bg-[#3b0764]" />
               </div>
 
               <h2 className="font-display text-2xl sm:text-4xl md:text-5xl font-extrabold text-[#090D16] max-w-2xl leading-tight">
-                Your competitors are still sending bank accounts in Instagram DMs.
+                Your competitors are still writing account numbers in Instagram DMs.
               </h2>
 
               <p className="text-sm sm:text-base text-[#525B6C] max-w-xl leading-relaxed">
-                Give your business the official credibility it deserves. Launch your store with 20 products free in under 2 minutes.
+                Give your business the official respect it deserves. Create your free online store with 20 products in under 2 minutes.
               </p>
 
               <div className="pt-2 w-full sm:w-auto">
@@ -1485,7 +1496,7 @@ export default function HomePage() {
                   href="/register"
                   className="w-full sm:w-auto px-8 py-4 bg-[#2e1065] hover:bg-[#3b0764] text-white font-display font-bold rounded-[8px] transition flex items-center justify-center gap-2 text-sm shadow-md hover:-translate-y-0.5 cursor-pointer"
                 >
-                  <span>Claim Your Store Now</span>
+                  <span>Create Your Free Store Now</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>

@@ -1,6 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { AuthService } from "../services/auth.service";
-import { registerSchema, loginSchema, bankDetailsSchema } from "../validators/auth.validator";
+import {
+  registerSchema,
+  loginSchema,
+  bankDetailsSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} from "../validators/auth.validator";
 
 export class AuthController {
   static async register(req: Request, res: Response, next: NextFunction) {
@@ -78,6 +84,37 @@ export class AuthController {
         success: true,
         message: "Payout bank account updated successfully",
         data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async forgotPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const validatedData = forgotPasswordSchema.parse(req.body);
+      const result = await AuthService.forgotPassword(validatedData.email);
+
+      return res.status(200).json({
+        success: true,
+        message: result.message,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async resetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const validatedData = resetPasswordSchema.parse(req.body);
+      const result = await AuthService.resetPassword(
+        validatedData.token,
+        validatedData.newPassword
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: result.message,
       });
     } catch (error) {
       next(error);

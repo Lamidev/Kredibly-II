@@ -166,4 +166,50 @@ export class EmailService {
       html,
     });
   }
+
+  /**
+   * Send password reset link to merchant
+   */
+  static async sendPasswordResetEmail(data: {
+    to: string;
+    fullName: string;
+    resetToken: string;
+  }) {
+    const resetUrl = `${ENV.FRONTEND_URL}/reset-password?token=${data.resetToken}`;
+
+    const html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h1 style="color: #0f172a; margin: 0; font-size: 24px; font-weight: 800;">Reset Your Password</h1>
+          <p style="color: #64748b; font-size: 14px; margin-top: 6px;">We received a request to reset your Kredibly password.</p>
+        </div>
+
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+          <p style="margin: 0 0 12px 0; font-size: 15px;">Hi <strong>${data.fullName}</strong>,</p>
+          <p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">
+            Click the button below to choose a new password for your merchant account. This link will expire in <strong>1 hour</strong>.
+          </p>
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${resetUrl}" style="background-color: #2e1065; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; display: inline-block;">
+              Reset Password
+            </a>
+          </div>
+          <p style="margin: 0; font-size: 12px; color: #64748b; line-height: 1.5;">
+            If you didn't request this password reset, you can safely ignore this email—your password will remain unchanged.
+          </p>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+        <p style="font-size: 12px; color: #94a3b8; text-align: center; margin: 0;">
+          © ${new Date().getFullYear()} Kredibly. Building trust for social commerce.
+        </p>
+      </div>
+    `;
+
+    return this.send({
+      to: data.to,
+      subject: "Reset your Kredibly password",
+      html,
+    });
+  }
 }

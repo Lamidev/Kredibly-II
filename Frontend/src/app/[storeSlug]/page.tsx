@@ -35,23 +35,28 @@ export async function generateMetadata({
   const title = `${store.name} — Shop on Kredibly`;
   const description =
     store.description ||
-    `Browse authentic products from ${store.name}. Enjoy 100% Escrow Protection on Kredibly.`;
+    `Browse authentic products from ${store.name}. Enjoy instant checkout and verified payments on Kredibly.`;
 
   return {
     title,
     description,
+    alternates: {
+      canonical: `https://kredibly.shop/${params.storeSlug}`,
+    },
     openGraph: {
       title,
       description,
-      siteName: "Kredibly",
+      siteName: store.name,
       locale: "en_NG",
       type: "website",
+      url: `https://kredibly.shop/${params.storeSlug}`,
       images: store.logoUrl ? [{ url: store.logoUrl }] : [],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      images: store.logoUrl ? [store.logoUrl] : [],
     },
   };
 }
@@ -67,5 +72,24 @@ export default async function StorePage({
     notFound();
   }
 
-  return <StorefrontClient store={store} />;
+  const storeJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "OnlineStore",
+    name: store.name,
+    url: `https://kredibly.shop/${store.slug}`,
+    description: store.description || `Official online store for ${store.name}`,
+    image: store.logoUrl || undefined,
+    currenciesAccepted: store.currency || "NGN",
+    paymentAccepted: "Debit Card, Instant Bank Transfer",
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(storeJsonLd) }}
+      />
+      <StorefrontClient store={store} />
+    </>
+  );
 }
