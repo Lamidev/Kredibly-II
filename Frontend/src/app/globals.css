@@ -27,6 +27,15 @@ body {
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
+@layer base {
+  body {
+    @apply font-sans;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight;
+  }
+}
+
 /* Subtle Fintech / Editorial Topography Grid Pattern (Vode Inspired) */
 .bg-kred-grid {
   background-image: linear-gradient(to right, rgba(9, 13, 22, 0.03) 1px, transparent 1px),

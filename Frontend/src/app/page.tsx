@@ -30,7 +30,36 @@ import {
   Package,
   Loader2,
   Sparkles,
+  Plus,
 } from "lucide-react";
+
+const WHY_SWITCH_ITEMS = [
+  {
+    num: "01",
+    title: "Stop answering \"How much?\" 50 times a day.",
+    body: "Instead of repeating prices, sizes, and bank account numbers in WhatsApp and Instagram DMs for hours, send one clean shop link where buyers see everything and order themselves.",
+  },
+  {
+    num: "02",
+    title: "Only real, confirmed bank alerts.",
+    body: "Say goodbye to fake transfer alerts and edited screenshots. Every bank transfer or card payment is verified automatically in seconds before your order is marked paid.",
+  },
+  {
+    num: "03",
+    title: "Fast 30-second checkout for your buyers.",
+    body: "Most websites force shoppers to sign up and remember passwords before paying. Kredibly lets customers add to cart, enter their delivery address, and pay immediately.",
+  },
+  {
+    num: "04",
+    title: "Launch yourself—no expensive developer needed.",
+    body: "You don't have to pay heavy fees to a web designer or get billed in US Dollars. Set up your full online store from your phone in minutes, free to start.",
+  },
+  {
+    num: "05",
+    title: "Automatic order tracking & customer records.",
+    body: "Stop writing orders in paper notebooks. Every buyer's phone number, delivery address, and purchase history is saved neatly in your dashboard—ready for instant payout.",
+  },
+];
 
 type BillingCycle = "quarterly" | "biannual" | "annual";
 
@@ -91,6 +120,7 @@ export default function HomePage() {
     message: "",
     suggestions: [],
   });
+  const [openSwitchIndex, setOpenSwitchIndex] = useState<number>(0);
 
   useEffect(() => {
     const raw = claimInput.toLowerCase().trim().replace(/[^a-z0-9-]/g, "");
@@ -355,7 +385,7 @@ export default function HomePage() {
             </div>
 
             {/* Display Headline */}
-            <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-[72px] font-display font-extrabold tracking-tight leading-[1.06] text-[#090D16]">
+            <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-[72px] font-display font-bold tracking-tight leading-[1.06] text-[#090D16]">
               Turn your social media into your{" "}
               <span className="text-[#3b0764]">online shop.</span>
             </h1>
@@ -503,9 +533,6 @@ export default function HomePage() {
                         <h4 className="font-display font-extrabold text-lg sm:text-xl text-[#090D16]">
                           Urban Luxe Boutique
                         </h4>
-                        <span className="text-[9px] font-mono font-bold px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xs">
-                          VERIFIED ESCROW STORE
-                        </span>
                       </div>
                       <p className="text-xs text-[#525B6C] mt-0.5">
                         Designer heels, luxury handbags, watches &amp; signature fragrances • Lagos, Nigeria
@@ -674,51 +701,6 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
-
-              {/* 3 Value Callouts at the Bottom */}
-              <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-[#DADDD4] bg-[#F3F4EF] border-t border-[#DADDD4]">
-                <div className="p-4 sm:p-5 flex items-center gap-3.5">
-                  <div className="w-9 h-9 rounded-lg bg-white border border-[#DADDD4] flex items-center justify-center shrink-0 text-[#3b0764]">
-                    <Store className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h5 className="font-display font-bold text-xs sm:text-sm text-[#090D16]">
-                      Your Shop in Bio
-                    </h5>
-                    <p className="text-[11px] text-[#525B6C] mt-0.5">
-                      Put your simple shop link on your WhatsApp status and Instagram profile.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-4 sm:p-5 flex items-center gap-3.5">
-                  <div className="w-9 h-9 rounded-lg bg-white border border-[#DADDD4] flex items-center justify-center shrink-0 text-[#3b0764]">
-                    <Zap className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h5 className="font-display font-bold text-xs sm:text-sm text-[#090D16]">
-                      Real Bank Alerts Only
-                    </h5>
-                    <p className="text-[11px] text-[#525B6C] mt-0.5">
-                      Customers pay via bank transfer or card. Confirmed automatically in 5 seconds.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-4 sm:p-5 flex items-center gap-3.5">
-                  <div className="w-9 h-9 rounded-lg bg-white border border-[#DADDD4] flex items-center justify-center shrink-0 text-[#3b0764]">
-                    <Wallet className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h5 className="font-display font-bold text-xs sm:text-sm text-[#090D16]">
-                      Money Straight to Your Bank
-                    </h5>
-                    <p className="text-[11px] text-[#525B6C] mt-0.5">
-                      No hidden deductions. Transfer your sales directly into your Nigerian bank account anytime.
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </section>
@@ -737,7 +719,7 @@ export default function HomePage() {
                   01 // EVERYTHING YOU NEED
                 </span>
               </div>
-              <h2 className="text-3xl sm:text-5xl md:text-6xl font-display font-extrabold tracking-tight text-[#090D16] leading-[1.06]">
+              <h2 className="text-3xl sm:text-5xl md:text-6xl font-display font-bold tracking-tight text-[#090D16] leading-[1.06]">
                 Everything you need to sell online. Simple and stress-free.
               </h2>
               <p className="text-sm sm:text-base text-[#525B6C] font-normal leading-relaxed">
@@ -862,88 +844,76 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 4. Section 3: How It Works — Connected Horizontal Pipeline on #FAF9F5 */}
-        <section id="how-it-works" className="py-20 sm:py-28 px-4 sm:px-6 max-w-6xl mx-auto">
-          {/* Keep Header & Sub-header text and positioning */}
-          <div className="space-y-4 mb-16 sm:mb-20">
-            <div className="inline-flex items-center gap-2.5">
-              <span className="w-5 h-[2px] bg-[#3b0764]" />
-              <span className="text-[11px] font-mono tracking-[0.2em] uppercase font-bold text-[#3b0764]">
-                02 // 4 SIMPLE STEPS
-              </span>
+        {/* 4. Section 3: How It Works — Minimalist Editorial Timeline on Very Light Purple */}
+        <section id="how-it-works" className="py-20 sm:py-28 bg-[#F7F4FC]">
+          <div className="px-4 sm:px-6 max-w-6xl mx-auto">
+            {/* Keep Header & Sub-header text and positioning */}
+            <div className="space-y-4 mb-16 sm:mb-20">
+              <div className="inline-flex items-center gap-2.5">
+                <span className="w-5 h-[2px] bg-[#3b0764]" />
+                <span className="text-[11px] font-mono tracking-[0.2em] uppercase font-bold text-[#3b0764]">
+                  02 // 4 SIMPLE STEPS
+                </span>
+              </div>
+
+              <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+                <h2 className="text-3xl sm:text-5xl md:text-6xl font-display font-bold tracking-tight text-[#090D16] max-w-xl leading-[1.06]">
+                  Ready to sell in under two minutes.
+                </h2>
+                <p className="text-sm sm:text-base text-[#525B6C] max-w-md font-normal leading-relaxed">
+                  Designed for busy sellers. If you know how to send a photo on WhatsApp, you already know how to run your Kredibly store.
+                </p>
+              </div>
             </div>
 
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-              <h2 className="text-3xl sm:text-5xl md:text-6xl font-display font-extrabold tracking-tight text-[#090D16] max-w-xl leading-[1.06]">
-                Ready to sell in under two minutes.
-              </h2>
-              <p className="text-sm sm:text-base text-[#525B6C] max-w-md font-normal leading-relaxed">
-                Designed for busy sellers. If you know how to send a photo on WhatsApp, you already know how to run your Kredibly store.
-              </p>
-            </div>
-          </div>
-
-          {/* Connected 4-Node Horizontal Pipeline */}
-          <div className="relative">
-            {/* Connecting Horizontal Rail on Desktop */}
-            <div className="hidden lg:block absolute top-7 left-10 right-10 h-[2px] bg-gradient-to-r from-[#2e1065] via-[#3b0764]/40 to-[#DADDD4]" />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+            {/* Reference-Style Open 4-Column Editorial Steps (No Cards) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
               {[
                 {
                   num: "01",
-                  time: "30 SECS",
+                  tag: "CLAIM LINK",
                   title: "Choose Your Store Name",
                   desc: "Pick a simple web address like kredibly.shop/yourbrand. No computer or web designer needed.",
-                  footer: "kredibly.shop/yourbrand",
                 },
                 {
                   num: "02",
-                  time: "60 SECS",
+                  tag: "ADD GOODS",
                   title: "Snap & Add Your Goods",
-                  desc: "Take photos of your items with your phone camera, type your price, and save. It looks clean and beautiful automatically.",
-                  footer: "Upload from phone",
+                  desc: "Take photos of your items with your phone camera, type your price, and save. It looks clean automatically.",
                 },
                 {
                   num: "03",
-                  time: "INSTANT",
-                  title: "Share Link on Social Media",
-                  desc: "Put your link on your WhatsApp status, Instagram bio, or TikTok profile. Customers click and see your goods immediately.",
-                  footer: "Share anywhere",
+                  tag: "SHARE LINK",
+                  title: "Share on Social Media",
+                  desc: "Put your link on your WhatsApp status, Instagram bio, or TikTok profile. Customers see your goods immediately.",
                 },
                 {
                   num: "04",
-                  time: "1-CLICK",
+                  tag: "GET PAID",
                   title: "Receive Orders & Deliver",
-                  desc: "Get an instant phone notification whenever an order is paid for, with the customer's exact delivery address.",
-                  footer: "Instant cash out",
+                  desc: "Get an instant notification whenever an order is paid for, with the customer's exact delivery address.",
                 },
               ].map((step) => (
-                <div
-                  key={step.num}
-                  className="bg-white border border-[#DADDD4] rounded-xl p-6 flex flex-col justify-between shadow-2xs hover:border-[#2e1065] transition-colors"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="w-10 h-10 rounded-[8px] bg-[#2e1065] text-white font-mono font-bold text-sm flex items-center justify-center shadow-xs">
-                        {step.num}
-                      </div>
-                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 bg-[#F3F4EF] border border-[#DADDD4] text-[#090D16] rounded-xs">
-                        {step.time}
-                      </span>
-                    </div>
-
-                    <h3 className="text-lg sm:text-xl font-display font-bold text-[#090D16] mb-2">
-                      {step.title}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-[#525B6C] leading-relaxed">
-                      {step.desc}
-                    </p>
+                <div key={step.num} className="space-y-4">
+                  {/* Top Dot + Thin Hairline */}
+                  <div className="flex items-center">
+                    <span className="w-2 h-2 rounded-full bg-[#3b0764] shrink-0" />
+                    <span className="h-[1px] w-full bg-[#3b0764]/20" />
                   </div>
 
-                  <div className="mt-6 pt-3.5 border-t border-[#F3F4EF] flex items-center justify-between text-[11px] font-mono text-[#3b0764] font-bold">
-                    <span>{step.footer}</span>
-                    <span>→</span>
+                  {/* Step Number / Tag */}
+                  <p className="text-[10.5px] font-mono font-semibold tracking-[0.16em] uppercase text-[#3b0764]">
+                    {step.num} / {step.tag}
+                  </p>
+
+                  {/* Title & Calm Description */}
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-display font-bold text-[#090D16] leading-snug">
+                      {step.title}
+                    </h3>
+                    <p className="text-[13px] text-[#525B6C] leading-relaxed">
+                      {step.desc}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -951,14 +921,14 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 5. Section 4: The Competitive Edge — 3-Column Reality Check on #F3F4EF */}
+        {/* 5. Section 4: Why Switch — White Canvas, Left Editorial Photo + Right Accordion */}
         <section
           id="competitive-edge"
-          className="py-20 sm:py-28 bg-[#F3F4EF] border-y border-[#DADDD4]"
+          className="py-20 sm:py-28 bg-white border-y border-[#DADDD4]"
         >
           <div className="px-4 sm:px-6 max-w-6xl mx-auto">
             {/* Keep Header & Sub-header text and positioning */}
-            <div className="space-y-4 mb-14 sm:mb-18">
+            <div className="space-y-4 mb-12 sm:mb-16">
               <div className="inline-flex items-center gap-2.5">
                 <span className="w-5 h-[2px] bg-[#3b0764]" />
                 <span className="text-[11px] font-mono tracking-[0.2em] uppercase font-bold text-[#3b0764]">
@@ -967,7 +937,7 @@ export default function HomePage() {
               </div>
 
               <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-                <h2 className="text-3xl sm:text-5xl md:text-6xl font-display font-extrabold tracking-tight text-[#090D16] max-w-xl leading-[1.06]">
+                <h2 className="text-3xl sm:text-5xl md:text-6xl font-display font-bold tracking-tight text-[#090D16] max-w-xl leading-[1.06]">
                   Selling in DMs is exhausting. There is a better way.
                 </h2>
                 <p className="text-sm sm:text-base text-[#525B6C] max-w-md font-normal leading-relaxed">
@@ -976,151 +946,77 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* 3-Column Reality Comparison Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-              {/* Option 1: WhatsApp / Instagram DMs */}
-              <div className="bg-white border border-[#DADDD4] rounded-xl p-6 sm:p-7 flex flex-col justify-between shadow-xs">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-700 bg-rose-50 px-2.5 py-1 rounded-xs border border-rose-200">
-                      THE DM HEADACHE
-                    </span>
-                    <XCircle className="w-5 h-5 text-rose-500" />
-                  </div>
-
-                  <div>
-                    <h3 className="font-display text-xl font-bold text-[#090D16]">
-                      Selling in Social Media DMs
-                    </h3>
-                    <p className="text-xs text-[#525B6C] mt-1 leading-relaxed">
-                      Stressful, manual, and wastes hours of your day.
-                    </p>
-                  </div>
-
-                  <ul className="space-y-3 pt-3 border-t border-[#F3F4EF] text-xs text-[#525B6C]">
-                    <li className="flex items-start gap-2.5">
-                      <XCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-                      <span>Spending 6+ hours repeating prices and answering &ldquo;How much?&rdquo;</span>
-                    </li>
-                    <li className="flex items-start gap-2.5">
-                      <XCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-                      <span>Customers ghosting after asking for your bank account number</span>
-                    </li>
-                    <li className="flex items-start gap-2.5">
-                      <XCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-                      <span>Scammers sending fake bank transfer screenshots and edited receipts</span>
-                    </li>
-                    <li className="flex items-start gap-2.5">
-                      <XCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-                      <span>Writing down orders and customer addresses in paper notebooks</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="mt-8 pt-4 border-t border-[#F3F4EF] text-center">
-                  <span className="text-xs font-mono font-bold text-rose-600">
-                    Loses 60% of Potential Buyers
+            {/* 2-Column Split: Left Image (Matches Right Accordion Height) + Right Accordion */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-stretch">
+              {/* Left High-Resolution Editorial Photo */}
+              <div className="lg:col-span-5 relative rounded-2xl overflow-hidden bg-[#1a0b2e] min-h-[380px] sm:min-h-[440px] lg:min-h-0">
+                <img
+                  src="/why-switch.jpg"
+                  alt="Nigerian online merchant preparing an order"
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#090D16]/90 via-[#090D16]/25 to-transparent" />
+                <div className="relative z-10 h-full flex flex-col justify-end p-6 sm:p-8 text-white">
+                  <span className="text-[10px] font-mono font-bold tracking-[0.2em] uppercase text-purple-200 mb-2">
+                    BUILT FOR SOCIAL SELLERS
                   </span>
+                  <h3 className="font-display text-2xl sm:text-3xl font-bold leading-tight text-white">
+                    Sell smarter.
+                    <br />
+                    Zero DM stress.
+                  </h3>
                 </div>
               </div>
 
-              {/* Option 2: Shopify / Complex Builders */}
-              <div className="bg-white border border-[#DADDD4] rounded-xl p-6 sm:p-7 flex flex-col justify-between shadow-xs">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-800 bg-amber-50 px-2.5 py-1 rounded-xs border border-amber-200">
-                      FOREIGN PLATFORMS
-                    </span>
-                    <AlertCircle className="w-5 h-5 text-amber-600" />
-                  </div>
+              {/* Right Accordion List (Reference Design) */}
+              <div className="lg:col-span-7 flex flex-col justify-center">
+                <div className="divide-y divide-[#E5E7E0] border-y border-[#E5E7E0]">
+                  {WHY_SWITCH_ITEMS.map((item, idx) => {
+                    const isOpen = openSwitchIndex === idx;
+                    return (
+                      <div key={item.num} className="py-5 sm:py-6">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setOpenSwitchIndex(isOpen ? -1 : idx)
+                          }
+                          aria-expanded={isOpen}
+                          className="w-full flex items-start sm:items-center justify-between gap-4 text-left group cursor-pointer"
+                        >
+                          <div className="flex items-start sm:items-center gap-4 sm:gap-6 min-w-0">
+                            <span className="text-xs font-mono font-bold text-[#3b0764] shrink-0 pt-1 sm:pt-0">
+                              {item.num}
+                            </span>
+                            <span className="font-display text-lg sm:text-[22px] font-bold text-[#090D16] leading-snug group-hover:text-[#3b0764] transition-colors">
+                              {item.title}
+                            </span>
+                          </div>
 
-                  <div>
-                    <h3 className="font-display text-xl font-bold text-[#090D16]">
-                      Foreign Website Builders (Shopify)
-                    </h3>
-                    <p className="text-xs text-[#525B6C] mt-1 leading-relaxed">
-                      Expensive, complicated, and billed in US Dollars.
-                    </p>
-                  </div>
+                          <span
+                            className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all border ${
+                              isOpen
+                                ? "bg-[#2e1065] border-[#2e1065] text-white"
+                                : "bg-white border-[#DADDD4] text-[#090D16] group-hover:border-[#2e1065]"
+                            }`}
+                          >
+                            {isOpen ? (
+                              <X className="w-4 h-4" />
+                            ) : (
+                              <Plus className="w-4 h-4" />
+                            )}
+                          </span>
+                        </button>
 
-                  <ul className="space-y-3 pt-3 border-t border-[#F3F4EF] text-xs text-[#525B6C]">
-                    <li className="flex items-start gap-2.5">
-                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                      <span>$39/month billed in US Dollars that drains your account</span>
-                    </li>
-                    <li className="flex items-start gap-2.5">
-                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                      <span>Requires hiring expensive web developers to set up</span>
-                    </li>
-                    <li className="flex items-start gap-2.5">
-                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                      <span>Confusing settings made for big American corporations</span>
-                    </li>
-                    <li className="flex items-start gap-2.5">
-                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                      <span>Forces Nigerian shoppers to create passwords before buying</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="mt-8 pt-4 border-t border-[#F3F4EF] text-center">
-                  <span className="text-xs font-mono font-bold text-amber-700">
-                    Too Complicated &amp; Pricey
-                  </span>
-                </div>
-              </div>
-
-              {/* Option 3: Kredibly Storefront (Highlighted in Dark Purple) */}
-              <div className="bg-[#2e1065] text-white rounded-xl p-6 sm:p-7 flex flex-col justify-between shadow-lg relative border-2 border-[#3b0764]">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 bg-white/15 rounded-xs text-purple-200">
-                      THE KREDIBLY WAY
-                    </span>
-                    <ShieldCheck className="w-5 h-5 text-purple-300" />
-                  </div>
-
-                  <div>
-                    <h3 className="font-display text-xl font-bold text-white">
-                      Your Official Kredibly Store
-                    </h3>
-                    <p className="text-xs text-purple-200 mt-1 leading-relaxed">
-                      Made for Nigerian sellers. Simple, fast, and stress-free.
-                    </p>
-                  </div>
-
-                  <ul className="space-y-3 pt-3 border-t border-white/15 text-xs text-purple-100">
-                    <li className="flex items-start gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                      <span>Set up on your phone in 2 minutes with zero coding</span>
-                    </li>
-                    <li className="flex items-start gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                      <span>Real bank alerts confirmed instantly (cards &amp; transfers)</span>
-                    </li>
-                    <li className="flex items-start gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                      <span>Customers buy in 30 seconds with no passwords</span>
-                    </li>
-                    <li className="flex items-start gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                      <span>Free to start with up to 20 products</span>
-                    </li>
-                    <li className="flex items-start gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                      <span>Withdraw your sales straight to your Nigerian bank</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="mt-8 pt-4 border-t border-white/15 text-center">
-                  <Link
-                    href="/register"
-                    className="w-full py-2.5 bg-white hover:bg-slate-100 text-[#2e1065] font-display font-bold text-xs rounded-[8px] transition inline-flex items-center justify-center gap-1.5"
-                  >
-                    <span>Create Your Free Store</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
+                        {isOpen && (
+                          <div className="pl-8 sm:pl-11 pr-10 pt-3">
+                            <p className="text-sm text-[#525B6C] leading-relaxed">
+                              {item.body}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -1137,7 +1033,7 @@ export default function HomePage() {
               </span>
               <span className="w-5 h-[2px] bg-[#3b0764]" />
             </div>
-            <h2 className="text-3xl sm:text-5xl font-display font-extrabold tracking-tight text-[#090D16]">
+            <h2 className="text-3xl sm:text-5xl font-display font-bold tracking-tight text-[#090D16]">
               Start free today. Pay only as your business grows.
             </h2>
             <p className="text-sm sm:text-base text-[#525B6C]">
@@ -1412,7 +1308,7 @@ export default function HomePage() {
                 </span>
                 <span className="w-5 h-[2px] bg-[#3b0764]" />
               </div>
-              <h2 className="text-3xl sm:text-5xl font-display font-extrabold tracking-tight text-[#090D16]">
+              <h2 className="text-3xl sm:text-5xl font-display font-bold tracking-tight text-[#090D16]">
                 Answers to your questions.
               </h2>
               <p className="text-sm sm:text-base text-[#525B6C]">
@@ -1483,7 +1379,7 @@ export default function HomePage() {
                 <span className="w-5 h-[2px] bg-[#3b0764]" />
               </div>
 
-              <h2 className="font-display text-2xl sm:text-4xl md:text-5xl font-extrabold text-[#090D16] max-w-2xl leading-tight">
+              <h2 className="font-display text-2xl sm:text-4xl md:text-5xl font-bold text-[#090D16] max-w-2xl leading-tight">
                 Your competitors are still writing account numbers in Instagram DMs.
               </h2>
 

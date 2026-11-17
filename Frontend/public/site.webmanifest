@@ -1,11 +1,11 @@
 {
   "name": "Kredibly",
   "short_name": "Kredibly",
-  "description": "AI-powered invoicing, receivables, payment collection, and business assistant for African businesses.",
+  "description": "The simple online store builder for social media sellers in Nigeria. Create your free store in 2 minutes, share your link on WhatsApp and Instagram, and get paid.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#4C1D95",
-  "theme_color": "#4C1D95",
+  "background_color": "#FAF9F5",
+  "theme_color": "#2e1065",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",

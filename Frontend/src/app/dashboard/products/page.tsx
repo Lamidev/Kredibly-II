@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { api, API_BASE_URL } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { formatCurrency } from "@/lib/utils";
@@ -25,6 +26,9 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface Variant {
   name: string;
@@ -225,8 +229,11 @@ export default function ProductsPage() {
       setProducts((prev) =>
         prev.map((p) => (p.id === product.id ? { ...p, isActive: nextActive } : p))
       );
+      toast.success(
+        nextActive ? "Product published to your store!" : "Product moved to Drafts."
+      );
     } catch {
-      alert("Failed to update product visibility.");
+      toast.error("Failed to update product visibility.");
     }
   };
 
@@ -282,18 +289,21 @@ export default function ProductsPage() {
 
       if (editingProduct) {
         await api.put(`/products/${editingProduct.id}`, payload);
+        toast.success("Product updated successfully!");
       } else {
         await api.post("/products", payload);
+        toast.success("Product published to your store!");
       }
 
       resetForm();
       setModalOpen(false);
       await fetchProducts();
     } catch (err: any) {
-      setErrorMsg(
+      const msg =
         err.response?.data?.message ||
-          `Failed to ${editingProduct ? "update" : "create"} product. Check inputs.`
-      );
+        `Failed to ${editingProduct ? "update" : "create"} product. Check inputs.`;
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -304,8 +314,9 @@ export default function ProductsPage() {
     try {
       await api.delete(`/products/${id}`);
       setProducts((prev) => prev.filter((p) => p.id !== id));
+      toast.success("Product deleted.");
     } catch (err: any) {
-      alert("Failed to delete product.");
+      toast.error(err.response?.data?.message || "Failed to delete product.");
     }
   };
 
@@ -316,8 +327,9 @@ export default function ProductsPage() {
       setProducts((prev) =>
         prev.map((p) => (p.id === id ? { ...p, stockQuantity: newStock } : p))
       );
+      toast.success(`Stock updated to ${newStock}.`);
     } catch {
-      alert("Failed to update stock");
+      toast.error("Failed to update stock.");
     }
   };
 
@@ -328,74 +340,69 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white pb-16">
-      {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-40 px-4 sm:px-8 py-3.5 flex items-center justify-between max-w-6xl mx-auto">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard"
-            className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-base font-bold text-white">Product Catalog</h1>
+    <div className="space-y-6">
+      {/* Page Title & Add Action */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-extrabold text-[#0f172a] tracking-tight">
+              Product Catalog
+            </h1>
             {!loading && (
-              <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-900 border border-slate-800 text-slate-300">
+              <Badge variant="secondary">
                 {store?.subscriptionTier === "BUSINESS"
                   ? `${products.length} products`
                   : `${products.length} / ${
                       store?.subscriptionTier === "PRO" ? 300 : 20
                     } used (incl. drafts)`}
-              </span>
+              </Badge>
             )}
           </div>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+            Add products, edit prices, or move items to Draft without losing your data.
+          </p>
         </div>
 
-        <button
-          onClick={openCreateModal}
-          className="px-3.5 py-1.5 bg-brand-500 hover:bg-brand-600 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-brand-500/20 transition"
-        >
+        <Button onClick={openCreateModal}>
           <Plus className="w-4 h-4" />
           Add Product
-        </button>
-      </header>
+        </Button>
+      </div>
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-8 py-8">
+      <div>
         {loading ? (
           <div className="py-20 flex justify-center">
-            <Loader2 className="w-6 h-6 animate-spin text-brand-500" />
+            <Loader2 className="w-6 h-6 animate-spin text-[#2e1065]" />
           </div>
         ) : products.length === 0 ? (
-          <div className="text-center py-20 px-4 rounded-3xl bg-slate-900/40 border border-slate-800/80 flex flex-col items-center max-w-lg mx-auto">
-            <div className="h-14 w-14 rounded-2xl bg-brand-500/10 text-brand-500 flex items-center justify-center mb-4">
-              <Package className="w-7 h-7" />
-            </div>
-            <h2 className="text-lg font-bold text-white mb-1">
-              No products added yet
-            </h2>
-            <p className="text-sm text-slate-400 mb-6">
-              Add your first product in 30 seconds. Snap 2 photos, set a price, and start sharing your link.
-            </p>
-            <button
-              onClick={() => setModalOpen(true)}
-              className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-brand-500/20"
-            >
-              <Plus className="w-4 h-4" />
-              Add Your First Product
-            </button>
-          </div>
+          <Card className="max-w-lg mx-auto">
+            <CardContent className="text-center py-14 px-6 flex flex-col items-center">
+              <div className="h-14 w-14 rounded-2xl bg-[#2e1065]/10 text-[#2e1065] flex items-center justify-center mb-4">
+                <Package className="w-7 h-7" />
+              </div>
+              <h2 className="text-base font-bold text-[#0f172a] mb-1">
+                No products added yet
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 mb-6">
+                Add your first product in 30 seconds. Snap 2 photos, set a price, and start sharing your link.
+              </p>
+              <Button onClick={openCreateModal}>
+                <Plus className="w-4 h-4" />
+                Add Your First Product
+              </Button>
+            </CardContent>
+          </Card>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {products.map((product) => (
-              <div
+              <Card
                 key={product.id}
-                className="bg-slate-900/70 border border-slate-800 rounded-2xl overflow-hidden shadow-lg flex flex-col justify-between"
+                className="overflow-hidden flex flex-col justify-between"
               >
                 <div>
                   {/* Image banner */}
-                  <div className="relative aspect-square w-full bg-slate-950">
+                  <div className="relative aspect-square w-full bg-slate-100">
                     {product.images && product.images.length > 0 ? (
                       <img
                         src={getFullImageUrl(product.images[0])}
@@ -403,18 +410,18 @@ export default function ProductsPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-700">
+                      <div className="w-full h-full flex items-center justify-center text-slate-300">
                         <Package className="w-12 h-12" />
                       </div>
                     )}
                     {!product.isActive && (
-                      <div className="absolute top-3 left-3 bg-slate-900/90 border border-slate-700 text-amber-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider backdrop-blur">
-                        Draft (Hidden)
+                      <div className="absolute top-3 left-3">
+                        <Badge variant="warning">Draft (Hidden)</Badge>
                       </div>
                     )}
                     {product.isActive && product.stockQuantity === 0 && (
-                      <div className="absolute top-3 left-3 bg-red-500/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider backdrop-blur">
-                        Sold Out
+                      <div className="absolute top-3 left-3">
+                        <Badge variant="destructive">Sold Out</Badge>
                       </div>
                     )}
                   </div>
@@ -422,23 +429,23 @@ export default function ProductsPage() {
                   {/* Details */}
                   <div className="p-4 space-y-2">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-bold text-white text-sm line-clamp-1">
+                      <h3 className="font-bold text-[#0f172a] text-sm line-clamp-1">
                         {product.title}
                       </h3>
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex items-center gap-1 shrink-0">
                         <button
                           onClick={() => openEditModal(product)}
-                          className="p-1 text-slate-400 hover:text-white transition"
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-[#2e1065] hover:bg-slate-100 transition cursor-pointer"
                           title="Edit product"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleToggleDraft(product)}
-                          className={`p-1 transition ${
+                          className={`p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer ${
                             product.isActive
-                              ? "text-slate-400 hover:text-amber-400"
-                              : "text-amber-400 hover:text-emerald-400"
+                              ? "text-slate-500 hover:text-amber-600"
+                              : "text-amber-600 hover:text-emerald-600"
                           }`}
                           title={product.isActive ? "Move to Draft" : "Publish to Store"}
                         >
@@ -450,7 +457,7 @@ export default function ProductsPage() {
                         </button>
                         <button
                           onClick={() => handleDeleteProduct(product.id)}
-                          className="p-1 text-slate-500 hover:text-red-400 transition"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
                           title="Delete product"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -459,51 +466,51 @@ export default function ProductsPage() {
                     </div>
 
                     <div className="flex items-baseline gap-2">
-                      <span className="text-base font-extrabold text-brand-400">
+                      <span className="text-base font-extrabold text-[#2e1065]">
                         {formatCurrency(product.basePrice)}
                       </span>
                       {product.comparePrice && (
-                        <span className="text-xs text-slate-500 line-through">
+                        <span className="text-xs text-slate-400 line-through">
                           {formatCurrency(product.comparePrice)}
                         </span>
                       )}
                     </div>
 
                     {product.hasVariants && (
-                      <div className="inline-flex items-center gap-1 text-[11px] text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md">
-                        <Layers className="w-3 h-3 text-brand-500" />
+                      <Badge variant="secondary">
+                        <Layers className="w-3 h-3 text-[#2e1065]" />
                         {product.variants?.length || 0} variants
-                      </div>
+                      </Badge>
                     )}
                   </div>
                 </div>
 
                 {/* Stock Quick Controller */}
-                <div className="p-4 pt-0 border-t border-slate-800/60 mt-3 flex items-center justify-between text-xs">
-                  <span className="text-slate-400">Stock:</span>
+                <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between text-xs bg-slate-50/50">
+                  <span className="text-slate-500 font-medium">Stock:</span>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleStockChange(product.id, product.stockQuantity, -1)}
-                      className="h-6 w-6 rounded-md bg-slate-800 hover:bg-slate-700 flex items-center justify-center font-bold text-white"
+                      className="h-6 w-6 rounded-md bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center font-bold text-[#0f172a] cursor-pointer"
                     >
                       -
                     </button>
-                    <span className="font-mono font-bold text-white px-1">
+                    <span className="font-mono font-bold text-[#0f172a] px-1">
                       {product.stockQuantity}
                     </span>
                     <button
                       onClick={() => handleStockChange(product.id, product.stockQuantity, 1)}
-                      className="h-6 w-6 rounded-md bg-slate-800 hover:bg-slate-700 flex items-center justify-center font-bold text-white"
+                      className="h-6 w-6 rounded-md bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center font-bold text-[#0f172a] cursor-pointer"
                     >
                       +
                     </button>
                   </div>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}
-      </main>
+      </div>
 
       {/* Add Product Modal */}
       {modalOpen && (
