@@ -1,0 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Manrope:wght@300..800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground: #090D16;
+  --background: #FAF9F5;
+  --surface: #ffffff;
+  --surface-raised: #F3F4EF;
+  --line: #DADDD4;
+  --brand-purple: #3b0764;
+}
+
+html {
+  scroll-behavior: smooth;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  min-height: 100vh;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Subtle Fintech / Editorial Topography Grid Pattern (Vode Inspired) */
+.bg-kred-grid {
+  background-image: linear-gradient(to right, rgba(9, 13, 22, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(9, 13, 22, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
