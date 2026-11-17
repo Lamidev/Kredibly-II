@@ -238,10 +238,12 @@ export class AuthService {
     }
 
     if (RESERVED_SLUGS.has(cleanSlug)) {
+      const suggestions = [`${cleanSlug}-ng`, `${cleanSlug}-store`, `shop-${cleanSlug}`];
       return {
         available: false,
         slug: cleanSlug,
         message: "This handle is reserved by system",
+        suggestions,
       };
     }
 
@@ -250,10 +252,41 @@ export class AuthService {
       select: { id: true },
     });
 
+    if (existing) {
+      const candidates = [
+        `${cleanSlug}-ng`,
+        `${cleanSlug}-store`,
+        `shop-${cleanSlug}`,
+        `${cleanSlug}-hub`,
+        `get-${cleanSlug}`,
+      ];
+      const suggestions: string[] = [];
+      for (const candidate of candidates) {
+        if (!RESERVED_SLUGS.has(candidate)) {
+          const taken = await prisma.store.findUnique({
+            where: { slug: candidate },
+            select: { id: true },
+          });
+          if (!taken) {
+            suggestions.push(candidate);
+          }
+        }
+        if (suggestions.length >= 3) break;
+      }
+
+      return {
+        available: false,
+        slug: cleanSlug,
+        message: "Handle is already taken",
+        suggestions,
+      };
+    }
+
     return {
-      available: !existing,
+      available: true,
       slug: cleanSlug,
-      message: existing ? "Handle is already taken" : "Handle is available!",
+      message: "Handle is available!",
+      suggestions: [],
     };
   }
 

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { api } from "@/lib/api";
 import {
   Accordion,
   AccordionContent,
@@ -27,40 +28,47 @@ import {
   ShoppingBag,
   CreditCard,
   Package,
+  Loader2,
+  Sparkles,
 } from "lucide-react";
 
-type BillingCycle = "quarterly" | "biannual" | "annual" | "wallet";
+type BillingCycle = "quarterly" | "biannual" | "annual";
 
 const FAQS = [
   {
     value: "item-1",
     q: "How does Kredibly buyer protection work without holding my money hostage?",
-    a: "When a customer pays, the funds are safely secured in your store wallet so you can dispatch with 100% confidence. Once you deliver the order and mark it Delivered in your dashboard, a 24-hour quiet timer runs. Even if the customer forgets to click confirm, your funds automatically unlock to your Available Balance and can be withdrawn directly to your Nigerian bank account in 1 click.",
+    a: "When a customer pays, funds are secured in your store wallet so you can dispatch with 100% confidence. Once you deliver the package and mark it Delivered in your dashboard, a 24-hour quiet timer runs. Even if the customer forgets to confirm or goes offline, your money automatically unlocks to your Available Balance and can be withdrawn directly to your Nigerian bank account in 1 click.",
   },
   {
     value: "item-2",
-    q: "Can shoppers bypass checkout and just message me on WhatsApp without paying?",
-    a: "No. To protect you from time-wasters and 'How much?' DM ghosting, Kredibly only reveals your direct WhatsApp order link on the buyer's verified receipt AFTER they have completed payment. Every chat you receive is already a paid, confirmed order.",
+    q: "Can shoppers bypass checkout and message me on WhatsApp to haggle or send fake alerts?",
+    a: "Never. To protect you from time-wasters, ghosting, and fake transfer screenshots, your direct WhatsApp order routing only unlocks on the customer's verified receipt AFTER their payment has been confirmed by our automated system. Every message you receive is an already paid, verified order ready for delivery.",
   },
   {
     value: "item-3",
-    q: "What happens if I choose 'Pay Monthly from Wallet' and my wallet balance is ₦0?",
-    a: "Your store is never deleted or locked out on a slow week. You get a 7-day grace period where your subscription automatically offsets from your very next sale. If no sales occur after 7 days, your store softly pauses extra Pro features and falls back to the Free Starter tier until you're ready.",
+    q: "Do I have to pay transaction fees or commissions on my sales?",
+    a: "On all paid subscription plans, Kredibly charges 0% platform commission—you keep 100% of your product asking prices. On the Free Starter tier, you can list up to 20 products and test the waters with zero upfront cost, with only a modest 2.5% fee on completed sales until you are ready to upgrade.",
   },
   {
     value: "item-4",
-    q: "Do my customers need to create an account or remember a password to buy?",
-    a: "Never. Forcing shoppers to create passwords causes over 35% cart abandonment. Shoppers simply enter their Name, Phone Number, and Delivery Address, pay via instant Bank Transfer or Card in 30 seconds, and can track their order status anytime using just their phone number.",
+    q: "Do my customers need to download an app or create a password to buy?",
+    a: "Never. Forcing Instagram or TikTok shoppers to download apps or remember passwords causes over 35% cart abandonment. Shoppers simply enter their delivery address and phone number, pay via instant Bank Transfer or Card in 30 seconds, and can track their delivery status anytime using just their phone number.",
   },
   {
     value: "item-5",
-    q: "How do I receive my money? Which Nigerian banks are supported?",
-    a: "You can link any Nigerian commercial bank or licensed FinTech account (GTBank, Access, Zenith, UBA, First Bank, OPay, Kuda, Moniepoint, Palmpay). When you request a withdrawal, your money is settled directly into your account via instant bank transfer.",
+    q: "How do I withdraw my money? Which Nigerian banks and FinTechs are supported?",
+    a: "You can link any Nigerian commercial bank or licensed FinTech account (GTBank, Access, Zenith, UBA, First Bank, OPay, Kuda, Moniepoint, Palmpay). When you request a withdrawal, your money is settled directly into your account in 1 click via automated instant bank transfer.",
   },
   {
     value: "item-6",
-    q: "Are product categories hardcoded, or can I create my own?",
-    a: "You create your own custom categories! Whether you sell UK-used iPhones, Bone-Straight Wigs, Sneakers, Skincare, or Cakes, simply type your category name when adding a product and your storefront automatically generates the filter tabs.",
+    q: "What happens if a customer claims they didn't receive their order or tries to dispute it?",
+    a: "You are fully protected. When fulfilling an order, you can upload waybill slips, rider contact info, or tracking proof directly in your dashboard. Our merchant dispute team reviews delivery confirmation evidence so genuine sellers are never unfairly debited or victimized by false buyer claims.",
+  },
+  {
+    value: "item-7",
+    q: "Can I connect my own custom website domain (like mybrand.ng or mybrand.com)?",
+    a: "Yes. While every store automatically gets an official, high-speed kredibly.shop/yourbrand link on sign-up, you can also link your own independent domain (like yourbrand.ng or yourbrand.com) on Deluxe and Ultimate plans with free automatic SSL certificates.",
   },
 ];
 
@@ -70,13 +78,96 @@ export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("quarterly");
 
+  // Real-time Brand Handle Availability Checking
+  const [isChecking, setIsChecking] = useState(false);
+  const [checkResult, setCheckResult] = useState<{
+    status: "idle" | "available" | "taken" | "invalid";
+    slug: string;
+    message: string;
+    suggestions: string[];
+  }>({
+    status: "idle",
+    slug: "",
+    message: "",
+    suggestions: [],
+  });
+
+  useEffect(() => {
+    const raw = claimInput.toLowerCase().trim().replace(/[^a-z0-9-]/g, "");
+    if (!raw) {
+      setCheckResult({ status: "idle", slug: "", message: "", suggestions: [] });
+      setIsChecking(false);
+      return;
+    }
+
+    if (raw.length < 3) {
+      setCheckResult({
+        status: "invalid",
+        slug: raw,
+        message: "Brand handle must be at least 3 characters",
+        suggestions: [],
+      });
+      setIsChecking(false);
+      return;
+    }
+
+    setIsChecking(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await api.get(`/auth/check-slug?slug=${encodeURIComponent(raw)}`);
+        const data = res.data?.data;
+        if (data?.available) {
+          setCheckResult({
+            status: "available",
+            slug: raw,
+            message: `kredibly.shop/${raw} is available!`,
+            suggestions: [],
+          });
+        } else {
+          const suggestions =
+            data?.suggestions && data.suggestions.length > 0
+              ? data.suggestions
+              : [`${raw}-ng`, `${raw}-store`, `shop-${raw}`];
+          setCheckResult({
+            status: "taken",
+            slug: raw,
+            message: data?.message || `kredibly.shop/${raw} is already taken`,
+            suggestions,
+          });
+        }
+      } catch (err) {
+        const reserved = new Set(["admin", "api", "dashboard", "kredibly", "shop", "login", "register", "urban-luxe"]);
+        if (reserved.has(raw)) {
+          setCheckResult({
+            status: "taken",
+            slug: raw,
+            message: `kredibly.shop/${raw} is reserved`,
+            suggestions: [`${raw}-ng`, `${raw}-store`, `shop-${raw}`],
+          });
+        } else {
+          setCheckResult({
+            status: "available",
+            slug: raw,
+            message: `kredibly.shop/${raw} is available!`,
+            suggestions: [],
+          });
+        }
+      } finally {
+        setIsChecking(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [claimInput]);
+
   const handleClaimSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!claimInput.trim()) {
+    const raw = claimInput.toLowerCase().trim().replace(/[^a-z0-9-]/g, "");
+    if (!raw) {
       router.push("/register");
       return;
     }
-    router.push(`/register?storeName=${encodeURIComponent(claimInput.trim())}`);
+    router.push(`/register?slug=${encodeURIComponent(raw)}&storeName=${encodeURIComponent(claimInput.trim())}`);
   };
 
   const getPlanPrice = (tier: "starterPlus" | "deluxe" | "ultimate") => {
@@ -85,19 +176,16 @@ export default function HomePage() {
         quarterly: { amount: "₦14,500", period: "/ 3 Months" },
         biannual: { amount: "₦27,500", period: "/ 6 Months" },
         annual: { amount: "₦55,000", period: "/ 1 Year" },
-        wallet: { amount: "₦5,500", period: "/ Month (From Sales)" },
       },
       deluxe: {
         quarterly: { amount: "₦28,500", period: "/ 3 Months" },
         biannual: { amount: "₦55,000", period: "/ 6 Months" },
         annual: { amount: "₦110,000", period: "/ 1 Year" },
-        wallet: { amount: "₦10,500", period: "/ Month (From Sales)" },
       },
       ultimate: {
         quarterly: { amount: "₦57,000", period: "/ 3 Months" },
         biannual: { amount: "₦110,000", period: "/ 6 Months" },
         annual: { amount: "₦220,000", period: "/ 1 Year" },
-        wallet: { amount: "₦21,000", period: "/ Month (From Sales)" },
       },
     };
     return table[tier][billingCycle];
@@ -277,34 +365,91 @@ export default function HomePage() {
               Give your brand a luxury storefront for Instagram, TikTok, and WhatsApp. List your products, accept automated bank transfers &amp; cards with built-in Escrow buyer trust, and cash out straight to your bank.
             </p>
 
-            {/* Interactive Domain Claimer */}
-            <form
-              onSubmit={handleClaimSubmit}
-              className="w-full max-w-xl mx-auto bg-white border border-[#CBD5E1] hover:border-[#2e1065] p-2 rounded-xl shadow-[0_10px_30px_-8px_rgba(46,16,101,0.12)] flex flex-col sm:flex-row items-center gap-2 transition-all"
-            >
-              <div className="flex items-center flex-1 w-full pl-3.5 pr-2 py-2 font-mono text-sm">
-                <span className="text-[#64748B] select-none shrink-0">kredibly.shop/</span>
-                <input
-                  type="text"
-                  required
-                  placeholder="your-brand-name"
-                  value={claimInput}
-                  onChange={(e) => setClaimInput(e.target.value)}
-                  className="bg-transparent text-[#090D16] font-bold placeholder-[#94A3B8] focus:outline-none w-full ml-1 lowercase"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full sm:w-auto px-7 py-3.5 bg-[#2e1065] hover:bg-[#3b0764] text-white font-display font-bold rounded-[8px] transition-all flex items-center justify-center gap-2 text-xs sm:text-sm shrink-0 shadow-sm cursor-pointer"
+            {/* Interactive Domain Claimer with Real-Time Brand Availability Checking */}
+            <div className="w-full max-w-xl mx-auto space-y-3">
+              <form
+                onSubmit={handleClaimSubmit}
+                className="w-full bg-white border border-[#CBD5E1] hover:border-[#2e1065] focus-within:border-[#2e1065] p-2 rounded-xl shadow-[0_10px_30px_-8px_rgba(46,16,101,0.12)] flex flex-col sm:flex-row items-center gap-2 transition-all"
               >
-                <span>Claim Your Store</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </form>
+                <div className="flex items-center flex-1 w-full pl-3.5 pr-2 py-2 font-mono">
+                  <span className="text-[#64748B] select-none shrink-0 text-[16px] sm:text-sm font-semibold">
+                    kredibly.shop/
+                  </span>
+                  <input
+                    type="text"
+                    required
+                    placeholder="your-brand-name"
+                    value={claimInput}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck="false"
+                    onChange={(e) => setClaimInput(e.target.value)}
+                    className="bg-transparent text-[#090D16] font-bold placeholder-[#94A3B8] focus:outline-none w-full ml-1 lowercase text-[16px] sm:text-sm"
+                  />
+                  {isChecking && (
+                    <Loader2 className="w-4 h-4 text-[#2e1065] animate-spin shrink-0 ml-1" />
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  className={`w-full sm:w-auto px-7 py-3.5 text-white font-display font-bold rounded-[8px] transition-all flex items-center justify-center gap-2 text-xs sm:text-sm shrink-0 shadow-sm cursor-pointer ${
+                    checkResult.status === "available"
+                      ? "bg-emerald-700 hover:bg-emerald-800"
+                      : "bg-[#2e1065] hover:bg-[#3b0764]"
+                  }`}
+                >
+                  <span>{checkResult.status === "available" ? "Claim Store Now" : "Claim Your Store"}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </form>
+
+              {/* Dynamic Availability & Smart Suggestion Feedback */}
+              {claimInput.trim() && (
+                <div className="min-h-[28px] flex flex-col items-center justify-center gap-2 text-xs">
+                  {checkResult.status === "available" && (
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-mono font-semibold animate-in fade-in">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span>{checkResult.message}</span>
+                    </div>
+                  )}
+
+                  {checkResult.status === "taken" && (
+                    <div className="space-y-2 animate-in fade-in w-full text-center">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-800 font-mono font-semibold">
+                        <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                        <span>{checkResult.message}</span>
+                      </div>
+
+                      {checkResult.suggestions.length > 0 && (
+                        <div className="flex items-center justify-center gap-1.5 flex-wrap pt-0.5">
+                          <span className="font-mono text-[11px] text-[#64748B]">Try available:</span>
+                          {checkResult.suggestions.map((sug) => (
+                            <button
+                              key={sug}
+                              type="button"
+                              onClick={() => setClaimInput(sug)}
+                              className="px-2.5 py-1 rounded-md bg-white border border-[#DADDD4] hover:border-[#2e1065] hover:bg-[#FAF9F5] text-[#2e1065] font-mono text-[11.5px] font-bold transition-all shadow-2xs cursor-pointer"
+                            >
+                              +{sug}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {checkResult.status === "invalid" && (
+                    <p className="text-[11px] font-mono text-[#64748B]">
+                      {checkResult.message}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Live Storefront Preview & Instant Commerce Showcase */}
+          {/* Live Storefront Preview Showcase — Unboxed & Realistic */}
           <div className="mt-14 sm:mt-18 relative z-10">
             <div className="bg-white border border-[#DADDD4] rounded-2xl shadow-[0_16px_40px_-12px_rgba(9,13,22,0.08)] overflow-hidden">
               {/* Browser / App Window Chrome */}
@@ -327,171 +472,186 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Live Storefront Content Canvas */}
-              <div className="p-3.5 sm:p-8 bg-[#FAF9F5] grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-                {/* Storefront Catalog View (7 cols) */}
-                <div className="lg:col-span-7 bg-white border border-[#DADDD4] rounded-xl p-4 sm:p-6 shadow-xs space-y-4 sm:space-y-5">
-                  {/* Store Header inside Mockup */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#F3F4EF]">
+              {/* Realistic Storefront Canvas (Clean, Unboxed Luxury Presentation) */}
+              <div className="p-5 sm:p-8 bg-[#FAF9F5] space-y-6">
+                {/* Store Header Row */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E7E9E2]">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-[#2e1065] text-white flex items-center justify-center font-display font-extrabold text-sm shrink-0 shadow-xs">
+                      UL
+                    </div>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-display font-extrabold text-base sm:text-lg text-[#090D16]">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-display font-extrabold text-lg sm:text-xl text-[#090D16]">
                           Urban Luxe Boutique
                         </h4>
-                        <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 bg-[#2e1065] text-white rounded-xs">
-                          VERIFIED
+                        <span className="text-[9px] font-mono font-bold px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xs">
+                          VERIFIED ESCROW STORE
                         </span>
                       </div>
                       <p className="text-xs text-[#525B6C] mt-0.5">
-                        Designer fashion, shoes &amp; accessories • Lagos, Nigeria
+                        Designer heels, luxury handbags, watches &amp; signature fragrances • Lagos, Nigeria
                       </p>
                     </div>
-
-                    <div className="text-left sm:text-right">
-                      <span className="text-[10px] font-mono uppercase text-[#525B6C] block">
-                        Store Link
-                      </span>
-                      <span className="font-mono text-xs font-bold text-[#3b0764]">
-                        kredibly.shop/urban-luxe
-                      </span>
-                    </div>
                   </div>
 
-                  {/* Category Filter Tabs */}
-                  <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-medium">
-                    <span className="px-3 py-1 rounded-[6px] bg-[#2e1065] text-white shrink-0">
-                      All Items (18)
+                  <div className="flex items-center gap-2 sm:self-center">
+                    <span className="px-3 py-1 rounded-[6px] bg-white border border-[#DADDD4] text-xs font-mono font-bold text-[#3b0764] shadow-2xs">
+                      kredibly.shop/urban-luxe
                     </span>
-                    <span className="px-3 py-1 rounded-[6px] bg-[#F3F4EF] text-[#525B6C] shrink-0 border border-[#DADDD4]">
-                      Heels &amp; Shoes
-                    </span>
-                    <span className="px-3 py-1 rounded-[6px] bg-[#F3F4EF] text-[#525B6C] shrink-0 border border-[#DADDD4]">
-                      Designer Bags
-                    </span>
-                    <span className="px-3 py-1 rounded-[6px] bg-[#F3F4EF] text-[#525B6C] shrink-0 border border-[#DADDD4]">
-                      Jewelry
-                    </span>
-                  </div>
-
-                  {/* 2 Live Product Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                    <div className="bg-[#FAF9F5] border border-[#DADDD4] rounded-lg p-3.5 space-y-3">
-                      <div className="h-32 rounded-md bg-gradient-to-br from-purple-100 to-slate-100 flex items-center justify-center relative overflow-hidden">
-                        <ShoppingBag className="w-10 h-10 text-[#3b0764]/40" />
-                        <span className="absolute top-2 left-2 text-[9px] font-mono font-bold bg-[#2e1065] text-white px-2 py-0.5 rounded-xs">
-                          IN STOCK: 5
-                        </span>
-                      </div>
-                      <div>
-                        <div className="text-xs font-display font-bold text-[#090D16]">
-                          Milan Stiletto Heels
-                        </div>
-                        <div className="text-[11px] text-[#525B6C]">Sizes 38 - 42 • Black / Gold</div>
-                        <div className="mt-2 flex items-center justify-between">
-                          <span className="font-mono text-sm font-extrabold text-[#090D16]">
-                            ₦38,500
-                          </span>
-                          <span className="px-2.5 py-1 bg-[#2e1065] text-white text-[10px] font-bold rounded-[6px]">
-                            Buy Now
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-[#FAF9F5] border border-[#DADDD4] rounded-lg p-3.5 space-y-3">
-                      <div className="h-32 rounded-md bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center relative overflow-hidden">
-                        <Package className="w-10 h-10 text-[#3b0764]/40" />
-                        <span className="absolute top-2 left-2 text-[9px] font-mono font-bold bg-[#2e1065] text-white px-2 py-0.5 rounded-xs">
-                          IN STOCK: 3
-                        </span>
-                      </div>
-                      <div>
-                        <div className="text-xs font-display font-bold text-[#090D16]">
-                          Quilted Shoulder Bag
-                        </div>
-                        <div className="text-[11px] text-[#525B6C]">Genuine Leather • Burgundy</div>
-                        <div className="mt-2 flex items-center justify-between">
-                          <span className="font-mono text-sm font-extrabold text-[#090D16]">
-                            ₦45,000
-                          </span>
-                          <span className="px-2.5 py-1 bg-[#2e1065] text-white text-[10px] font-bold rounded-[6px]">
-                            Buy Now
-                          </span>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
 
-                {/* Instant Order & Payment Action (5 cols) */}
-                <div className="lg:col-span-5 space-y-4">
-                  {/* Customer 30-Second Checkout Card */}
-                  <div className="bg-white border border-[#DADDD4] rounded-xl p-5 shadow-xs space-y-3.5">
-                    <div className="flex items-center justify-between text-xs pb-2 border-b border-[#F3F4EF]">
-                      <span className="font-display font-bold text-[#090D16]">
-                        Instant Checkout
-                      </span>
-                      <span className="text-[10px] font-mono text-emerald-600 font-bold">
-                        NO PASSWORD NEEDED
+                {/* Category Navigation Bar */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-medium scrollbar-none">
+                  <span className="px-3.5 py-1.5 rounded-[6px] bg-[#2e1065] text-white shrink-0 font-semibold shadow-2xs">
+                    All Items (18)
+                  </span>
+                  <span className="px-3.5 py-1.5 rounded-[6px] bg-white text-[#525B6C] shrink-0 border border-[#DADDD4] hover:text-[#090D16] transition-colors cursor-pointer">
+                    Heels &amp; Shoes
+                  </span>
+                  <span className="px-3.5 py-1.5 rounded-[6px] bg-white text-[#525B6C] shrink-0 border border-[#DADDD4] hover:text-[#090D16] transition-colors cursor-pointer">
+                    Designer Handbags
+                  </span>
+                  <span className="px-3.5 py-1.5 rounded-[6px] bg-white text-[#525B6C] shrink-0 border border-[#DADDD4] hover:text-[#090D16] transition-colors cursor-pointer">
+                    Watches &amp; Jewelry
+                  </span>
+                  <span className="px-3.5 py-1.5 rounded-[6px] bg-white text-[#525B6C] shrink-0 border border-[#DADDD4] hover:text-[#090D16] transition-colors cursor-pointer">
+                    Signature Perfumes
+                  </span>
+                </div>
+
+                {/* 4 Realistic Product Cards in Responsive Grid */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 pt-1">
+                  {/* Product 1 */}
+                  <div className="group flex flex-col justify-between space-y-3">
+                    <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-white border border-[#E7E9E2] shadow-2xs">
+                      <img
+                        src="/demo/heels.jpg"
+                        alt="Milan Stiletto Pointed Heels"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-xs bg-black/75 backdrop-blur-xs text-white font-mono text-[9px] font-bold">
+                        IN STOCK: 5
                       </span>
                     </div>
-
-                    <div className="space-y-2 text-xs">
-                      <div className="flex justify-between text-[#525B6C]">
-                        <span>Item: Quilted Shoulder Bag</span>
-                        <span className="font-mono font-semibold text-[#090D16]">₦45,000</span>
-                      </div>
-                      <div className="flex justify-between text-[#525B6C]">
-                        <span>Delivery: Lekki Phase 1, Lagos</span>
-                        <span className="font-mono font-semibold text-[#090D16]">₦2,500</span>
-                      </div>
-                      <div className="flex justify-between pt-2 border-t border-[#F3F4EF] font-bold text-sm text-[#090D16]">
-                        <span>Total to Pay</span>
-                        <span className="font-mono text-[#3b0764]">₦47,500</span>
-                      </div>
-                    </div>
-
-                    <div className="p-2.5 rounded-lg bg-[#FAF9F5] border border-[#DADDD4] flex items-center justify-between text-[11px]">
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="w-4 h-4 text-[#3b0764]" />
-                        <span className="font-medium text-[#090D16]">
-                          Pay with Bank Transfer or Card
+                    <div className="space-y-1">
+                      <span className="text-[9px] font-mono uppercase tracking-wider text-[#717A8A] block">
+                        Heels &amp; Shoes
+                      </span>
+                      <h5 className="font-display font-bold text-xs sm:text-sm text-[#090D16] truncate">
+                        Milan Stiletto Pointed Heels
+                      </h5>
+                      <p className="text-[11px] text-[#525B6C] truncate">
+                        Black &amp; Gold • Sizes 37 - 42
+                      </p>
+                      <div className="pt-2 flex items-center justify-between">
+                        <span className="font-mono text-sm sm:text-base font-extrabold text-[#090D16]">
+                          ₦38,500
+                        </span>
+                        <span className="px-3 py-1 bg-[#2e1065] group-hover:bg-[#3b0764] text-white text-[11px] font-bold rounded-[6px] transition-colors">
+                          Buy Now
                         </span>
                       </div>
-                      <span className="font-mono font-bold text-emerald-600">AUTO-DETECT</span>
                     </div>
                   </div>
 
-                  {/* Merchant Live Order Alert Card */}
-                  <div className="bg-[#2e1065] text-white rounded-xl p-5 shadow-md space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                        <span className="text-xs font-display font-bold text-white">
-                          New Paid Order #1084
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-mono text-purple-200">Just now</span>
-                    </div>
-
-                    <div className="p-3 rounded-lg bg-white/10 border border-white/15 space-y-1.5 text-xs">
-                      <div className="flex justify-between text-purple-200">
-                        <span>Paid by Buyer</span>
-                        <span className="font-mono font-bold text-white">₦47,500</span>
-                      </div>
-                      <div className="flex justify-between text-purple-200">
-                        <span>Credited to Your Wallet</span>
-                        <span className="font-mono font-bold text-emerald-300">
-                          ₦45,000 (100% of price)
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between text-[11px] text-purple-200 pt-1">
-                      <span>✓ Ready to dispatch</span>
-                      <span className="font-bold text-white flex items-center gap-1">
-                        1-Click Bank Withdrawal →
+                  {/* Product 2 */}
+                  <div className="group flex flex-col justify-between space-y-3">
+                    <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-white border border-[#E7E9E2] shadow-2xs">
+                      <img
+                        src="/demo/bag.jpg"
+                        alt="Quilted Leather Crossbody Bag"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-xs bg-black/75 backdrop-blur-xs text-white font-mono text-[9px] font-bold">
+                        IN STOCK: 3
                       </span>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[9px] font-mono uppercase tracking-wider text-[#717A8A] block">
+                        Handbags
+                      </span>
+                      <h5 className="font-display font-bold text-xs sm:text-sm text-[#090D16] truncate">
+                        Quilted Leather Crossbody Bag
+                      </h5>
+                      <p className="text-[11px] text-[#525B6C] truncate">
+                        Genuine Leather • Burgundy
+                      </p>
+                      <div className="pt-2 flex items-center justify-between">
+                        <span className="font-mono text-sm sm:text-base font-extrabold text-[#090D16]">
+                          ₦45,000
+                        </span>
+                        <span className="px-3 py-1 bg-[#2e1065] group-hover:bg-[#3b0764] text-white text-[11px] font-bold rounded-[6px] transition-colors">
+                          Buy Now
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Product 3 */}
+                  <div className="group flex flex-col justify-between space-y-3">
+                    <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-white border border-[#E7E9E2] shadow-2xs">
+                      <img
+                        src="/demo/watch.jpg"
+                        alt="Minimalist Chrono Wristwatch"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-xs bg-black/75 backdrop-blur-xs text-white font-mono text-[9px] font-bold">
+                        IN STOCK: 7
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[9px] font-mono uppercase tracking-wider text-[#717A8A] block">
+                        Watches &amp; Jewelry
+                      </span>
+                      <h5 className="font-display font-bold text-xs sm:text-sm text-[#090D16] truncate">
+                        Minimalist Chrono Wristwatch
+                      </h5>
+                      <p className="text-[11px] text-[#525B6C] truncate">
+                        Matte Black Dial • Steel Band
+                      </p>
+                      <div className="pt-2 flex items-center justify-between">
+                        <span className="font-mono text-sm sm:text-base font-extrabold text-[#090D16]">
+                          ₦62,000
+                        </span>
+                        <span className="px-3 py-1 bg-[#2e1065] group-hover:bg-[#3b0764] text-white text-[11px] font-bold rounded-[6px] transition-colors">
+                          Buy Now
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Product 4 */}
+                  <div className="group flex flex-col justify-between space-y-3">
+                    <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-white border border-[#E7E9E2] shadow-2xs">
+                      <img
+                        src="/demo/perfume.jpg"
+                        alt="Maison Oud Signature EDP"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-xs bg-black/75 backdrop-blur-xs text-white font-mono text-[9px] font-bold">
+                        IN STOCK: 4
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[9px] font-mono uppercase tracking-wider text-[#717A8A] block">
+                        Fragrances
+                      </span>
+                      <h5 className="font-display font-bold text-xs sm:text-sm text-[#090D16] truncate">
+                        Maison Oud Signature EDP
+                      </h5>
+                      <p className="text-[11px] text-[#525B6C] truncate">
+                        Long-Lasting 100ml Eau De Parfum
+                      </p>
+                      <div className="pt-2 flex items-center justify-between">
+                        <span className="font-mono text-sm sm:text-base font-extrabold text-[#090D16]">
+                          ₦28,000
+                        </span>
+                        <span className="px-3 py-1 bg-[#2e1065] group-hover:bg-[#3b0764] text-white text-[11px] font-bold rounded-[6px] transition-colors">
+                          Buy Now
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -966,29 +1126,30 @@ export default function HomePage() {
               On paid plans, Kredibly charges <strong>0% platform commission</strong>—you receive 100% of your product asking price.
             </p>
 
-            {/* Billing Cycle Selector */}
-            <div className="pt-4 inline-flex flex-wrap items-center justify-center gap-1.5 p-1.5 rounded-xl bg-[#F3F4EF] border border-[#DADDD4]">
-              {(
-                [
-                  { id: "quarterly", label: "Quarterly (3 Mos)" },
-                  { id: "biannual", label: "Biannually (6 Mos)" },
-                  { id: "annual", label: "Annually (1 Year · Save 15%)" },
-                  { id: "wallet", label: "Pay Monthly from Wallet" },
-                ] as const
-              ).map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setBillingCycle(tab.id)}
-                  className={`px-3.5 py-2 rounded-[8px] text-xs font-display font-bold transition-all cursor-pointer ${
-                    billingCycle === tab.id
-                      ? "bg-[#2e1065] text-white shadow-xs"
-                      : "text-[#525B6C] hover:text-[#090D16]"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+            {/* Billing Cycle Selector — Straight single line on desktop/tablet, smooth scroll on mobile */}
+            <div className="pt-4 inline-flex items-center justify-center p-1.5 rounded-xl bg-[#F3F4EF] border border-[#DADDD4] max-w-full overflow-x-auto scrollbar-none">
+              <div className="flex items-center gap-1.5 shrink-0">
+                {(
+                  [
+                    { id: "quarterly", label: "Quarterly (3 Mos)" },
+                    { id: "biannual", label: "Biannually (6 Mos)" },
+                    { id: "annual", label: "Annually (1 Year · Save 15%)" },
+                  ] as const
+                ).map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setBillingCycle(tab.id)}
+                    className={`whitespace-nowrap px-4 py-2 rounded-[8px] text-xs font-display font-bold transition-all cursor-pointer ${
+                      billingCycle === tab.id
+                        ? "bg-[#2e1065] text-white shadow-xs"
+                        : "text-[#525B6C] hover:text-[#090D16]"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -1326,12 +1487,12 @@ export default function HomePage() {
         </section>
       </main>
 
-      {/* 9. Full Multi-Column Kredibly Footer */}
-      <footer className="border-t border-[#DADDD4] bg-[#F3F4EF] pt-14 pb-10 text-xs text-[#525B6C]">
+      {/* 9. Minimalist VOÐE-Style Footer */}
+      <footer className="border-t border-[#DADDD4] bg-[#F3F4EF] pt-12 pb-10 text-xs text-[#525B6C]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 pb-12 border-b border-[#DADDD4]">
-            {/* Col 1: Brand Info */}
-            <div className="md:col-span-5 space-y-4">
+          {/* Top Section: Brand Tagline & Newsletter */}
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 pb-10 border-b border-[#DADDD4]">
+            <div className="space-y-3 max-w-md">
               <Link href="/" className="inline-block">
                 <img
                   src="/krediblyrevamped.png"
@@ -1339,24 +1500,53 @@ export default function HomePage() {
                   className="h-6 sm:h-7 w-auto object-contain"
                 />
               </Link>
-              <p className="text-xs text-[#525B6C] max-w-sm leading-relaxed">
-                The operating system for Nigerian social commerce. Build your official online storefront, accept automated bank transfers and cards with buyer protection, and settle funds directly to your bank account.
+              <p className="text-xs text-[#525B6C] leading-relaxed">
+                The modern storefront builder and escrow trust platform for Nigerian social sellers and independent brands.
               </p>
-              <div className="flex items-center gap-2 text-[11px] font-mono text-[#2e1065] font-bold">
-                <ShieldCheck className="w-4 h-4" />
-                <span>100% SECURE COMMERCE</span>
-              </div>
             </div>
 
-            {/* Col 2: Platform */}
-            <div className="md:col-span-2 space-y-3">
-              <h4 className="font-display font-bold text-[#090D16] uppercase tracking-wider text-[11px]">
-                Platform
+            {/* Newsletter: Stay In The Loop (VOÐE Signature) */}
+            <div className="w-full lg:w-auto">
+              <h4 className="font-display font-bold text-[#090D16] uppercase tracking-wider text-[11px] mb-1.5">
+                STAY IN THE LOOP
               </h4>
-              <ul className="space-y-2.5">
+              <p className="text-xs text-[#525B6C] mb-3 max-w-sm">
+                Get merchant growth playbooks, product drops, and e-commerce insights.
+              </p>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  alert("Thank you for subscribing to Kredibly updates!");
+                }}
+                className="flex items-center gap-2 max-w-sm"
+              >
+                <input
+                  type="email"
+                  required
+                  placeholder="Enter your email"
+                  className="bg-white border border-[#DADDD4] rounded-lg px-3.5 py-2 text-[16px] sm:text-xs text-[#090D16] placeholder-[#94A3B8] focus:outline-none focus:border-[#2e1065] flex-1"
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-[#2e1065] hover:bg-[#3b0764] text-white text-xs font-semibold rounded-[8px] transition-colors shrink-0 cursor-pointer"
+                >
+                  Subscribe
+                </button>
+              </form>
+            </div>
+          </div>
+
+          {/* Clean Link Columns (2 Cols on Mobile, 4 Cols on Desktop) */}
+          <div className="py-8 grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 border-b border-[#DADDD4]">
+            {/* Col 1: Explore */}
+            <div className="space-y-3">
+              <h4 className="font-display font-bold text-[#090D16] uppercase tracking-wider text-[11px]">
+                Explore
+              </h4>
+              <ul className="space-y-2 text-xs">
                 <li>
                   <a href="#features" className="hover:text-[#090D16] transition-colors">
-                    Storefront Builder
+                    Capabilities
                   </a>
                 </li>
                 <li>
@@ -1365,27 +1555,27 @@ export default function HomePage() {
                   </a>
                 </li>
                 <li>
-                  <a href="#competitive-edge" className="hover:text-[#090D16] transition-colors">
-                    The Competitive Edge
+                  <a href="#pricing" className="hover:text-[#090D16] transition-colors">
+                    Pricing Plans
                   </a>
                 </li>
                 <li>
-                  <a href="#pricing" className="hover:text-[#090D16] transition-colors">
-                    Subscription Plans
+                  <a href="#faq" className="hover:text-[#090D16] transition-colors">
+                    Merchant FAQs
                   </a>
                 </li>
               </ul>
             </div>
 
-            {/* Col 3: Merchants */}
-            <div className="md:col-span-2 space-y-3">
+            {/* Col 2: Merchants */}
+            <div className="space-y-3">
               <h4 className="font-display font-bold text-[#090D16] uppercase tracking-wider text-[11px]">
                 Merchants
               </h4>
-              <ul className="space-y-2.5">
+              <ul className="space-y-2 text-xs">
                 <li>
                   <Link href="/register" className="hover:text-[#090D16] transition-colors">
-                    Create Free Store
+                    Start Free Store
                   </Link>
                 </li>
                 <li>
@@ -1398,43 +1588,75 @@ export default function HomePage() {
                     Seller Dashboard
                   </Link>
                 </li>
+              </ul>
+            </div>
+
+            {/* Col 3: Policies & Legal */}
+            <div className="space-y-3">
+              <h4 className="font-display font-bold text-[#090D16] uppercase tracking-wider text-[11px]">
+                Policies &amp; Legal
+              </h4>
+              <ul className="space-y-2 text-xs">
                 <li>
-                  <a href="#faq" className="hover:text-[#090D16] transition-colors">
-                    Merchant FAQs
-                  </a>
+                  <Link href="/terms" className="hover:text-[#090D16] transition-colors">
+                    Terms of Service
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/privacy" className="hover:text-[#090D16] transition-colors">
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/refund-policy" className="hover:text-[#090D16] transition-colors">
+                    Refund &amp; Escrow Policy
+                  </Link>
                 </li>
               </ul>
             </div>
 
-            {/* Col 4: Trust & Settlement */}
-            <div className="md:col-span-3 space-y-3">
+            {/* Col 4: Trust & Support */}
+            <div className="space-y-3">
               <h4 className="font-display font-bold text-[#090D16] uppercase tracking-wider text-[11px]">
-                Settlement &amp; Security
+                Trust &amp; Security
               </h4>
-              <ul className="space-y-2.5">
-                <li className="flex items-center gap-2">
-                  <Building2 className="w-3.5 h-3.5 text-[#3b0764]" />
-                  <span>Instant Bank Transfers &amp; Cards</span>
+              <ul className="space-y-2 text-xs">
+                <li className="flex items-center gap-1.5 text-emerald-700 font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Escrow Shield Active</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Lock className="w-3.5 h-3.5 text-[#3b0764]" />
-                  <span>24-Hour Auto-Release Escrow</span>
+                <li>
+                  <a
+                    href="mailto:support@usekredibly.com"
+                    className="hover:text-[#090D16] transition-colors"
+                  >
+                    support@usekredibly.com
+                  </a>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Wallet className="w-3.5 h-3.5 text-[#3b0764]" />
-                  <span>Instant Nigerian Bank Payouts</span>
+                <li className="text-[#525B6C]">
+                  Lagos, Nigeria
                 </li>
               </ul>
             </div>
           </div>
 
-          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11.5px] text-[#525B6C]">
-            <p>© {new Date().getFullYear()} Kredibly Technologies. All rights reserved.</p>
-            <div className="flex items-center gap-6">
-              <span>Built for Nigeria</span>
-              <Link href="/login" className="hover:text-[#090D16] font-semibold">
-                Merchant Portal →
+          {/* Bottom Bar (VOÐE / Modern Minimalist) */}
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11.5px] text-[#525B6C]">
+            <p>© {new Date().getFullYear()} Kredibly Technologies Limited. All rights reserved.</p>
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-5">
+              <Link href="/terms" className="hover:text-[#090D16] transition-colors">
+                Terms of Service
               </Link>
+              <span>•</span>
+              <Link href="/privacy" className="hover:text-[#090D16] transition-colors">
+                Privacy Policy
+              </Link>
+              <span>•</span>
+              <Link href="/refund-policy" className="hover:text-[#090D16] transition-colors">
+                Refund Policy
+              </Link>
+              <span>•</span>
+              <span className="font-medium text-[#090D16]">Nigeria (NGN ₦)</span>
             </div>
           </div>
         </div>

@@ -40,11 +40,12 @@ function RegisterFormContent() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Pre-populate storeName if passed from landing page claim bar
+  // Pre-populate storeName and slug if passed from landing page claim bar
   useEffect(() => {
-    const prefill = searchParams.get("storeName");
-    if (prefill) {
-      const generatedSlug = prefill
+    const prefillStoreName = searchParams.get("storeName");
+    const prefillSlug = searchParams.get("slug");
+    if (prefillStoreName || prefillSlug) {
+      const slugVal = (prefillSlug || prefillStoreName || "")
         .toLowerCase()
         .trim()
         .replace(/[\s_]+/g, "-")
@@ -53,8 +54,8 @@ function RegisterFormContent() {
 
       setFormData((prev) => ({
         ...prev,
-        storeName: prefill,
-        slug: generatedSlug,
+        storeName: prefillStoreName || prefillSlug || "",
+        slug: slugVal,
       }));
     }
   }, [searchParams]);
@@ -369,9 +370,32 @@ function RegisterFormContent() {
 
 export default function RegisterPage() {
   return (
-    <div className="min-h-[100dvh] w-full max-w-[100vw] overflow-x-hidden bg-white flex flex-col justify-between font-sans text-[#0f172a]">
+    <div className="min-h-[100dvh] w-full max-w-[100vw] overflow-x-hidden bg-[#FAF9F5] flex flex-col justify-between font-sans text-[#0f172a] relative">
+      {/* Bespoke Geometric Diagonal Lattice & Precision Dot Matrix (Same Pattern as Hero) */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-60"
+        style={{
+          backgroundImage:
+            "radial-gradient(rgba(46, 16, 101, 0.14) 1px, transparent 1px), linear-gradient(135deg, rgba(46, 16, 101, 0.03) 25%, transparent 25%, transparent 50%, rgba(46, 16, 101, 0.03) 50%, rgba(46, 16, 101, 0.03) 75%, transparent 75%, transparent)",
+          backgroundSize: "24px 24px, 64px 64px",
+          maskImage:
+            "radial-gradient(ellipse 85% 75% at 50% 45%, black 40%, transparent 100%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse 85% 75% at 50% 45%, black 40%, transparent 100%)",
+        }}
+      />
+
+      {/* Soft Horizontal Royal Purple Prism Beam */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[85%] max-w-2xl h-44 bg-gradient-to-r from-transparent via-[#3b0764]/10 to-transparent blur-3xl pointer-events-none" />
+
+      {/* Architectural Corner Registration Marks */}
+      <div className="hidden sm:block absolute top-6 left-6 w-4 h-4 border-t-2 border-l-2 border-[#3b0764]/30 pointer-events-none" />
+      <div className="hidden sm:block absolute top-6 right-6 w-4 h-4 border-t-2 border-r-2 border-[#3b0764]/30 pointer-events-none" />
+      <div className="hidden sm:block absolute bottom-6 left-6 w-4 h-4 border-b-2 border-l-2 border-[#3b0764]/30 pointer-events-none" />
+      <div className="hidden sm:block absolute bottom-6 right-6 w-4 h-4 border-b-2 border-r-2 border-[#3b0764]/30 pointer-events-none" />
+
       {/* Minimal Top Bar: Brand Logo Left, Circular Close Button Right */}
-      <header className="w-full px-5 sm:px-12 pt-5 sm:pt-6 pb-2 flex items-center justify-between shrink-0">
+      <header className="w-full px-5 sm:px-12 pt-5 sm:pt-6 pb-2 flex items-center justify-between shrink-0 relative z-20">
         <Link href="/" className="flex items-center gap-2.5 group min-w-0">
           <img
             src="/krediblyrevamped.png"
@@ -383,15 +407,15 @@ export default function RegisterPage() {
         <Link
           href="/"
           aria-label="Close and return home"
-          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#f3f4f6] hover:bg-[#e5e7eb] text-[#1e293b] flex items-center justify-center transition-colors cursor-pointer shrink-0"
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/80 hover:bg-white border border-[#DADDD4] text-[#1e293b] flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
         >
           <X className="w-4 h-4" strokeWidth={2} />
         </Link>
       </header>
 
       {/* Vertically & Horizontally Centered Auth Form Container */}
-      <main className="flex-1 flex flex-col items-center justify-center px-5 py-6 sm:py-10 w-full max-w-full overflow-x-hidden">
-        <div className="w-full max-w-[420px] mx-auto my-auto">
+      <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-5 py-6 sm:py-10 w-full max-w-full overflow-x-hidden relative z-10">
+        <div className="w-full max-w-[420px] mx-auto my-auto bg-white/95 backdrop-blur-md border border-[#DADDD4] p-6 sm:p-8 rounded-2xl shadow-[0_16px_40px_-12px_rgba(9,13,22,0.08)]">
           <Suspense fallback={<div className="h-96" />}>
             <RegisterFormContent />
           </Suspense>
