@@ -60,40 +60,44 @@ export class EmailService {
     const dashboardUrl = `${ENV.FRONTEND_URL}/dashboard`;
 
     const html = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b;">
-        <div style="text-align: center; margin-bottom: 28px;">
-          <h1 style="color: #0f172a; margin: 0; font-size: 26px; font-weight: 800;">Welcome to Kredibly 🚀</h1>
-          <p style="color: #64748b; font-size: 15px; margin-top: 6px;">Your store is officially live!</p>
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; color: #0f172a; background-color: #ffffff;">
+        <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 24px;">
+          <p style="margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #2e1065;">Kredibly</p>
+          <h1 style="color: #0f172a; margin: 8px 0 0 0; font-size: 24px; font-weight: 700;">Welcome to Kredibly</h1>
+          <p style="color: #64748b; font-size: 14px; margin: 6px 0 0 0;">Your online store is live and ready for orders.</p>
         </div>
 
-        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
-          <p style="margin: 0 0 12px 0; font-size: 16px;">Hi <strong>${data.fullName}</strong>,</p>
-          <p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155;">
-            Congratulations on creating <strong>${data.storeName}</strong>! Your storefront is ready to accept orders and receive payments safely.
+        <div style="background-color: #faf9f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 24px;">
+          <p style="margin: 0 0 12px 0; font-size: 15px;">Hi <strong>${data.fullName}</strong>,</p>
+          <p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155; font-size: 14px;">
+            Congratulations on creating <strong>${data.storeName}</strong>. Your storefront is ready to accept orders and receive verified payments directly.
           </p>
-          <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;">
-            <p style="margin: 0; font-size: 13px; color: #64748b; text-transform: uppercase; font-weight: 600;">Your Store Link</p>
-            <a href="${storeUrl}" style="color: #2563eb; font-size: 16px; font-weight: 600; text-decoration: none;" target="_blank">${storeUrl}</a>
+          <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 16px;">
+            <p style="margin: 0 0 4px 0; font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;">Your Store Link</p>
+            <a href="${storeUrl}" style="color: #2e1065; font-size: 15px; font-weight: 600; text-decoration: none;" target="_blank">${storeUrl}</a>
           </div>
         </div>
 
-        <div style="text-align: center; margin: 28px 0;">
-          <a href="${dashboardUrl}" style="background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; display: inline-block;">
-            Go to Your Dashboard →
+        <div style="margin: 24px 0;">
+          <a href="${dashboardUrl}" style="background-color: #2e1065; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; display: inline-block;">
+            Open Merchant Dashboard
           </a>
         </div>
 
-        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 28px 0;" />
-        <p style="font-size: 12px; color: #94a3b8; text-align: center; margin: 0;">
-          © ${new Date().getFullYear()} Kredibly. Building trust for social commerce.
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 28px 0 16px 0;" />
+        <p style="font-size: 12px; color: #94a3b8; margin: 0;">
+          © ${new Date().getFullYear()} Kredibly. Simple online storefronts for social sellers.
         </p>
       </div>
     `;
 
+    const text = `Hi ${data.fullName},\n\nCongratulations on creating ${data.storeName} on Kredibly! Your storefront is live and ready to accept orders.\n\nYour Store Link: ${storeUrl}\nMerchant Dashboard: ${dashboardUrl}\n\n— The Kredibly Team`;
+
     return this.send({
       to: data.to,
-      subject: `🎉 Your store "${data.storeName}" is live on Kredibly!`,
+      subject: `Welcome to Kredibly — ${data.storeName} is live`,
       html,
+      text,
     });
   }
 
@@ -109,27 +113,31 @@ export class EmailService {
     itemsSummary: string;
   }) {
     const html = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b;">
-        <h2 style="color: #0f172a; margin-top: 0;">Order Confirmed! 🛍️</h2>
-        <p>Hi <strong>${data.customerName}</strong>,</p>
-        <p>Your payment for order <strong>#${data.orderNumber}</strong> from <strong>${data.storeName}</strong> has been successfully received.</p>
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; color: #0f172a; background-color: #ffffff;">
+        <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #2e1065;">Kredibly Order Receipt</p>
+        <h2 style="color: #0f172a; margin: 0 0 16px 0; font-size: 22px; font-weight: 700;">Order Confirmed</h2>
+        <p style="font-size: 14px; color: #334155;">Hi <strong>${data.customerName}</strong>,</p>
+        <p style="font-size: 14px; color: #334155; line-height: 1.6;">Your payment for order <strong>#${data.orderNumber}</strong> from <strong>${data.storeName}</strong> has been received.</p>
         
-        <div style="background-color: #f1f5f9; border-radius: 8px; padding: 16px; margin: 20px 0;">
-          <p style="margin: 0 0 8px 0;"><strong>Order:</strong> #${data.orderNumber}</p>
+        <div style="background-color: #faf9f5; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 20px 0; font-size: 14px;">
+          <p style="margin: 0 0 8px 0;"><strong>Order Number:</strong> #${data.orderNumber}</p>
           <p style="margin: 0 0 8px 0;"><strong>Total Paid:</strong> ₦${Number(data.totalAmount).toLocaleString()}</p>
           <p style="margin: 0;"><strong>Items:</strong> ${data.itemsSummary}</p>
         </div>
 
-        <p style="font-size: 13px; color: #64748b;">
-          🔒 <em>This transaction is backed by the Kredibly Escrow Guarantee. The seller has been notified to prepare your delivery.</em>
+        <p style="font-size: 13px; color: #64748b; line-height: 1.5;">
+          This transaction is backed by the Kredibly Escrow Guarantee. The seller has been notified to prepare your delivery.
         </p>
       </div>
     `;
 
+    const text = `Hi ${data.customerName},\n\nYour payment for order #${data.orderNumber} from ${data.storeName} has been received.\n\nOrder: #${data.orderNumber}\nTotal Paid: NGN ${Number(data.totalAmount).toLocaleString()}\nItems: ${data.itemsSummary}\n\nThe seller has been notified to prepare your delivery.`;
+
     return this.send({
       to: data.to,
-      subject: `Order Confirmation #${data.orderNumber} - ${data.storeName}`,
+      subject: `Order confirmation #${data.orderNumber} - ${data.storeName}`,
       html,
+      text,
     });
   }
 
@@ -145,25 +153,29 @@ export class EmailService {
     totalAmount: string | number;
   }) {
     const html = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b;">
-        <h2 style="color: #16a34a; margin-top: 0;">🎉 You just made a new sale!</h2>
-        <p>Hi <strong>${data.merchantName}</strong>,</p>
-        <p>A customer has just placed an order on your store <strong>${data.storeName}</strong>.</p>
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; color: #0f172a; background-color: #ffffff;">
+        <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #2e1065;">New Sale Notification</p>
+        <h2 style="color: #0f172a; margin: 0 0 16px 0; font-size: 22px; font-weight: 700;">New Paid Order Received</h2>
+        <p style="font-size: 14px; color: #334155;">Hi <strong>${data.merchantName}</strong>,</p>
+        <p style="font-size: 14px; color: #334155; line-height: 1.6;">A customer has just placed and paid for an order on <strong>${data.storeName}</strong>.</p>
         
-        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 20px 0;">
+        <div style="background-color: #faf9f5; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 20px 0; font-size: 14px;">
           <p style="margin: 0 0 8px 0;"><strong>Order Number:</strong> #${data.orderNumber}</p>
           <p style="margin: 0 0 8px 0;"><strong>Customer:</strong> ${data.customerName}</p>
           <p style="margin: 0;"><strong>Amount:</strong> ₦${Number(data.totalAmount).toLocaleString()}</p>
         </div>
 
-        <p>Log in to your Kredibly dashboard to view customer delivery details and fulfill the order.</p>
+        <p style="font-size: 14px; color: #334155;">Log in to your Kredibly dashboard to view delivery details and fulfill the order.</p>
       </div>
     `;
 
+    const text = `Hi ${data.merchantName},\n\nYou just received a new paid order on ${data.storeName}.\n\nOrder Number: #${data.orderNumber}\nCustomer: ${data.customerName}\nAmount: NGN ${Number(data.totalAmount).toLocaleString()}\n\nLog in to your Kredibly dashboard (${ENV.FRONTEND_URL}/dashboard/orders) to fulfill the order.`;
+
     return this.send({
       to: data.to,
-      subject: `💰 New Order #${data.orderNumber} received for ${data.storeName}!`,
+      subject: `New order #${data.orderNumber} for ${data.storeName}`,
       html,
+      text,
     });
   }
 
@@ -206,10 +218,13 @@ export class EmailService {
       </div>
     `;
 
+    const text = `Hi ${data.fullName},\n\nWe received a request to reset your Kredibly password. Open the link below to set a new password (expires in 1 hour):\n\n${resetUrl}\n\nIf you did not request this, you can safely ignore this email.`;
+
     return this.send({
       to: data.to,
       subject: "Reset your Kredibly password",
       html,
+      text,
     });
   }
 
@@ -237,8 +252,8 @@ export class EmailService {
           <div style="background: #ffffff; border: 1px dashed #3b0764; border-radius: 8px; padding: 16px; text-align: center; margin: 20px 0;">
             <span style="font-family: monospace; font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #2e1065;">${data.otp}</span>
           </div>
-          <p style="margin: 0; font-size: 12.5px; color: #b45309; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px;">
-            ⚠️ <strong>24-Hour Security Lock:</strong> For your protection against fraud, withdrawals will be paused for 24 hours after changing your payout bank account.
+          <p style="margin: 0; font-size: 12.5px; color: #92400e; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px;">
+            <strong>24-Hour Security Lock:</strong> For your protection against fraud, withdrawals will be paused for 24 hours after changing your payout bank account.
           </p>
         </div>
 
@@ -248,10 +263,13 @@ export class EmailService {
       </div>
     `;
 
+    const text = `Hi ${data.fullName},\n\nYour confirmation code to change the payout bank account for ${data.storeName} is: ${data.otp}\n\nThis code expires in 10 minutes. Note: Changing your bank account pauses withdrawals for 24 hours for your protection.`;
+
     return this.send({
       to: data.to,
-      subject: `🔐 ${data.otp} is your Kredibly bank change confirmation code`,
+      subject: `${data.otp} is your Kredibly bank change confirmation code`,
       html,
+      text,
     });
   }
 
@@ -269,7 +287,7 @@ export class EmailService {
     const maskedAcc = data.accountNumber.replace(/^(\d{2})\d{4}(\d{4})$/, "$1****$2");
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b;">
-        <h2 style="color: #0f172a; margin-top: 0;">Payout Bank Account Updated 🔒</h2>
+        <h2 style="color: #0f172a; margin-top: 0; font-size: 20px; font-weight: 700;">Payout Bank Account Updated</h2>
         <p>Hi <strong>${data.fullName}</strong>,</p>
         <p>Your payout bank account for <strong>${data.storeName}</strong> was just updated to:</p>
         <div style="background-color: #f1f5f9; border-radius: 8px; padding: 14px 16px; margin: 16px 0;">
@@ -285,10 +303,13 @@ export class EmailService {
       </div>
     `;
 
+    const text = `Hi ${data.fullName},\n\nYour payout bank account for ${data.storeName} was updated to ${data.bankName} (${maskedAcc}).\n\nFor security, withdrawals are paused for 24 hours until ${data.lockedUntil.toUTCString()}.\n\nIf you did not authorize this change, contact ${ENV.ADMIN_EMAIL} immediately.`;
+
     return this.send({
       to: data.to,
-      subject: `⚠️ Payout bank account changed for ${data.storeName}`,
+      subject: `Security notice: Payout bank account updated for ${data.storeName}`,
       html,
+      text,
     });
   }
 }

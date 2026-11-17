@@ -61,7 +61,7 @@ const WHY_SWITCH_ITEMS = [
   },
 ];
 
-type BillingCycle = "quarterly" | "biannual" | "annual";
+type BillingCycle = "monthly" | "quarterly" | "biannual" | "annual";
 
 const FAQS = [
   {
@@ -105,7 +105,7 @@ export default function HomePage() {
   const router = useRouter();
   const [claimInput, setClaimInput] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [billingCycle, setBillingCycle] = useState<BillingCycle>("quarterly");
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
 
   // Real-time Brand Handle Availability Checking
   const [isChecking, setIsChecking] = useState(false);
@@ -203,19 +203,22 @@ export default function HomePage() {
   const getPlanPrice = (tier: "starterPlus" | "deluxe" | "ultimate") => {
     const table = {
       starterPlus: {
-        quarterly: { amount: "₦14,500", period: "/ 3 Months" },
-        biannual: { amount: "₦27,500", period: "/ 6 Months" },
-        annual: { amount: "₦55,000", period: "/ 1 Year" },
+        monthly: { amount: "₦5,000", period: "/ Month" },
+        quarterly: { amount: "₦14,500", period: "/ 3 Months (₦4,833/mo)" },
+        biannual: { amount: "₦27,500", period: "/ 6 Months (₦4,583/mo)" },
+        annual: { amount: "₦55,000", period: "/ 1 Year (₦4,583/mo)" },
       },
       deluxe: {
-        quarterly: { amount: "₦28,500", period: "/ 3 Months" },
-        biannual: { amount: "₦55,000", period: "/ 6 Months" },
-        annual: { amount: "₦110,000", period: "/ 1 Year" },
+        monthly: { amount: "₦10,000", period: "/ Month" },
+        quarterly: { amount: "₦28,500", period: "/ 3 Months (₦9,500/mo)" },
+        biannual: { amount: "₦55,000", period: "/ 6 Months (₦9,167/mo)" },
+        annual: { amount: "₦110,000", period: "/ 1 Year (₦9,167/mo)" },
       },
       ultimate: {
-        quarterly: { amount: "₦57,000", period: "/ 3 Months" },
-        biannual: { amount: "₦110,000", period: "/ 6 Months" },
-        annual: { amount: "₦220,000", period: "/ 1 Year" },
+        monthly: { amount: "₦20,000", period: "/ Month" },
+        quarterly: { amount: "₦57,000", period: "/ 3 Months (₦19,000/mo)" },
+        biannual: { amount: "₦110,000", period: "/ 6 Months (₦18,333/mo)" },
+        annual: { amount: "₦220,000", period: "/ 1 Year (₦18,333/mo)" },
       },
     };
     return table[tier][billingCycle];
@@ -425,7 +428,7 @@ export default function HomePage() {
                   type="submit"
                   className={`w-full sm:w-auto px-7 py-3.5 text-white font-display font-bold rounded-[8px] transition-all flex items-center justify-center gap-2 text-xs sm:text-sm shrink-0 shadow-sm cursor-pointer ${
                     checkResult.status === "available"
-                      ? "bg-emerald-700 hover:bg-emerald-800"
+                      ? "bg-[#3b0764] hover:bg-[#2e1065]"
                       : "bg-[#2e1065] hover:bg-[#3b0764]"
                   }`}
                 >
@@ -438,8 +441,8 @@ export default function HomePage() {
               {claimInput.trim() && (
                 <div className="min-h-[28px] flex flex-col items-center justify-center gap-2 text-xs">
                   {checkResult.status === "available" && (
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-mono font-semibold animate-in fade-in">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 border border-purple-200 text-[#2e1065] font-mono font-semibold animate-in fade-in">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#3b0764] shrink-0" />
                       <span>{checkResult.message}</span>
                     </div>
                   )}
@@ -477,20 +480,20 @@ export default function HomePage() {
                 </div>
               )}
 
-              {/* Frictionless Assurance */}
-              <div className="flex items-center justify-center gap-3 text-xs sm:text-[13px] text-[#64748B] font-medium pt-1 flex-wrap">
-                <span className="flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              {/* Frictionless Assurance — Straight line on mobile, purple checkmarks */}
+              <div className="flex items-center justify-center gap-2 sm:gap-3 text-[10.5px] sm:text-[13px] text-[#64748B] font-medium pt-1 whitespace-nowrap">
+                <span className="flex items-center gap-1 shrink-0">
+                  <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#3b0764] shrink-0" />
                   <span>No coding</span>
                 </span>
-                <span className="w-1 h-1 rounded-full bg-[#CBD5E1]" />
-                <span className="flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="w-1 h-1 rounded-full bg-[#CBD5E1] shrink-0" />
+                <span className="flex items-center gap-1 shrink-0">
+                  <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#3b0764] shrink-0" />
                   <span>No computer needed</span>
                 </span>
-                <span className="w-1 h-1 rounded-full bg-[#CBD5E1]" />
-                <span className="flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="w-1 h-1 rounded-full bg-[#CBD5E1] shrink-0" />
+                <span className="flex items-center gap-1 shrink-0">
+                  <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#3b0764] shrink-0" />
                   <span>Works on any phone</span>
                 </span>
               </div>
@@ -511,11 +514,11 @@ export default function HomePage() {
                 <div className="flex-1 max-w-md mx-auto hidden sm:flex items-center justify-center gap-2 px-3 py-1 bg-white border border-[#DADDD4] rounded-md text-xs font-mono text-[#525B6C]">
                   <Lock className="w-3 h-3 text-[#3b0764]" />
                   <span className="text-[#090D16] font-semibold">kredibly.shop/urban-luxe</span>
-                  <span className="text-[10px] text-emerald-600 font-bold ml-1">• LIVE STORE</span>
+                  <span className="text-[10px] text-[#3b0764] font-bold ml-1">• LIVE STORE</span>
                 </div>
 
                 <div className="flex items-center gap-2 text-[11px] font-mono font-bold text-[#3b0764]">
-                  <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="inline-block w-2 h-2 rounded-full bg-[#3b0764] animate-pulse" />
                   <span>ACCEPTING ORDERS</span>
                 </div>
               </div>
@@ -1045,6 +1048,7 @@ export default function HomePage() {
               <div className="flex items-center gap-1.5 shrink-0">
                 {(
                   [
+                    { id: "monthly", label: "Monthly" },
                     { id: "quarterly", label: "Quarterly (3 Mos)" },
                     { id: "biannual", label: "Biannually (6 Mos)" },
                     { id: "annual", label: "Annually (1 Year · Save 15%)" },
@@ -1535,8 +1539,8 @@ export default function HomePage() {
                 Trust &amp; Security
               </h4>
               <ul className="space-y-2 text-xs">
-                <li className="flex items-center gap-1.5 text-emerald-700 font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <li className="flex items-center gap-1.5 text-[#3b0764] font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#3b0764] animate-pulse" />
                   <span>Escrow Shield Active</span>
                 </li>
                 <li>
