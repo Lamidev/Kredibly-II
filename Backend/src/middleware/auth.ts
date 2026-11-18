@@ -68,3 +68,14 @@ export const requireAuth = async (
     next(error);
   }
 };
+
+export const requireAdmin = (
+  req: Request,
+  _res: Response,
+  next: NextFunction
+) => {
+  if (!req.user || req.user.role !== "ADMIN") {
+    return next(new AppError("Super Admin access required.", 403));
+  }
+  next();
+};

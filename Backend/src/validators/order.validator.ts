@@ -21,7 +21,14 @@ export const initializeCheckoutSchema = z.object({
   }),
   items: z.array(checkoutItemSchema).min(1, "At least one item is required in cart"),
   notes: z.string().optional(),
+  promoCode: z.string().trim().max(40).optional().nullable(),
   paymentMethod: z.enum(["BANK_TRANSFER", "CARD"]).default("BANK_TRANSFER"),
+});
+
+export const validatePromoSchema = z.object({
+  storeSlug: z.string().min(1, "Store slug is required"),
+  code: z.string().trim().min(1, "Promo code is required").max(40),
+  subtotal: z.coerce.number().min(0),
 });
 
 export type InitializeCheckoutInput = z.infer<typeof initializeCheckoutSchema>;

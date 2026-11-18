@@ -1,65 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useCartStore } from "@/store/useCartStore";
+import { StorefrontHeader } from "@/components/storefront/StorefrontHeader";
+import { StorefrontFooter } from "@/components/storefront/StorefrontFooter";
 import { CartDrawer } from "@/components/storefront/CartDrawer";
-import { FloatingCartBar } from "@/components/storefront/FloatingCartBar";
 import { CheckoutDrawer } from "@/components/storefront/CheckoutDrawer";
+import { ProductCard } from "@/components/storefront/ProductCard";
 import { formatCurrency, getImageUrl } from "@/lib/utils";
-import { API_BASE_URL } from "@/lib/api";
 import {
-  ArrowLeft,
-  ShieldCheck,
+  StoreData,
+  StoreProduct,
+  ProductVariant,
+} from "@/types/storefront";
+import {
   ShoppingBag,
   Check,
   Plus,
   Minus,
+  ChevronRight,
 } from "lucide-react";
-
-interface Variant {
-  id: string;
-  name: string;
-  price: number | string;
-  stockQuantity: number;
-}
-
-interface Product {
-  id: string;
-  title: string;
-  slug: string;
-  description?: string;
-  category?: string | null;
-  brand?: string | null;
-  attributes?: Array<{ label: string; value: string }> | null;
-  basePrice: number | string;
-  comparePrice?: number | string | null;
-  images: string[];
-  stockQuantity: number;
-  hasVariants: boolean;
-  variants: Variant[];
-}
-
-interface StoreData {
-  id: string;
-  name: string;
-  slug: string;
-  whatsappNumber: string;
-  currency: string;
-}
 
 export function ProductDetailClient({
   store,
   product,
 }: {
   store: StoreData;
-  product: Product;
+  product: StoreProduct;
 }) {
-  const { addItem, openCart, getTotalCount } = useCartStore();
-  const cartCount = getTotalCount();
+  const { addItem } = useCartStore();
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [selectedVariant, setSelectedVariant] = useState<Variant | undefined>(
+  const [selectedVariant, setSelectedVariant] = useState<
+    ProductVariant | undefined
+  >(
     product.hasVariants && product.variants?.length > 0
       ? product.variants[0]
       : undefined
@@ -67,8 +42,7 @@ export function ProductDetailClient({
   const [quantity, setQuantity] = useState(1);
   const [addedAnimation, setAddedAnimation] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
-
-  const getFullImageUrl = (path?: string) => getImageUrl(path);
+  const [trackModalOpen, setTrackModalOpen] = useState(false);
 
   const activePrice = selectedVariant
     ? Number(selectedVariant.price)
@@ -79,6 +53,19 @@ export function ProductDetailClient({
     : product.stockQuantity;
 
   const isSoldOut = maxStock <= 0;
+
+  // Similar products ("You May Also Like") — same category first, then other store products
+  const similarProducts = useMemo(() => {
+    const all = (store.products || []).filter((p) => p.id !== product.id);
+    if (all.length === 0) return [];
+
+    const prodCat = product.category?.trim().toLowerCase();
+    const sameCat = prodCat
+      ? all.filter((p) => p.category?.trim().toLowerCase() === prodCat)
+      : [];
+    const others = all.filter((p) => !sameCat.some((s) => s.id === p.id));
+    return [...sameCat, ...others].slice(0, 4);
+  }, [store.products, product.id, product.category]);
 
   const handleAddToCart = () => {
     if (isSoldOut) return;
@@ -117,46 +104,69 @@ export function ProductDetailClient({
     setCheckoutOpen(true);
   };
 
-  return (
-    <div className="min-h-screen bg-[#fafaf8] text-[#20231e] font-sans pb-24">
-      {/* Top Navigation */}
-      <nav className="sticky top-0 z-30 bg-[#fafaf8]/95 backdrop-blur-md border-b border-[#daddd4]">
-        <div className="mx-auto w-[min(1180px,calc(100%-32px))] md:w-[min(1180px,calc(100%-48px))] py-3.5 flex items-center justify-between">
-          <Link
-            href={`/${store.slug}`}
-            className="px-3 py-2 rounded-[6px] bg-[#f3f4ef] hover:bg-[#e6e8e1] border border-[#daddd4] text-[#20231e] transition flex items-center gap-1.5 text-xs font-semibold"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to {store.name}</span>
-          </Link>
+  const handleQuickAddSimilar = (p: StoreProduct, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (p.stockQuantity <= 0) return;
+    const firstVar =
+      p.hasVariants && p.variants?.length > 0 ? p.variants[0] : undefined;
+    addItem({
+      productId: p.id,
+      variantId: firstVar?.id,
+      title: p.title,
+      variantName: firstVar?.name,
+      price: firstVar ? Number(firstVar.price) : Number(p.basePrice),
+      image: p.images?.[0],
+      maxStock: firstVar ? firstVar.stockQuantity : p.stockQuantity,
+    });
+  };
 
-          <button
-            type="button"
-            onClick={openCart}
-            aria-label="Open shopping bag"
-            className="relative p-2.5 rounded-[6px] bg-[#f3f4ef] hover:bg-[#e6e8e1] border border-[#daddd4] text-[#20231e] transition flex items-center justify-center cursor-pointer"
-          >
-            <ShoppingBag className="w-4 h-4" />
-            {cartCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#2e1065] text-white text-[10px] font-mono font-bold flex items-center justify-center leading-none shadow-sm">
-                {cartCount}
-              </span>
-            )}
-          </button>
-        </div>
-      </nav>
+  const images = product.images || [];
+  const hasMultipleImages = images.length > 1;
+
+  return (
+    <div className="min-h-screen bg-[#fafaf8] text-[#20231e] font-sans flex flex-col">
+      <StorefrontHeader
+        store={store}
+        trackModalOpen={trackModalOpen}
+        onOpenTrackModal={() => setTrackModalOpen(true)}
+        onCloseTrackModal={() => setTrackModalOpen(false)}
+      />
 
       {/* Main Product Container */}
-      <main className="mx-auto w-[min(1080px,calc(100%-32px))] pt-8 sm:pt-12">
+      <main className="flex-1 mx-auto w-[min(1120px,calc(100%-32px))] md:w-[min(1120px,calc(100%-48px))] pt-6 sm:pt-10 pb-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-start">
-          {/* Left Column: Image Gallery */}
-          <div className="space-y-3">
-            <div className="aspect-square w-full rounded-[6px] bg-white border border-[#e6e8e1] overflow-hidden relative flex items-center justify-center p-6">
-              {product.images && product.images.length > 0 ? (
+          {/* Left Column: Full-Bleed Image Gallery (Thumbnails below on mobile, left on desktop) */}
+          <div className="flex flex-col-reverse md:flex-row gap-3">
+            {hasMultipleImages && (
+              <div className="flex flex-row md:flex-col gap-2.5 shrink-0">
+                {images.map((img, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setActiveImageIndex(idx)}
+                    className={`h-16 w-16 md:h-20 md:w-20 rounded-[6px] bg-white overflow-hidden border transition cursor-pointer shrink-0 ${
+                      activeImageIndex === idx
+                        ? "border-[#2e1065] ring-2 ring-[#2e1065]/15"
+                        : "border-[#e6e8e1] opacity-65 hover:opacity-100"
+                    }`}
+                  >
+                    <img
+                      src={getImageUrl(img)}
+                      alt={`${product.title} view ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="flex-1 aspect-square w-full rounded-[8px] bg-white border border-[#e6e8e1] overflow-hidden relative">
+              {images.length > 0 ? (
                 <img
-                  src={getFullImageUrl(product.images[activeImageIndex])}
+                  src={getImageUrl(images[activeImageIndex])}
                   alt={product.title}
-                  className="max-w-full max-h-full object-contain"
+                  className="w-full h-full object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-[#c5c8be]">
@@ -170,29 +180,6 @@ export function ProductDetailClient({
                 </div>
               )}
             </div>
-
-            {/* Thumbnail switcher if 2 images */}
-            {product.images && product.images.length > 1 && (
-              <div className="flex items-center gap-3">
-                {product.images.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveImageIndex(idx)}
-                    className={`h-16 w-16 rounded-[5px] bg-white p-1.5 overflow-hidden border transition cursor-pointer ${
-                      activeImageIndex === idx
-                        ? "border-[#2e1065] ring-2 ring-[#2e1065]/15"
-                        : "border-[#e6e8e1] opacity-60 hover:opacity-100"
-                    }`}
-                  >
-                    <img
-                      src={getFullImageUrl(img)}
-                      alt="Thumbnail"
-                      className="w-full h-full object-contain"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Right Column: Product Info & Actions */}
@@ -269,7 +256,9 @@ export function ProductDetailClient({
                   </span>
                   <button
                     type="button"
-                    onClick={() => setQuantity((q) => Math.min(maxStock, q + 1))}
+                    onClick={() =>
+                      setQuantity((q) => Math.min(maxStock, q + 1))
+                    }
                     disabled={quantity >= maxStock || isSoldOut}
                     className="h-8 w-8 rounded-[4px] bg-[#f3f4ef] hover:bg-[#e6e8e1] text-[#20231e] flex items-center justify-center font-bold disabled:opacity-40 cursor-pointer"
                   >
@@ -283,7 +272,7 @@ export function ProductDetailClient({
               </div>
             </div>
 
-            {/* Action Buttons (No WhatsApp bypass — Direct Checkout or Add to Bag) */}
+            {/* Action Buttons */}
             <div className="space-y-2.5 pt-2">
               <button
                 type="button"
@@ -291,7 +280,7 @@ export function ProductDetailClient({
                 disabled={isSoldOut}
                 className="w-full h-[48px] bg-[#2e1065] hover:bg-[#3b0764] disabled:opacity-40 text-white font-display font-bold rounded-[8px] transition flex items-center justify-center gap-2 text-sm shadow-sm cursor-pointer"
               >
-                <span>Buy Now — Instant Escrow Checkout</span>
+                <span>Buy Now — Instant Checkout</span>
               </button>
 
               <button
@@ -301,21 +290,8 @@ export function ProductDetailClient({
                 className="w-full h-[46px] bg-white hover:bg-[#f3f4ef] border border-[#daddd4] disabled:opacity-40 text-[#20231e] font-display font-bold rounded-[8px] transition flex items-center justify-center gap-2 text-xs cursor-pointer"
               >
                 <ShoppingBag className="w-4 h-4 text-[#3b0764]" />
-                <span>{addedAnimation ? "Added to Bag ✓" : "Add to Bag"}</span>
+                <span>{addedAnimation ? "Added to Bag ✓" : "Add to Cart"}</span>
               </button>
-            </div>
-
-            {/* Escrow Guarantee Callout */}
-            <div className="p-4 rounded-[6px] bg-[#f3f4ef] border border-[#daddd4] flex items-start gap-3">
-              <ShieldCheck className="w-5 h-5 text-[#3b0764] shrink-0 mt-0.5" />
-              <div className="text-xs space-y-1">
-                <p className="font-bold text-[#20231e]">
-                  100% Delivery Guarantee · Kredibly Escrow
-                </p>
-                <p className="text-[#62665d] leading-relaxed">
-                  Your payment is held safely in the Kredibly Escrow Vault until your order is delivered. After payment, you receive an instant verified receipt with direct seller WhatsApp access.
-                </p>
-              </div>
             </div>
 
             {/* Description & Specifications */}
@@ -361,16 +337,97 @@ export function ProductDetailClient({
             )}
           </div>
         </div>
+
+        {/* You May Also Like (Similar Products) */}
+        {similarProducts.length > 0 && (
+          <section className="mt-14 pt-10 border-t border-[#daddd4]">
+            <div className="flex items-end justify-between mb-6 gap-4">
+              <div>
+                <p className="text-[10px] tracking-[1.8px] font-semibold uppercase text-[#62665d] mb-1.5">
+                  MORE FOR YOU
+                </p>
+                <h2 className="font-display text-xl sm:text-3xl font-bold text-[#20231e] tracking-tight">
+                  You May Also Like
+                </h2>
+              </div>
+              <Link
+                href={`/${store.slug}/products`}
+                className="text-xs sm:text-sm font-semibold text-[#2e1065] hover:underline inline-flex items-center gap-0.5 shrink-0"
+              >
+                <span>Explore All</span>
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-[13px] gap-y-[25px] sm:gap-x-[18px] sm:gap-y-[30px] lg:gap-x-[20px]">
+              {similarProducts.map((sim) => (
+                <ProductCard
+                  key={sim.id}
+                  product={sim}
+                  store={store}
+                  onAddToCart={handleQuickAddSimilar}
+                />
+              ))}
+            </div>
+          </section>
+        )}
       </main>
 
-      {/* Cart Drawer, Checkout Drawer & Floating Bar */}
+      <StorefrontFooter
+        store={store}
+        onTrackOrder={() => setTrackModalOpen(true)}
+        extraBottomPadding
+      />
+
+      {/* Mobile Floating Sticky Add to Cart Bar */}
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-[#daddd4] px-4 py-3 shadow-lg">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="h-10 w-10 rounded-[6px] bg-[#fafaf8] border border-[#e6e8e1] overflow-hidden shrink-0">
+              {images[0] ? (
+                <img
+                  src={getImageUrl(images[0])}
+                  alt={product.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-[#c5c8be]">
+                  <ShoppingBag className="w-4 h-4" />
+                </div>
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-[#20231e] truncate">
+                {product.title}
+              </p>
+              <p className="font-display text-sm font-bold text-[#20231e]">
+                {formatCurrency(activePrice)}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={isSoldOut}
+            className="px-5 h-10 rounded-[8px] bg-[#2e1065] hover:bg-[#3b0764] disabled:opacity-40 text-white font-display font-bold text-xs shrink-0 cursor-pointer"
+          >
+            {isSoldOut
+              ? "Sold Out"
+              : addedAnimation
+              ? "Added ✓"
+              : "Add to Cart"}
+          </button>
+        </div>
+      </div>
+
       <CartDrawer onCheckoutClick={() => setCheckoutOpen(true)} />
       <CheckoutDrawer
         storeSlug={store.slug}
+        shippingConfig={store.shippingConfig}
         isOpen={checkoutOpen}
         onClose={() => setCheckoutOpen(false)}
       />
-      <FloatingCartBar />
     </div>
   );
 }

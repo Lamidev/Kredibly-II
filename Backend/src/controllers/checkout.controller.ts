@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import { ENV } from "../config/env";
 import { OrderService } from "../services/order.service";
-import { initializeCheckoutSchema } from "../validators/order.validator";
+import {
+  initializeCheckoutSchema,
+  validatePromoSchema,
+} from "../validators/order.validator";
 
 export class CheckoutController {
   static async initialize(req: Request, res: Response, next: NextFunction) {
@@ -12,6 +15,24 @@ export class CheckoutController {
       return res.status(201).json({
         success: true,
         message: "Order initialized successfully",
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async validatePromo(req: Request, res: Response, next: NextFunction) {
+    try {
+      const validated = validatePromoSchema.parse(req.body);
+      const result = await OrderService.validatePromoPreview(
+        validated.storeSlug,
+        validated.code,
+        validated.subtotal
+      );
+
+      return res.status(200).json({
+        success: true,
         data: result,
       });
     } catch (error) {

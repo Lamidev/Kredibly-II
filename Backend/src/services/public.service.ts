@@ -25,7 +25,9 @@ export class PublicStoreService {
         socialLinks: true,
         currency: true,
         subscriptionTier: true,
+        isActive: true,
         passFeeToCustomer: true,
+        shippingConfig: true,
         products: {
           where: { isActive: true },
           include: {
@@ -76,7 +78,7 @@ export class PublicStoreService {
       },
     });
 
-    if (!store) {
+    if (!store || !store.isActive) {
       throw new AppError(`Store '${storeSlug}' not found`, 404);
     }
 

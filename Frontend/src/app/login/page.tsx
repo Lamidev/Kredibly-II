@@ -32,7 +32,7 @@ export default function LoginPage() {
       const primaryStore = stores[0];
       setAuth(token, user, primaryStore);
       toast.success("Welcome back!");
-      router.push("/dashboard");
+      router.push(user?.role === "ADMIN" ? "/admin" : "/dashboard");
     } catch (err: any) {
       const msg =
         err.response?.data?.message ||

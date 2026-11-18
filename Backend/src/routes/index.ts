@@ -10,6 +10,8 @@ import orderAdminRouter from "./order-admin.routes";
 import walletRouter from "./wallet.routes";
 import customerRouter from "./customer.routes";
 import storeRouter from "./store.routes";
+import adminRouter from "./admin.routes";
+import shopperRouter from "./shopper.routes";
 
 const router = Router();
 
@@ -45,5 +47,11 @@ router.use("/store", storeRouter);
 
 // Local VPS Image Upload (authenticated)
 router.use("/upload", uploadRouter);
+
+// Platform Super Admin (authenticated + ADMIN role)
+router.use("/admin", adminRouter);
+
+// Storefront Optional Shopper Accounts & Profiles
+router.use("/shopper", shopperRouter);
 
 export default router;

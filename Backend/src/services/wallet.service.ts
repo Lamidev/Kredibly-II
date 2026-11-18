@@ -273,6 +273,8 @@ export class WalletService {
       );
     }
 
+    const TRANSFER_FEE = 100;
+    const netPayout = amount - TRANSFER_FEE;
     const reference = `WD-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
 
     // 1. Atomically decrement available balance only if sufficient funds remain
@@ -299,8 +301,8 @@ export class WalletService {
         data: {
           walletId: store.wallet!.id,
           amount,
-          platformFee: 0,
-          netAmount: amount,
+          platformFee: TRANSFER_FEE,
+          netAmount: netPayout,
           type: "WITHDRAWAL",
           status: "PENDING",
           reference,
@@ -310,18 +312,18 @@ export class WalletService {
       return { updatedWallet, transaction };
     });
 
-    // 2. Dispatch Payout via Nomba Transfer Engine
+    // 2. Dispatch Payout via Nomba Transfer Engine (net of ₦100 transfer fee)
     try {
       if (ENV.NOMBA_CLIENT_ID && ENV.NOMBA_PRIVATE_KEY && ENV.NOMBA_ACCOUNT_ID) {
         await NombaService.initiateTransfer({
-          amount,
+          amount: netPayout,
           bankCode: store.bankCode || "058",
           accountNumber: store.accountNumber,
           accountName: store.accountName || store.name,
           narration: `KREDIBLY - ${store.name}`,
         });
       } else {
-        console.log(`[Nomba Dev Transfer] Simulated payout of ₦${amount} to ${store.bankName} (${store.accountNumber})`);
+        console.log(`[Nomba Dev Transfer] Simulated payout of ₦${netPayout} (fee ₦${TRANSFER_FEE}) to ${store.bankName} (${store.accountNumber})`);
       }
 
       // Mark transaction completed
@@ -332,7 +334,7 @@ export class WalletService {
 
       return {
         success: true,
-        message: `Withdrawal of ₦${amount.toLocaleString()} successfully sent to ${store.bankName} (${store.accountNumber})`,
+        message: `Withdrawal of ₦${netPayout.toLocaleString()} (₦${TRANSFER_FEE} transfer fee) sent to ${store.bankName} (${store.accountNumber})`,
         reference,
         newAvailableBalance: withdrawalTx.updatedWallet.availableBalance,
         newEscrowBalance: withdrawalTx.updatedWallet.escrowBalance,

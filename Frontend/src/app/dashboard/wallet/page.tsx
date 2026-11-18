@@ -232,8 +232,8 @@ export default function WalletPage() {
     switch (type) {
       case "SALE":
         return (
-          <Badge variant="warning">
-            <ArrowDownLeft className="w-3 h-3" /> Sale (In Escrow)
+          <Badge variant="success">
+            <ArrowDownLeft className="w-3 h-3" /> Sale Credited
           </Badge>
         );
       case "ESCROW_RELEASE":

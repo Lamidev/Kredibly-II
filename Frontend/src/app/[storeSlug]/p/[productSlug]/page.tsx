@@ -2,6 +2,8 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductDetailClient } from "./ProductDetailClient";
 
+export const dynamic = "force-dynamic";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 async function getProduct(storeSlug: string, productSlug: string) {
@@ -9,7 +11,7 @@ async function getProduct(storeSlug: string, productSlug: string) {
     const res = await fetch(
       `${API_URL}/public/stores/${storeSlug}/products/${productSlug}`,
       {
-        next: { revalidate: 30 }, // ISR edge caching
+        cache: "no-store",
       }
     );
 
@@ -76,16 +78,34 @@ export async function generateMetadata({
   };
 }
 
+async function getStore(storeSlug: string) {
+  try {
+    const res = await fetch(`${API_URL}/public/stores/${storeSlug}`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.data;
+  } catch {
+    return null;
+  }
+}
+
 export default async function ProductPage({
   params,
 }: {
   params: { storeSlug: string; productSlug: string };
 }) {
-  const data = await getProduct(params.storeSlug, params.productSlug);
+  const [data, fullStore] = await Promise.all([
+    getProduct(params.storeSlug, params.productSlug),
+    getStore(params.storeSlug),
+  ]);
 
   if (!data || !data.product) {
     notFound();
   }
+
+  const storeForClient = fullStore || data.store;
 
   const productUrl = `https://kredibly.shop/${data.store.slug}/p/${data.product.slug}`;
   const images = (data.product.images || []).map((img: string) =>
@@ -130,7 +150,7 @@ export default async function ProductPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
       />
-      <ProductDetailClient store={data.store} product={data.product} />
+      <ProductDetailClient store={storeForClient} product={data.product} />
     </>
   );
 }

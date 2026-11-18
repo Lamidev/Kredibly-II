@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { getImageUrl } from "@/lib/utils";
-import { ShoppingCart, ShoppingBag } from "lucide-react";
+import { useWishlistStore } from "@/store/useWishlistStore";
+import { ShoppingCart, ShoppingBag, Heart } from "lucide-react";
 
 export interface ProductCardProps {
   product: {
@@ -40,6 +42,13 @@ export function ProductCard({
   onAddToCart,
   featuredBadge,
 }: ProductCardProps) {
+  const { items: wishlistItems, storeSlug: loadedSlug, loadWishlist, toggleWishlist } =
+    useWishlistStore();
+  useEffect(() => {
+    if (loadedSlug !== store.slug) loadWishlist(store.slug);
+  }, [store.slug, loadedSlug, loadWishlist]);
+
+  const isWishlisted = wishlistItems.some((p) => p.id === product.id);
   const isSoldOut = product.stockQuantity <= 0;
 
   const getFullImageUrl = (path?: string) => getImageUrl(path);
@@ -61,18 +70,14 @@ export function ProductCard({
     (isSoldOut
       ? "OUT OF STOCK"
       : hasDiscount
-      ? `${ (product.brand || store.name).toUpperCase() } · SAVE ${discountPct}%`
-      : product.brand && product.category
-      ? `${product.brand} · ${product.category}`
-      : product.brand
-      ? `${product.brand} · VERIFIED`
+      ? `SAVE ${discountPct}%`
       : product.hasVariants
-      ? "MULTIPLE OPTIONS · ESCROW"
-      : "VERIFIED · ESCROW PROTECTED");
+      ? "MULTIPLE OPTIONS"
+      : "");
 
   return (
     <article className="swot-product-card w-full group font-sans cursor-pointer">
-      {/* SWOT / Mobiletrends Image Container */}
+      {/* Full-Bleed Product Image Container */}
       <Link
         href={`/${store.slug}/p/${product.slug}`}
         className="block h-[205px] sm:h-[225px] bg-white border border-[#e6e8e1] rounded-[5px] overflow-hidden relative group-hover:border-[#cfd2c6] transition-colors"
@@ -82,15 +87,33 @@ export function ProductCard({
             src={getFullImageUrl(primaryImage)}
             alt={product.title}
             loading="lazy"
-            className="w-full h-full object-contain p-[18px_14px_34px] transition-transform duration-500 ease-out group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-[#c5c8be] pb-6">
+          <div className="w-full h-full flex items-center justify-center text-[#c5c8be]">
             <ShoppingBag className="w-10 h-10 stroke-[1.5]" />
           </div>
         )}
 
-        {/* Quick Add-to-Cart button in top-right (Mobiletrends exact style) */}
+        {/* Quick Wishlist Heart in top-left */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleWishlist(store.slug, product as any);
+          }}
+          aria-label="Save to wishlist"
+          className={`absolute top-2.5 left-2.5 w-8 h-8 rounded-[6px] backdrop-blur-[5px] flex items-center justify-center transition-all duration-200 cursor-pointer z-10 ${
+            isWishlisted
+              ? "bg-[#2e1065] text-white"
+              : "bg-white/85 text-[#20231e] hover:text-[#2e1065] md:opacity-0 md:group-hover:opacity-100"
+          }`}
+        >
+          <Heart className={`h-3.5 w-3.5 ${isWishlisted ? "fill-current" : ""}`} />
+        </button>
+
+        {/* Quick Add-to-Cart button in top-right */}
         {!isSoldOut && onAddToCart && (
           <button
             type="button"
@@ -102,10 +125,11 @@ export function ProductCard({
           </button>
         )}
 
-        {/* SWOT Bottom-Left Frosted Condition / Spec Pill */}
-        <span className="absolute bottom-[10px] left-[11px] max-w-[calc(100%-22px)] truncate bg-[#202020df] backdrop-blur-[5px] text-white px-[8px] py-[3px] text-[7px] sm:text-[8px] tracking-[0.4px] sm:tracking-[1px] uppercase rounded-[2px] font-medium">
-          {badgeText}
-        </span>
+        {badgeText && (
+          <span className="absolute bottom-[10px] left-[11px] max-w-[calc(100%-22px)] truncate bg-[#202020df] backdrop-blur-[5px] text-white px-[8px] py-[3px] text-[7px] sm:text-[8px] tracking-[0.4px] sm:tracking-[1px] uppercase rounded-[2px] font-medium">
+            {badgeText}
+          </span>
+        )}
       </Link>
 
       {/* SWOT Category Eyebrow */}

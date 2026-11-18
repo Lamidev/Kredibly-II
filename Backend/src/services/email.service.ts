@@ -48,6 +48,53 @@ export class EmailService {
   }
 
   /**
+   * Send 6-digit verification / confirmation / reset code for Storefront Shoppers
+   */
+  static async sendShopperCodeEmail(data: {
+    to: string;
+    fullName: string;
+    storeName: string;
+    code: string;
+    purpose: "verify" | "reset" | "profile";
+  }) {
+    const titles = {
+      verify: "Verify your email address",
+      reset: "Reset your password",
+      profile: "Confirm your profile update",
+    };
+    const descriptions = {
+      verify: `Enter this 6-digit code to finish creating your ${data.storeName} account.`,
+      reset: `Enter this 6-digit code to reset your ${data.storeName} password.`,
+      profile: `Enter this 6-digit code to confirm changes to your ${data.storeName} profile.`,
+    };
+
+    const html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; color: #0f172a; background-color: #ffffff;">
+        <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 24px;">
+          <p style="margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #2e1065;">${data.storeName}</p>
+          <h1 style="color: #0f172a; margin: 8px 0 0 0; font-size: 22px; font-weight: 700;">${titles[data.purpose]}</h1>
+        </div>
+        <div style="background-color: #faf9f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 24px;">
+          <p style="margin: 0 0 12px 0; font-size: 15px;">Hi <strong>${data.fullName}</strong>,</p>
+          <p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155; font-size: 14px;">${descriptions[data.purpose]}</p>
+          <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; text-align: center;">
+            <span style="font-family: monospace; font-size: 28px; font-weight: 800; letter-spacing: 0.25em; color: #2e1065;">${data.code}</span>
+          </div>
+          <p style="margin: 14px 0 0 0; font-size: 12px; color: #64748b;">
+            This code expires in 15 minutes. If you did not request this, please ignore this email.
+          </p>
+        </div>
+      </div>
+    `;
+
+    return this.send({
+      to: data.to,
+      subject: `${data.code} is your ${data.storeName} verification code`,
+      html,
+    });
+  }
+
+  /**
    * Send 6-digit email verification code on merchant signup
    */
   static async sendEmailVerificationCode(data: {

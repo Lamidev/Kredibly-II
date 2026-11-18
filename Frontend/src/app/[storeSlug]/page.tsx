@@ -3,12 +3,14 @@ import { notFound } from "next/navigation";
 import { StorefrontClient } from "./StorefrontClient";
 import { getImageUrl } from "@/lib/utils";
 
+export const dynamic = "force-dynamic";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 async function getStore(storeSlug: string) {
   try {
     const res = await fetch(`${API_URL}/public/stores/${storeSlug}`, {
-      next: { revalidate: 30 }, // ISR edge caching
+      cache: "no-store",
     });
 
     if (!res.ok) return null;
@@ -33,11 +35,13 @@ export async function generateMetadata({
     };
   }
 
-  const title = `${store.name} — Shop on Kredibly`;
+  const title = `${store.name} — kredibly.shop/${params.storeSlug}`;
   const description =
     store.description ||
-    `Browse authentic products from ${store.name}. Enjoy instant checkout and verified payments on Kredibly.`;
-  const ogImage = store.logoUrl ? getImageUrl(store.logoUrl) : "";
+    `Browse authentic products from ${store.name}. Enjoy instant checkout and fast delivery on Kredibly.`;
+  const ogImage = store.logoUrl
+    ? getImageUrl(store.logoUrl)
+    : "https://usekredibly.com/krediblyoriginal.jpeg";
 
   return {
     title,
@@ -52,13 +56,20 @@ export async function generateMetadata({
       locale: "en_NG",
       type: "website",
       url: `https://kredibly.shop/${params.storeSlug}`,
-      images: ogImage ? [{ url: ogImage }] : [],
+      images: [
+        {
+          url: ogImage,
+          width: 600,
+          height: 600,
+          alt: `${store.name} logo`,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: ogImage ? [ogImage] : [],
+      images: [ogImage],
     },
   };
 }

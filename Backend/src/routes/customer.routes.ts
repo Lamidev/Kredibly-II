@@ -58,6 +58,7 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
         address: c.address,
         city: c.city,
         state: c.state,
+        isRegistered: c.isRegistered,
         createdAt: c.createdAt,
         totalOrders: c.orders.length,
         paidOrdersCount: paidOrders.length,
