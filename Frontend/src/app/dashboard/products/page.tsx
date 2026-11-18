@@ -5,9 +5,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { api, API_BASE_URL } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, getImageUrl } from "@/lib/utils";
 import { compressProductImage } from "@/lib/compressor";
 import {
   ArrowLeft,
@@ -36,6 +36,13 @@ interface Variant {
   stockQuantity: number;
 }
 
+interface ProductAttribute {
+  label: string;
+  value: string;
+}
+
+const DETAIL_PRESETS = ["Brand", "Condition", "Material", "Weight / Size"] as const;
+
 interface Product {
   id: string;
   title: string;
@@ -43,6 +50,7 @@ interface Product {
   description?: string;
   category?: string | null;
   brand?: string | null;
+  attributes?: ProductAttribute[] | null;
   isFeatured?: boolean;
   basePrice: number | string;
   comparePrice?: number | string | null;
@@ -74,7 +82,7 @@ export default function ProductsPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
-  const [brand, setBrand] = useState("");
+  const [attributes, setAttributes] = useState<ProductAttribute[]>([]);
   const [isFeatured, setIsFeatured] = useState(false);
   const [basePrice, setBasePrice] = useState("");
   const [comparePrice, setComparePrice] = useState("");
@@ -156,7 +164,7 @@ export default function ProductsPage() {
     if (previewToRemove && !previewToRemove.startsWith("blob:")) {
       // It's an existing saved URL
       setExistingImages((prev) =>
-        prev.filter((url) => getFullImageUrl(url) !== previewToRemove)
+        prev.filter((url) => getImageUrl(url) !== previewToRemove)
       );
     } else {
       // It's a newly selected file (calculate index within selectedFiles)
@@ -175,7 +183,7 @@ export default function ProductsPage() {
     setTitle("");
     setDescription("");
     setCategory("");
-    setBrand("");
+    setAttributes([]);
     setIsFeatured(false);
     setBasePrice("");
     setComparePrice("");
@@ -198,7 +206,16 @@ export default function ProductsPage() {
     setTitle(product.title);
     setDescription(product.description || "");
     setCategory(product.category || "");
-    setBrand(product.brand || "");
+    const existingAttrs = Array.isArray(product.attributes)
+      ? product.attributes.filter((a) => a?.label && a?.value)
+      : [];
+    if (existingAttrs.length > 0) {
+      setAttributes(existingAttrs);
+    } else if (product.brand) {
+      setAttributes([{ label: "Brand", value: product.brand }]);
+    } else {
+      setAttributes([]);
+    }
     setIsFeatured(Boolean(product.isFeatured));
     setBasePrice(String(product.basePrice));
     setComparePrice(product.comparePrice ? String(product.comparePrice) : "");
@@ -215,7 +232,7 @@ export default function ProductsPage() {
     );
     const savedImgs = product.images || [];
     setExistingImages(savedImgs);
-    setImagePreviews(savedImgs.map((img) => getFullImageUrl(img)));
+    setImagePreviews(savedImgs.map((img) => getImageUrl(img)));
     setSelectedFiles([]);
     setCompressionStats("");
     setErrorMsg("");
@@ -252,9 +269,57 @@ export default function ProductsPage() {
     setVariants((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const addAttributeRow = (presetLabel?: string) => {
+    if (
+      presetLabel &&
+      attributes.some(
+        (a) => a.label.trim().toLowerCase() === presetLabel.toLowerCase()
+      )
+    ) {
+      return;
+    }
+    setAttributes((prev) => [...prev, { label: presetLabel || "", value: "" }]);
+  };
+
+  const removeAttributeRow = (index: number) => {
+    setAttributes((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const applyVariantTemplate = (template: "size" | "color" | "storage" | "pack") => {
+    const defaultPrice = Number(basePrice) || 0;
+    const templates: Record<typeof template, Variant[]> = {
+      size: [
+        { name: "Size: S", price: defaultPrice, stockQuantity: 5 },
+        { name: "Size: M", price: defaultPrice, stockQuantity: 5 },
+        { name: "Size: L", price: defaultPrice, stockQuantity: 5 },
+      ],
+      color: [
+        { name: "Color: Black", price: defaultPrice, stockQuantity: 5 },
+        { name: "Color: White", price: defaultPrice, stockQuantity: 5 },
+      ],
+      storage: [
+        { name: "128GB", price: defaultPrice, stockQuantity: 3 },
+        { name: "256GB", price: defaultPrice, stockQuantity: 3 },
+      ],
+      pack: [
+        { name: "Single Pack", price: defaultPrice, stockQuantity: 10 },
+        { name: "Bundle (3x)", price: defaultPrice * 3, stockQuantity: 5 },
+      ],
+    };
+    setVariants(templates[template]);
+  };
+
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
+
+    if (description.trim().length < 5) {
+      const msg = "Please add a short product description (at least 5 characters).";
+      setErrorMsg(msg);
+      toast.error(msg);
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -272,12 +337,21 @@ export default function ProductsPage() {
 
       const finalImages = [...existingImages, ...uploadedUrls].slice(0, 2);
 
+      const cleanedAttributes = attributes
+        .map((a) => ({ label: a.label.trim(), value: a.value.trim() }))
+        .filter((a) => a.label.length > 0 && a.value.length > 0);
+
+      const brandAttr = cleanedAttributes.find(
+        (a) => a.label.toLowerCase() === "brand"
+      );
+
       // 2. Create or update product in database
       const payload = {
-        title,
-        description,
+        title: title.trim(),
+        description: description.trim(),
         category: category.trim() || null,
-        brand: brand.trim() || null,
+        brand: brandAttr ? brandAttr.value : null,
+        attributes: cleanedAttributes.length > 0 ? cleanedAttributes : null,
         isFeatured,
         basePrice: Number(basePrice),
         comparePrice: comparePrice ? Number(comparePrice) : null,
@@ -333,11 +407,7 @@ export default function ProductsPage() {
     }
   };
 
-  const getFullImageUrl = (path: string) => {
-    if (path.startsWith("http")) return path;
-    const base = API_BASE_URL.replace("/api", "");
-    return `${base}${path}`;
-  };
+  const getFullImageUrl = (path: string) => getImageUrl(path);
 
   return (
     <div className="space-y-6">
@@ -394,7 +464,7 @@ export default function ProductsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
             {products.map((product) => (
               <Card
                 key={product.id}
@@ -512,155 +582,196 @@ export default function ProductsPage() {
         )}
       </div>
 
-      {/* Add Product Modal */}
+      {/* Slide-Over Product Sheet (Full-screen on mobile, right sheet on desktop) */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl my-8 space-y-5">
-            <div className="flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* Backdrop */}
+          <div
+            onClick={() => !submitting && setModalOpen(false)}
+            className="fixed inset-0 bg-slate-950/40 backdrop-blur-[2px] transition-opacity"
+          />
+
+          {/* Sheet Panel */}
+          <div className="relative z-10 w-full sm:max-w-lg h-full bg-white border-l border-slate-200 shadow-2xl flex flex-col">
+            {/* Sticky Header */}
+            <div className="px-5 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
               <div>
-                <h3 className="text-lg font-bold text-white">
+                <h3 className="font-display text-lg font-bold text-[#0f172a] tracking-tight">
                   {editingProduct ? "Edit Product" : "Add New Product"}
                 </h3>
-                <p className="text-xs text-slate-400">
-                  Quick mobile listing (max 2 compressed images).
+                <p className="text-xs text-slate-500">
+                  {editingProduct
+                    ? "Update your product details and pricing"
+                    : "Create a new product listing for your store"}
                 </p>
               </div>
               <button
-                onClick={() => setModalOpen(false)}
-                className="text-slate-400 hover:text-white"
+                type="button"
+                onClick={() => !submitting && setModalOpen(false)}
+                aria-label="Close"
+                className="h-8 w-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {errorMsg && (
-              <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{errorMsg}</span>
-              </div>
-            )}
+            {/* Scrollable Form Body */}
+            <form
+              id="product-sheet-form"
+              onSubmit={handleCreateProduct}
+              className="flex-1 overflow-y-auto px-5 sm:px-6 py-5 space-y-5"
+            >
+              {errorMsg && (
+                <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
 
-            <form onSubmit={handleCreateProduct} className="space-y-4">
-              {/* Image Uploader */}
+              {/* 1. Product Images (Max 2) */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                  Product Photos (Max 2)
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  {imagePreviews.map((preview, idx) => (
-                    <div
-                      key={idx}
-                      className="relative aspect-square rounded-2xl overflow-hidden border border-slate-800 bg-slate-950"
-                    >
-                      <img
-                        src={preview}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(idx)}
-                        className="absolute top-2 right-2 h-6 w-6 rounded-full bg-slate-950/80 text-white flex items-center justify-center hover:bg-red-500 transition"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-
-                  {imagePreviews.length < 2 && (
-                    <label className="aspect-square rounded-2xl border-2 border-dashed border-slate-800 hover:border-brand-500/50 bg-slate-950/50 flex flex-col items-center justify-center gap-2 cursor-pointer transition p-3 text-center">
-                      <UploadCloud className="w-6 h-6 text-slate-500" />
-                      <span className="text-[11px] text-slate-400 font-medium">
-                        {compressing ? "Optimizing..." : "Add Photo"}
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleImageSelect}
-                        disabled={compressing}
-                      />
-                    </label>
-                  )}
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                    Product Images (Max 2)
+                  </label>
+                  <span className="text-[11px] text-slate-400 font-medium">
+                    {imagePreviews.length}/2 Uploaded
+                  </span>
                 </div>
 
+                <div className="grid grid-cols-2 gap-3 mb-2.5">
+                  {[0, 1].map((slotIdx) => {
+                    const preview = imagePreviews[slotIdx];
+                    return preview ? (
+                      <div
+                        key={slotIdx}
+                        className="relative aspect-[4/3] rounded-xl overflow-hidden border border-slate-200 bg-slate-50"
+                      >
+                        <img
+                          src={preview}
+                          alt={`Product slot ${slotIdx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(slotIdx)}
+                          className="absolute top-2 right-2 h-6 w-6 rounded-full bg-slate-900/80 text-white flex items-center justify-center hover:bg-red-600 transition cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        key={slotIdx}
+                        className="aspect-[4/3] rounded-xl border border-dashed border-slate-200 bg-slate-50/70 flex flex-col items-center justify-center text-center p-2"
+                      >
+                        <Package className="w-4 h-4 text-slate-300 mb-1" />
+                        <span className="text-[11px] font-medium text-slate-400">
+                          {slotIdx === 0 ? "Slot 1 (Main)" : "Slot 2"}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {imagePreviews.length < 2 && (
+                  <label className="w-full rounded-xl border border-dashed border-slate-300 hover:border-[#2e1065] bg-slate-50/60 hover:bg-slate-50 flex flex-col items-center justify-center gap-1 py-4 px-3 cursor-pointer transition text-center">
+                    <UploadCloud className="w-5 h-5 text-[#2e1065]" />
+                    <span className="text-xs font-semibold text-[#0f172a]">
+                      {compressing
+                        ? "Optimizing image..."
+                        : `Upload Image (Slot ${imagePreviews.length + 1})`}
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      Click to choose a photo (PNG, JPG, WebP)
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageSelect}
+                      disabled={compressing}
+                    />
+                  </label>
+                )}
+
                 {compressionStats && (
-                  <p className="text-[11px] text-brand-400 mt-2 font-mono flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-brand-500" />
+                  <p className="text-[11px] text-[#2e1065] mt-2 font-mono flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" />
                     {compressionStats}
                   </p>
                 )}
               </div>
 
-              {/* Title */}
+              {/* 2. Title */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Product Title *
+                <label className="block text-xs font-semibold text-[#0f172a] mb-1.5">
+                  Product Title <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Vintage Denim Jacket or iPhone 16 Pro"
+                  placeholder="e.g. Silk Midi Dress, iPhone 15 Pro, Red Velvet Cake"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-500 text-sm"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065] text-sm"
                 />
               </div>
 
-              {/* Custom Category & Brand */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Custom Category
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Sneakers, Laptops, Wigs"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-500 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Brand / Condition Tag
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Apple, Nike, Brand New"
-                    value={brand}
-                    onChange={(e) => setBrand(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-500 text-sm"
-                  />
-                </div>
+              {/* 3. Description (Required, directly after Title) */}
+              <div>
+                <label className="block text-xs font-semibold text-[#0f172a] mb-1.5">
+                  Description <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  minLength={5}
+                  placeholder="Describe what you're selling — key features, material, size, or what comes in the box..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065] text-sm resize-none"
+                />
               </div>
 
-              {/* Quick 1-Tap Chips for Existing Categories */}
-              {existingCategories.length > 0 && (
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[11px] text-slate-500">Quick select:</span>
-                  {existingCategories.map((cat) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => setCategory(cat)}
-                      className={`px-2 py-0.5 rounded-md text-[11px] font-medium border transition ${
-                        category === cat
-                          ? "bg-purple-900 border-purple-500 text-white"
-                          : "bg-slate-900 border-slate-800 text-slate-400 hover:text-white"
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              )}
+              {/* 4. Category (keeps storefront tabs organized) */}
+              <div>
+                <label className="block text-xs font-semibold text-[#0f172a] mb-1.5">
+                  Category
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Dresses, Skincare, Phones, Pastries"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065] text-sm"
+                />
+                {existingCategories.length > 0 && (
+                  <div className="flex items-center gap-1.5 flex-wrap mt-2">
+                    <span className="text-[11px] text-slate-400">Your categories:</span>
+                    {existingCategories.map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setCategory(cat)}
+                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition cursor-pointer ${
+                          category === cat
+                            ? "bg-[#2e1065] border-[#2e1065] text-white"
+                            : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-              {/* Pricing */}
+              {/* 5. Pricing & Stock */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Selling Price (₦) *
+                  <label className="block text-xs font-semibold text-[#0f172a] mb-1.5">
+                    Price (₦) <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -669,27 +780,26 @@ export default function ProductsPage() {
                     placeholder="15000"
                     value={basePrice}
                     onChange={(e) => setBasePrice(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-500 text-sm"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065] text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Compare Price (₦)
+                  <label className="block text-xs font-semibold text-[#0f172a] mb-1.5">
+                    Compare-at Price (₦)
                   </label>
                   <input
                     type="number"
-                    placeholder="20000 (Slash)"
+                    placeholder="Optional old price"
                     value={comparePrice}
                     onChange={(e) => setComparePrice(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-500 text-sm"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065] text-sm"
                   />
                 </div>
               </div>
 
-              {/* Stock */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Available Quantity in Stock
+                <label className="block text-xs font-semibold text-[#0f172a] mb-1.5">
+                  Stock Quantity <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -697,122 +807,230 @@ export default function ProductsPage() {
                   required
                   value={stockQuantity}
                   onChange={(e) => setStockQuantity(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-500 text-sm"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065] text-sm"
                 />
               </div>
 
-              {/* Description */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Description (Optional)
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Material, fit, or special instructions..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-500 text-sm resize-none"
-                />
-              </div>
+              {/* 6. More Details (Optional 1-tap dynamic attributes) */}
+              <div className="pt-4 border-t border-slate-100 space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold text-[#0f172a]">
+                    More Details (Optional)
+                  </label>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Tap to add only what fits your product — skip if not needed.
+                  </p>
+                </div>
 
-              {/* Variants Toggle */}
-              <div className="pt-2 border-t border-slate-800/80">
-                <label className="flex items-center justify-between cursor-pointer">
-                  <span className="text-xs font-semibold text-slate-300">
-                    This product has variants (Sizes, Colors)
-                  </span>
-                  <input
-                    type="checkbox"
-                    checked={hasVariants}
-                    onChange={(e) => setHasVariants(e.target.checked)}
-                    className="h-4 w-4 rounded accent-brand-500"
-                  />
-                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {DETAIL_PRESETS.map((preset) => {
+                    const alreadyAdded = attributes.some(
+                      (a) => a.label.trim().toLowerCase() === preset.toLowerCase()
+                    );
+                    return (
+                      <button
+                        key={preset}
+                        type="button"
+                        disabled={alreadyAdded}
+                        onClick={() => addAttributeRow(preset)}
+                        className="px-2.5 py-1 rounded-full text-[11px] font-medium border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 disabled:opacity-40 transition cursor-pointer"
+                      >
+                        + {preset}
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    onClick={() => addAttributeRow("")}
+                    className="px-2.5 py-1 rounded-full text-[11px] font-medium border border-dashed border-slate-300 bg-white hover:border-[#2e1065] text-[#2e1065] transition cursor-pointer"
+                  >
+                    + Custom Detail
+                  </button>
+                </div>
 
-                {hasVariants && (
-                  <div className="mt-3 space-y-2.5 bg-slate-950/80 p-3 rounded-2xl border border-slate-800">
-                    {variants.map((v, i) => (
-                      <div key={i} className="flex items-center gap-2">
+                {attributes.length > 0 && (
+                  <div className="space-y-2">
+                    {attributes.map((attr, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
                         <input
                           type="text"
-                          placeholder="e.g. Size 42 / Black"
-                          value={v.name}
+                          placeholder="Detail (e.g. Material)"
+                          value={attr.label}
                           onChange={(e) => {
-                            const updated = [...variants];
-                            updated[i].name = e.target.value;
-                            setVariants(updated);
+                            const next = [...attributes];
+                            next[idx] = { ...next[idx], label: e.target.value };
+                            setAttributes(next);
                           }}
-                          className="flex-1 px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
+                          className="w-2/5 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065]"
                         />
                         <input
-                          type="number"
-                          placeholder="Price"
-                          value={v.price}
+                          type="text"
+                          placeholder="Value (e.g. 100% Cotton)"
+                          value={attr.value}
                           onChange={(e) => {
-                            const updated = [...variants];
-                            updated[i].price = Number(e.target.value);
-                            setVariants(updated);
+                            const next = [...attributes];
+                            next[idx] = { ...next[idx], value: e.target.value };
+                            setAttributes(next);
                           }}
-                          className="w-20 px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
+                          className="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065]"
                         />
-                        <input
-                          type="number"
-                          placeholder="Qty"
-                          value={v.stockQuantity}
-                          onChange={(e) => {
-                            const updated = [...variants];
-                            updated[i].stockQuantity = Number(e.target.value);
-                            setVariants(updated);
-                          }}
-                          className="w-16 px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
-                        />
-                        {variants.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeVariantRow(i)}
-                            className="text-slate-500 hover:text-red-400"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeAttributeRow(idx)}
+                          className="h-8 w-8 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     ))}
-                    <button
-                      type="button"
-                      onClick={addVariantRow}
-                      className="text-xs text-brand-400 font-semibold hover:underline flex items-center gap-1 pt-1"
-                    >
-                      <Plus className="w-3 h-3" /> Add another variant
-                    </button>
                   </div>
                 )}
               </div>
 
-              {/* Submit Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="px-4 py-2.5 text-xs font-semibold text-slate-400 hover:text-white transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting || compressing}
-                  className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-brand-500/20"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Publishing...
-                    </>
-                  ) : (
-                    editingProduct ? "Save Changes" : "Publish Product"
-                  )}
-                </button>
+              {/* 7. Product Options / Variants */}
+              <div className="pt-4 border-t border-slate-100 space-y-3">
+                <label className="flex items-center justify-between cursor-pointer">
+                  <div>
+                    <span className="block text-xs font-semibold text-[#0f172a]">
+                      This product has options (Size, Color, Pack, etc.)
+                    </span>
+                    <span className="block text-[11px] text-slate-500">
+                      Turn on if customers need to pick a size, color, or spec.
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={hasVariants}
+                    onChange={(e) => setHasVariants(e.target.checked)}
+                    className="h-4 w-4 rounded accent-[#2e1065] cursor-pointer"
+                  />
+                </label>
+
+                {hasVariants && (
+                  <div className="space-y-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[11px] text-slate-500 font-medium">
+                        Quick templates:
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => applyVariantTemplate("size")}
+                        className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[11px] font-medium text-slate-700 hover:border-[#2e1065] cursor-pointer"
+                      >
+                        Size (S, M, L)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyVariantTemplate("color")}
+                        className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[11px] font-medium text-slate-700 hover:border-[#2e1065] cursor-pointer"
+                      >
+                        Color
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyVariantTemplate("storage")}
+                        className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[11px] font-medium text-slate-700 hover:border-[#2e1065] cursor-pointer"
+                      >
+                        Storage
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyVariantTemplate("pack")}
+                        className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[11px] font-medium text-slate-700 hover:border-[#2e1065] cursor-pointer"
+                      >
+                        Pack / Bundle
+                      </button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {variants.map((v, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            placeholder="Option (e.g. Size: M)"
+                            value={v.name}
+                            onChange={(e) => {
+                              const updated = [...variants];
+                              updated[i].name = e.target.value;
+                              setVariants(updated);
+                            }}
+                            className="flex-1 px-2.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-[#0f172a]"
+                          />
+                          <input
+                            type="number"
+                            placeholder="Price"
+                            value={v.price}
+                            onChange={(e) => {
+                              const updated = [...variants];
+                              updated[i].price = Number(e.target.value);
+                              setVariants(updated);
+                            }}
+                            className="w-24 px-2.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-[#0f172a]"
+                          />
+                          <input
+                            type="number"
+                            placeholder="Qty"
+                            value={v.stockQuantity}
+                            onChange={(e) => {
+                              const updated = [...variants];
+                              updated[i].stockQuantity = Number(e.target.value);
+                              setVariants(updated);
+                            }}
+                            className="w-16 px-2.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-[#0f172a]"
+                          />
+                          {variants.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeVariantRow(i)}
+                              className="text-slate-400 hover:text-red-600 cursor-pointer"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={addVariantRow}
+                      className="text-xs text-[#2e1065] font-semibold hover:underline flex items-center gap-1 pt-0.5 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add another option
+                    </button>
+                  </div>
+                )}
               </div>
             </form>
+
+            {/* Sticky Footer */}
+            <div className="px-5 sm:px-6 py-4 border-t border-slate-100 bg-white flex items-center justify-end gap-3 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setModalOpen(false)}
+                disabled={submitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                form="product-sheet-form"
+                disabled={submitting || compressing}
+                className="bg-[#2e1065] hover:bg-[#3b0764] text-white"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : editingProduct ? (
+                  "Save Changes"
+                ) : (
+                  "Add Product"
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       )}

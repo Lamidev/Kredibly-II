@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { AlignJustify, ExternalLink, UserCircle } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
+import { getImageUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 export function AdminHeader({ setOpen }: { setOpen: (val: boolean) => void }) {
   const { user, store } = useAuthStore();
   const storeSlug = store?.slug || "mystore";
+  const resolvedLogo = getImageUrl(store?.logoUrl) || "/kredibly-k-icon.png";
 
   return (
     <header className="flex items-center justify-between px-4 sm:px-8 py-3 bg-white border-b border-slate-200 sticky top-0 z-20">
@@ -26,8 +28,8 @@ export function AdminHeader({ setOpen }: { setOpen: (val: boolean) => void }) {
         {/* Mobile Store Name */}
         <div className="flex lg:hidden items-center gap-2 min-w-0">
           <img
-            src="/kredibly-k-icon.png"
-            alt="Kredibly"
+            src={resolvedLogo}
+            alt={store?.name || "Kredibly"}
             className="w-7 h-7 object-cover rounded-lg shrink-0"
           />
           <span className="text-xs font-bold text-[#0f172a] truncate max-w-[140px]">

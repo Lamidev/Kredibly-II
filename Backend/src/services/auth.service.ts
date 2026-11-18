@@ -56,9 +56,16 @@ export class AuthService {
       candidateSlug = `${candidateSlug}-${randomSuffix}`;
     }
 
-    // 3. Hash password
+    // 3. Hash password & generate 6-digit email verification code
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(data.password, salt);
+
+    const rawCode = String(crypto.randomInt(100000, 1000000));
+    const emailVerifyCodeHash = crypto
+      .createHash("sha256")
+      .update(rawCode)
+      .digest("hex");
+    const emailVerifyExpires = new Date(Date.now() + 15 * 60 * 1000);
 
     // 4. Create User, Store, and Wallet in an atomic transaction
     const result = await prisma.$transaction(async (tx) => {
@@ -69,6 +76,9 @@ export class AuthService {
           phoneNumber: data.phoneNumber.trim(),
           passwordHash,
           role: "MERCHANT",
+          emailVerified: false,
+          emailVerifyCodeHash,
+          emailVerifyExpires,
         },
       });
 
@@ -94,21 +104,85 @@ export class AuthService {
       return { user: newUser, store: newStore, wallet: newWallet };
     });
 
-    // Dispatch welcome email non-blocking
-    EmailService.sendWelcomeEmail({
+    // Dispatch 6-digit verification code email non-blocking
+    EmailService.sendEmailVerificationCode({
       to: result.user.email,
       fullName: result.user.fullName,
-      storeName: result.store.name,
-      storeSlug: result.store.slug,
-    }).catch((err) => console.error("Welcome email dispatch failed:", err));
+      code: rawCode,
+    }).catch((err) => console.error("Verification email dispatch failed:", err));
 
-    // 5. Generate JWT token
+    return {
+      requiresEmailVerification: true,
+      email: result.user.email,
+    };
+  }
+
+  /**
+   * Verify merchant email with 6-digit code, issue JWT, and send Welcome email
+   */
+  static async verifyEmail(email: string, code: string) {
+    const cleanEmail = email.toLowerCase().trim();
+    const codeHash = crypto.createHash("sha256").update(code.trim()).digest("hex");
+
+    const user = await prisma.user.findUnique({
+      where: { email: cleanEmail },
+      include: {
+        stores: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            whatsappNumber: true,
+            currency: true,
+            subscriptionTier: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new AppError("Account not found", 404);
+    }
+
+    if (user.emailVerified) {
+      throw new AppError("Email is already verified. Please log in.", 400);
+    }
+
+    if (
+      !user.emailVerifyCodeHash ||
+      !user.emailVerifyExpires ||
+      user.emailVerifyExpires.getTime() < Date.now() ||
+      user.emailVerifyCodeHash !== codeHash
+    ) {
+      throw new AppError("Invalid or expired verification code", 400);
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        emailVerifyCodeHash: null,
+        emailVerifyExpires: null,
+      },
+    });
+
+    const primaryStore = user.stores[0];
+
+    if (primaryStore) {
+      EmailService.sendWelcomeEmail({
+        to: user.email,
+        fullName: user.fullName,
+        storeName: primaryStore.name,
+        storeSlug: primaryStore.slug,
+      }).catch((err) => console.error("Welcome email dispatch failed:", err));
+    }
+
     const token = jwt.sign(
       {
-        id: result.user.id,
-        email: result.user.email,
-        role: result.user.role,
-        storeId: result.store.id,
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        storeId: primaryStore?.id,
       },
       ENV.JWT_SECRET,
       { expiresIn: "7d" }
@@ -117,21 +191,53 @@ export class AuthService {
     return {
       token,
       user: {
-        id: result.user.id,
-        fullName: result.user.fullName,
-        email: result.user.email,
-        phoneNumber: result.user.phoneNumber,
-        role: result.user.role,
+        id: user.id,
+        fullName: user.fullName,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        role: user.role,
       },
-      store: {
-        id: result.store.id,
-        name: result.store.name,
-        slug: result.store.slug,
-        whatsappNumber: result.store.whatsappNumber,
-        currency: result.store.currency,
-        subscriptionTier: result.store.subscriptionTier,
-      },
+      store: primaryStore || null,
     };
+  }
+
+  /**
+   * Resend 6-digit email verification code
+   */
+  static async resendVerificationCode(email: string) {
+    const cleanEmail = email.toLowerCase().trim();
+    const user = await prisma.user.findUnique({
+      where: { email: cleanEmail },
+    });
+
+    if (!user) {
+      throw new AppError("Account not found", 404);
+    }
+
+    if (user.emailVerified) {
+      throw new AppError("Email is already verified. Please log in.", 400);
+    }
+
+    const rawCode = String(crypto.randomInt(100000, 1000000));
+    const emailVerifyCodeHash = crypto
+      .createHash("sha256")
+      .update(rawCode)
+      .digest("hex");
+    const emailVerifyExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerifyCodeHash,
+        emailVerifyExpires,
+      },
+    });
+
+    await EmailService.sendEmailVerificationCode({
+      to: user.email,
+      fullName: user.fullName,
+      code: rawCode,
+    });
   }
 
   /**
@@ -178,6 +284,14 @@ export class AuthService {
     const isMatch = await bcrypt.compare(data.password, user.passwordHash);
     if (!isMatch) {
       throw new AppError("Invalid email/phone or password", 401);
+    }
+
+    if (!user.emailVerified) {
+      await AuthService.resendVerificationCode(user.email);
+      throw new AppError(
+        "Please verify your email address. We just sent a 6-digit code to your inbox.",
+        403
+      );
     }
 
     const primaryStore = user.stores[0];

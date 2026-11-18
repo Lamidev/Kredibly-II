@@ -318,13 +318,15 @@ export default function WalletPage() {
 
           {/* Metric Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="border-[#2e1065]/20">
+            <Card>
               <CardContent className="p-5 sm:p-6 space-y-2">
-                <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
+                <div className="flex items-center justify-between text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
                   <span>Available Balance</span>
-                  <TrendingUp className="w-4 h-4 text-emerald-600" />
+                  <span className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200/70 flex items-center justify-center text-[#2e1065]">
+                    <TrendingUp className="w-3.5 h-3.5" />
+                  </span>
                 </div>
-                <p className="text-3xl font-extrabold text-[#0f172a]">
+                <p className="font-display text-3xl font-bold text-[#0f172a]">
                   {formatCurrency(available)}
                 </p>
                 <p className="text-[11px] text-slate-500">
@@ -335,11 +337,13 @@ export default function WalletPage() {
 
             <Card>
               <CardContent className="p-5 sm:p-6 space-y-2">
-                <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
+                <div className="flex items-center justify-between text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
                   <span>In Escrow Hold</span>
-                  <ShieldCheck className="w-4 h-4 text-amber-500" />
+                  <span className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200/70 flex items-center justify-center text-[#0f172a]">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                  </span>
                 </div>
-                <p className="text-3xl font-extrabold text-amber-600">
+                <p className="font-display text-3xl font-bold text-[#0f172a]">
                   {formatCurrency(escrow)}
                 </p>
                 <p className="text-[11px] text-slate-500">
@@ -350,9 +354,11 @@ export default function WalletPage() {
 
             <Card>
               <CardContent className="p-5 sm:p-6 flex flex-col justify-between gap-3 h-full">
-                <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
+                <div className="flex items-center justify-between text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
                   <span>Payout Bank Account</span>
-                  <Building2 className="w-4 h-4 text-[#2e1065]" />
+                  <span className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200/70 flex items-center justify-center text-[#0f172a]">
+                    <Building2 className="w-3.5 h-3.5" />
+                  </span>
                 </div>
 
                 {hasBankDetails ? (

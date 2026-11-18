@@ -48,6 +48,48 @@ export class EmailService {
   }
 
   /**
+   * Send 6-digit email verification code on merchant signup
+   */
+  static async sendEmailVerificationCode(data: {
+    to: string;
+    fullName: string;
+    code: string;
+  }) {
+    const html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; color: #0f172a; background-color: #ffffff;">
+        <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 24px;">
+          <p style="margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #2e1065;">Kredibly</p>
+          <h1 style="color: #0f172a; margin: 8px 0 0 0; font-size: 22px; font-weight: 700;">Verify your email address</h1>
+          <p style="color: #64748b; font-size: 14px; margin: 6px 0 0 0;">Enter the 6-digit code below to activate your merchant account.</p>
+        </div>
+
+        <div style="background-color: #faf9f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 24px;">
+          <p style="margin: 0 0 12px 0; font-size: 15px;">Hi <strong>${data.fullName}</strong>,</p>
+          <p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155; font-size: 14px;">
+            Use this verification code to confirm your email address and launch your Kredibly store:
+          </p>
+          <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; text-align: center;">
+            <span style="font-family: monospace; font-size: 28px; font-weight: 800; letter-spacing: 0.25em; color: #2e1065;">${data.code}</span>
+          </div>
+          <p style="margin: 14px 0 0 0; font-size: 12px; color: #64748b;">
+            This code expires in 15 minutes. If you did not create a Kredibly account, you can safely ignore this email.
+          </p>
+        </div>
+
+        <p style="color: #94a3b8; font-size: 11px; text-align: center; margin: 0;">
+          Kredibly Technologies Ltd • Digital Storefront &amp; Escrow Platform
+        </p>
+      </div>
+    `;
+
+    return this.send({
+      to: data.to,
+      subject: `${data.code} is your Kredibly verification code`,
+      html,
+    });
+  }
+
+  /**
    * Send welcome email when a new merchant registers and sets up their store
    */
   static async sendWelcomeEmail(data: {

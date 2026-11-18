@@ -6,6 +6,8 @@ import {
   bankDetailsSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  verifyEmailSchema,
+  resendVerificationSchema,
 } from "../validators/auth.validator";
 
 export class AuthController {
@@ -16,8 +18,37 @@ export class AuthController {
 
       return res.status(201).json({
         success: true,
-        message: "Merchant account and store created successfully",
+        message: "Verification code sent to your email address",
         data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async verifyEmail(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email, code } = verifyEmailSchema.parse(req.body);
+      const result = await AuthService.verifyEmail(email, code);
+
+      return res.status(200).json({
+        success: true,
+        message: "Email verified successfully",
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async resendVerification(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email } = resendVerificationSchema.parse(req.body);
+      await AuthService.resendVerificationCode(email);
+
+      return res.status(200).json({
+        success: true,
+        message: "Verification code resent to your email",
       });
     } catch (error) {
       next(error);

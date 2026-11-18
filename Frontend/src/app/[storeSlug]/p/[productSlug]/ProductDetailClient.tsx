@@ -6,7 +6,7 @@ import { useCartStore } from "@/store/useCartStore";
 import { CartDrawer } from "@/components/storefront/CartDrawer";
 import { FloatingCartBar } from "@/components/storefront/FloatingCartBar";
 import { CheckoutDrawer } from "@/components/storefront/CheckoutDrawer";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, getImageUrl } from "@/lib/utils";
 import { API_BASE_URL } from "@/lib/api";
 import {
   ArrowLeft,
@@ -31,6 +31,7 @@ interface Product {
   description?: string;
   category?: string | null;
   brand?: string | null;
+  attributes?: Array<{ label: string; value: string }> | null;
   basePrice: number | string;
   comparePrice?: number | string | null;
   images: string[];
@@ -67,12 +68,7 @@ export function ProductDetailClient({
   const [addedAnimation, setAddedAnimation] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
 
-  const getFullImageUrl = (path?: string) => {
-    if (!path) return "";
-    if (path.startsWith("http")) return path;
-    const base = API_BASE_URL.replace("/api", "");
-    return `${base}${path}`;
-  };
+  const getFullImageUrl = (path?: string) => getImageUrl(path);
 
   const activePrice = selectedVariant
     ? Number(selectedVariant.price)
@@ -135,11 +131,17 @@ export function ProductDetailClient({
           </Link>
 
           <button
+            type="button"
             onClick={openCart}
-            className="px-3.5 py-2 rounded-[6px] bg-[#2e1065] hover:bg-[#3b0764] text-white transition relative flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
+            aria-label="Open shopping bag"
+            className="relative p-2.5 rounded-[6px] bg-[#f3f4ef] hover:bg-[#e6e8e1] border border-[#daddd4] text-[#20231e] transition flex items-center justify-center cursor-pointer"
           >
-            <ShoppingBag className="w-3.5 h-3.5" />
-            <span className="font-mono font-bold">{cartCount}</span>
+            <ShoppingBag className="w-4 h-4" />
+            {cartCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#2e1065] text-white text-[10px] font-mono font-bold flex items-center justify-center leading-none shadow-sm">
+                {cartCount}
+              </span>
+            )}
           </button>
         </div>
       </nav>
@@ -316,15 +318,45 @@ export function ProductDetailClient({
               </div>
             </div>
 
-            {/* Description */}
-            {product.description && (
-              <div className="space-y-2 pt-4 border-t border-[#daddd4]">
-                <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#62665d]">
-                  Product Details &amp; Specifications
-                </h3>
-                <p className="text-xs sm:text-sm text-[#20231e] leading-relaxed whitespace-pre-line">
-                  {product.description}
-                </p>
+            {/* Description & Specifications */}
+            {(product.description ||
+              (Array.isArray(product.attributes) &&
+                product.attributes.length > 0)) && (
+              <div className="space-y-4 pt-4 border-t border-[#daddd4]">
+                {product.description && (
+                  <div className="space-y-2">
+                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#62665d]">
+                      Product Description
+                    </h3>
+                    <p className="text-xs sm:text-sm text-[#20231e] leading-relaxed whitespace-pre-line">
+                      {product.description}
+                    </p>
+                  </div>
+                )}
+
+                {Array.isArray(product.attributes) &&
+                  product.attributes.length > 0 && (
+                    <div className="space-y-2">
+                      <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#62665d]">
+                        Specifications
+                      </h3>
+                      <div className="grid grid-cols-2 gap-2">
+                        {product.attributes.map((attr, idx) => (
+                          <div
+                            key={idx}
+                            className="p-2.5 rounded-[6px] bg-white border border-[#e6e8e1]"
+                          >
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-[#62665d]">
+                              {attr.label}
+                            </p>
+                            <p className="text-xs font-semibold text-[#20231e] mt-0.5">
+                              {attr.value}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
               </div>
             )}
           </div>

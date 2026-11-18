@@ -34,6 +34,15 @@ export const resetPasswordSchema = z.object({
   newPassword: z.string().min(6, "Password must be at least 6 characters"),
 });
 
+export const verifyEmailSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  code: z.string().trim().regex(/^\d{6}$/, "Enter the 6-digit verification code"),
+});
+
+export const resendVerificationSchema = z.object({
+  email: z.string().email("Invalid email address"),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type BankDetailsInput = z.infer<typeof bankDetailsSchema>;

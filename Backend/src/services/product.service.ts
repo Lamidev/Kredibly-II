@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "../config/db";
 import { AppError } from "../middleware/errorHandler";
 import { sanitizeSlug } from "../utils/slug";
@@ -69,6 +70,10 @@ export class ProductService {
           description: data.description?.trim(),
           category: data.category?.trim() || null,
           brand: data.brand?.trim() || null,
+          attributes:
+            data.attributes && data.attributes.length > 0
+              ? data.attributes
+              : Prisma.JsonNull,
           basePrice: data.basePrice,
           comparePrice: data.comparePrice ?? null,
           images: data.images,
@@ -197,6 +202,12 @@ export class ProductService {
           description: data.description?.trim(),
           category: data.category !== undefined ? data.category?.trim() || null : undefined,
           brand: data.brand !== undefined ? data.brand?.trim() || null : undefined,
+          attributes:
+            data.attributes !== undefined
+              ? data.attributes && data.attributes.length > 0
+                ? data.attributes
+                : Prisma.JsonNull
+              : undefined,
           basePrice: data.basePrice,
           comparePrice: data.comparePrice,
           images: data.images,

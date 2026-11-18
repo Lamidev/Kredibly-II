@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/useAuthStore";
+import { getImageUrl } from "@/lib/utils";
 import {
   LayoutDashboard,
   ShoppingBasket,
@@ -12,7 +13,6 @@ import {
   Users,
   Wallet,
   Settings,
-  Store,
   Copy,
   LogOut,
 } from "lucide-react";
@@ -67,12 +67,21 @@ const MENU_ITEMS = [
   },
 ];
 
-function BrandHeader({ storeName, storeSlug }: { storeName?: string; storeSlug?: string }) {
+function BrandHeader({
+  storeName,
+  storeSlug,
+  logoUrl,
+}: {
+  storeName?: string;
+  storeSlug?: string;
+  logoUrl?: string | null;
+}) {
+  const resolvedLogo = getImageUrl(logoUrl) || "/kredibly-k-icon.png";
   return (
     <Link href="/dashboard" className="flex items-center gap-3 group select-none py-1">
       <img
-        src="/kredibly-k-icon.png"
-        alt="Kredibly"
+        src={resolvedLogo}
+        alt={storeName || "Kredibly"}
         className="w-10 h-10 object-cover rounded-xl border border-slate-200 bg-white shadow-2xs group-hover:scale-105 transition-transform shrink-0"
       />
       <div className="flex flex-col min-w-0">
@@ -108,7 +117,11 @@ function SidebarContent({
   return (
     <div className="flex flex-col h-full justify-between">
       <div>
-        <BrandHeader storeName={store?.name} storeSlug={storeSlug} />
+        <BrandHeader
+          storeName={store?.name}
+          storeSlug={storeSlug}
+          logoUrl={store?.logoUrl}
+        />
 
         <nav className="mt-7 flex flex-col gap-1.5">
           {MENU_ITEMS.map((item) => {
@@ -152,18 +165,6 @@ function SidebarContent({
           <Copy className="w-4 h-4 text-[#2e1065]" />
           <span>Copy Store Link</span>
         </Button>
-
-        <Link href={`/${storeSlug}`} target="_blank" onClick={onNavigate}>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="w-full justify-start gap-2.5 text-xs font-semibold text-slate-700"
-          >
-            <Store className="w-4 h-4 text-emerald-600" />
-            <span>View Live Store</span>
-          </Button>
-        </Link>
 
         <Button
           type="button"
