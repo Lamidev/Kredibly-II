@@ -231,11 +231,97 @@ export class WalletService {
   }
 
   /**
-   * Request withdrawal from Available Balance to registered Nigerian bank account via Nomba
+   * Send 6-digit OTP to merchant email before initiating a wallet withdrawal
    */
-  static async withdrawFunds(storeId: string, amount: number) {
+  static async requestWithdrawalOtp(storeId: string, amount: number) {
     if (!amount || amount < 1000) {
       throw new AppError("Minimum withdrawal amount is ₦1,000", 400);
+    }
+
+    const store = await prisma.store.findUnique({
+      where: { id: storeId },
+      include: {
+        wallet: true,
+        owner: { select: { email: true, fullName: true } },
+      },
+    });
+
+    if (!store || !store.wallet) {
+      throw new AppError("Store wallet not found", 404);
+    }
+
+    if (!store.accountNumber || !store.bankName) {
+      throw new AppError(
+        "Please link and verify your payout bank details before requesting a withdrawal",
+        400
+      );
+    }
+
+    if (store.withdrawalLockedUntil && store.withdrawalLockedUntil > new Date()) {
+      const unlockStr = store.withdrawalLockedUntil.toLocaleString("en-NG", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
+      throw new AppError(
+        `Withdrawals are temporarily locked for 24 hours after a bank account change. Unlocks on ${unlockStr}.`,
+        403
+      );
+    }
+
+    const available = Number(store.wallet.availableBalance);
+    if (available < amount) {
+      throw new AppError(
+        `Insufficient available balance. You requested ₦${amount.toLocaleString()} but only have ₦${available.toLocaleString()} available.`,
+        400
+      );
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpHash = crypto.createHash("sha256").update(otp).digest("hex");
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    await prisma.store.update({
+      where: { id: storeId },
+      data: {
+        withdrawalOtpHash: otpHash,
+        withdrawalOtpExpires: expiresAt,
+      },
+    });
+
+    EmailService.sendWithdrawalOtpEmail({
+      to: store.owner.email,
+      fullName: store.owner.fullName,
+      storeName: store.name,
+      amount,
+      bankName: store.bankName,
+      accountNumber: store.accountNumber,
+      otp,
+    }).catch((err) => console.error("Withdrawal OTP email failed:", err));
+
+    const maskedEmail = store.owner.email.replace(
+      /(^.{2})(.*)(@.*)/,
+      (_, a, b, c) => `${a}${"*".repeat(Math.min(b.length, 5))}${c}`
+    );
+
+    return {
+      message: `A 6-digit confirmation code has been sent to ${maskedEmail}`,
+      maskedEmail,
+    };
+  }
+
+  /**
+   * Request withdrawal from Available Balance to registered Nigerian bank account via Nomba
+   */
+  static async withdrawFunds(storeId: string, amount: number, otp?: string) {
+    if (!amount || amount < 1000) {
+      throw new AppError("Minimum withdrawal amount is ₦1,000", 400);
+    }
+
+    if (!otp || otp.trim().length !== 6) {
+      throw new AppError(
+        "A 6-digit email confirmation code is required to authorize this withdrawal.",
+        400
+      );
     }
 
     const store = await prisma.store.findUnique({
@@ -264,6 +350,31 @@ export class WalletService {
         403
       );
     }
+
+    const providedHash = crypto
+      .createHash("sha256")
+      .update(otp.trim())
+      .digest("hex");
+
+    if (
+      !store.withdrawalOtpHash ||
+      store.withdrawalOtpHash !== providedHash ||
+      !store.withdrawalOtpExpires ||
+      store.withdrawalOtpExpires < new Date()
+    ) {
+      throw new AppError(
+        "Invalid or expired confirmation code. Please request a new code.",
+        400
+      );
+    }
+
+    await prisma.store.update({
+      where: { id: storeId },
+      data: {
+        withdrawalOtpHash: null,
+        withdrawalOtpExpires: null,
+      },
+    });
 
     const available = Number(store.wallet.availableBalance);
     if (available < amount) {

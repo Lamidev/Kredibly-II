@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatNumberInput, parseNumberInput } from "@/lib/utils";
 import {
   TrendingUp,
   ShieldCheck,
@@ -87,6 +87,10 @@ export default function WalletPage() {
   // Withdrawal Modal
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [withdrawOtp, setWithdrawOtp] = useState("");
+  const [withdrawOtpSent, setWithdrawOtpSent] = useState(false);
+  const [sendingWithdrawOtp, setSendingWithdrawOtp] = useState(false);
+  const [withdrawMaskedEmail, setWithdrawMaskedEmail] = useState("");
   const [withdrawing, setWithdrawing] = useState(false);
 
   // Bank Setup Modal
@@ -207,16 +211,48 @@ export default function WalletPage() {
     }
   };
 
+  const parsedWithdrawAmount = parseNumberInput(withdrawAmount);
+
+  const handleRequestWithdrawOtp = async () => {
+    if (parsedWithdrawAmount < 1000 || parsedWithdrawAmount > available) return;
+    setSendingWithdrawOtp(true);
+    try {
+      const res = await api.post("/wallet/request-withdrawal-otp", {
+        amount: parsedWithdrawAmount,
+      });
+      setWithdrawOtpSent(true);
+      setWithdrawMaskedEmail(res.data?.data?.maskedEmail || "your email");
+      toast.success(
+        res.data?.message || "Confirmation code sent to your email."
+      );
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.message || "Could not send confirmation code."
+      );
+    } finally {
+      setSendingWithdrawOtp(false);
+    }
+  };
+
   const handleWithdraw = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!withdrawOtpSent) {
+      await handleRequestWithdrawOtp();
+      return;
+    }
     setWithdrawing(true);
 
     try {
-      const amount = Number(withdrawAmount);
-      const res = await api.post("/wallet/withdraw", { amount });
+      const res = await api.post("/wallet/withdraw", {
+        amount: parsedWithdrawAmount,
+        otp: withdrawOtp.trim(),
+      });
 
       toast.success(res.data.data.message || "Withdrawal dispatched!");
       setWithdrawAmount("");
+      setWithdrawOtp("");
+      setWithdrawOtpSent(false);
+      setWithdrawMaskedEmail("");
       setWithdrawModalOpen(false);
       await fetchWallet();
     } catch (err: any) {
@@ -639,7 +675,17 @@ export default function WalletPage() {
       </Dialog>
 
       {/* Withdraw Funds Dialog */}
-      <Dialog open={withdrawModalOpen} onOpenChange={setWithdrawModalOpen}>
+      <Dialog
+        open={withdrawModalOpen}
+        onOpenChange={(open) => {
+          setWithdrawModalOpen(open);
+          if (!open) {
+            setWithdrawOtp("");
+            setWithdrawOtpSent(false);
+            setWithdrawMaskedEmail("");
+          }
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -647,7 +693,7 @@ export default function WalletPage() {
               <span>Withdraw to Bank Account</span>
             </DialogTitle>
             <DialogDescription>
-              Funds are sent immediately via Nomba NIP transfer.
+              Funds are sent immediately via Nomba NIP transfer after email verification.
             </DialogDescription>
           </DialogHeader>
 
@@ -669,37 +715,75 @@ export default function WalletPage() {
                 </label>
                 <button
                   type="button"
-                  onClick={() => setWithdrawAmount(available.toString())}
-                  className="text-[#2e1065] hover:underline font-bold text-[11px] cursor-pointer"
+                  disabled={withdrawOtpSent}
+                  onClick={() => setWithdrawAmount(formatNumberInput(available))}
+                  className="text-[#2e1065] hover:underline font-bold text-[11px] cursor-pointer disabled:opacity-50"
                 >
                   Withdraw All ({formatCurrency(available)})
                 </button>
               </div>
               <input
-                type="number"
-                min={1000}
-                max={available}
+                type="text"
+                inputMode="numeric"
                 required
+                disabled={withdrawOtpSent}
                 placeholder="Min ₦1,000"
                 value={withdrawAmount}
-                onChange={(e) => setWithdrawAmount(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-[#0f172a] font-mono focus:outline-none focus:border-[#2e1065]"
+                onChange={(e) =>
+                  setWithdrawAmount(formatNumberInput(e.target.value))
+                }
+                className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-[#0f172a] font-mono focus:outline-none focus:border-[#2e1065] disabled:opacity-70"
               />
             </div>
+
+            {withdrawOtpSent && (
+              <div className="p-3.5 rounded-xl bg-purple-50/70 border border-purple-200 space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[11px] font-semibold text-[#2e1065]">
+                    Enter 6-digit code sent to {withdrawMaskedEmail}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleRequestWithdrawOtp}
+                    disabled={sendingWithdrawOtp}
+                    className="text-[11px] font-bold text-[#2e1065] hover:underline cursor-pointer shrink-0"
+                  >
+                    {sendingWithdrawOtp ? "Sending..." : "Resend"}
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  required
+                  autoFocus
+                  placeholder="6-digit code"
+                  value={withdrawOtp}
+                  onChange={(e) =>
+                    setWithdrawOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+                  }
+                  className="w-full px-3 py-2.5 rounded-xl bg-white border border-purple-300 text-center text-base font-mono font-bold tracking-[0.4em] text-[#0f172a] focus:outline-none focus:border-[#2e1065]"
+                />
+              </div>
+            )}
 
             <Button
               type="submit"
               disabled={
                 withdrawing ||
-                Number(withdrawAmount) < 1000 ||
-                Number(withdrawAmount) > available
+                sendingWithdrawOtp ||
+                parsedWithdrawAmount < 1000 ||
+                parsedWithdrawAmount > available ||
+                (withdrawOtpSent && withdrawOtp.trim().length !== 6)
               }
               className="w-full"
             >
-              {withdrawing ? (
+              {withdrawing || sendingWithdrawOtp ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
+              ) : withdrawOtpSent ? (
+                <span>Confirm &amp; Withdraw</span>
               ) : (
-                <span>Confirm Payout</span>
+                <span>Send Email Confirmation Code</span>
               )}
             </Button>
           </form>

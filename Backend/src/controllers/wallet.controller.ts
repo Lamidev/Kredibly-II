@@ -69,12 +69,29 @@ export class WalletController {
     }
   }
 
+  static async requestWithdrawalOtp(req: Request, res: Response, next: NextFunction) {
+    try {
+      const storeId = req.storeId!;
+      const amount = Number(req.body.amount);
+      const data = await WalletService.requestWithdrawalOtp(storeId, amount);
+
+      return res.status(200).json({
+        success: true,
+        message: data.message,
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async withdraw(req: Request, res: Response, next: NextFunction) {
     try {
       const storeId = req.storeId!;
       const amount = Number(req.body.amount);
+      const otp = typeof req.body.otp === "string" ? req.body.otp : undefined;
 
-      const result = await WalletService.withdrawFunds(storeId, amount);
+      const result = await WalletService.withdrawFunds(storeId, amount, otp);
 
       return res.status(200).json({
         success: true,

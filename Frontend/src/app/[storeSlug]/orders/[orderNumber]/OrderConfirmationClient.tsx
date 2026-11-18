@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, getStorePath } from "@/lib/utils";
+import { useShopperStore } from "@/store/useShopperStore";
 import { StorefrontHeader } from "@/components/storefront/StorefrontHeader";
 import { StorefrontFooter } from "@/components/storefront/StorefrontFooter";
 import { CartDrawer } from "@/components/storefront/CartDrawer";
@@ -12,9 +13,7 @@ import { CheckoutDrawer } from "@/components/storefront/CheckoutDrawer";
 import { StoreData } from "@/types/storefront";
 import {
   CheckCircle2,
-  ShieldCheck,
   MessageCircle,
-  Package,
   MapPin,
   Phone,
   User,
@@ -66,6 +65,18 @@ export function OrderConfirmationClient({
   const [order, setOrder] = useState<OrderData>(initialOrder);
   const [simulating, setSimulating] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const { token: shopperToken, storeSlug: loadedSlug, loadShopper } =
+    useShopperStore();
+
+  useEffect(() => {
+    if (loadedSlug !== order.store.slug) {
+      loadShopper(order.store.slug);
+    }
+  }, [order.store.slug, loadedSlug, loadShopper]);
+
+  const isShopperLoggedIn = Boolean(
+    shopperToken && loadedSlug === order.store.slug
+  );
 
   const headerStore: StoreData = storeData || {
     id: order.store.slug,
@@ -145,12 +156,6 @@ export function OrderConfirmationClient({
             Order <span className="text-brand-400 font-mono font-bold">#{order.orderNumber}</span> has been received.
           </p>
 
-          {/* Escrow Badge */}
-          <div className="mt-5 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-semibold">
-            <ShieldCheck className="w-4 h-4 text-brand-500 shrink-0" />
-            <span>Funds held safely in Kredibly Escrow until dispatch</span>
-          </div>
-
           {/* Primary Action: Message Seller on WhatsApp */}
           <a
             href={whatsappUrl}
@@ -161,6 +166,32 @@ export function OrderConfirmationClient({
             <MessageCircle className="w-5 h-5" />
             <span>Message Seller on WhatsApp</span>
           </a>
+
+          {/* Registered Shopper vs Guest Action */}
+          {isShopperLoggedIn ? (
+            <Link
+              href={getStorePath(order.store.slug, "/account")}
+              className="w-full mt-2.5 py-3 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-2xl transition flex items-center justify-center gap-2 text-xs"
+            >
+              <User className="w-4 h-4" />
+              <span>View Order in My Profile</span>
+            </Link>
+          ) : (
+            <p className="text-[11px] text-slate-400 mt-3">
+              Save your order number{" "}
+              <span className="font-mono font-bold text-slate-200">
+                #{order.orderNumber}
+              </span>{" "}
+              to track delivery anytime, or{" "}
+              <Link
+                href={getStorePath(order.store.slug, "/account/register")}
+                className="text-brand-400 hover:underline font-semibold"
+              >
+                create a free account
+              </Link>
+              .
+            </p>
+          )}
         </div>
 
         {/* Delivery Details Card */}
@@ -224,7 +255,7 @@ export function OrderConfirmationClient({
         {/* Back to store button */}
         <div className="text-center pt-2">
           <Link
-            href={`/${order.store.slug}`}
+            href={getStorePath(order.store.slug)}
             className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition"
           >
             <span>Back to {order.store.name}</span>
