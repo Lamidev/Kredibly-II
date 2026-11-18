@@ -19,6 +19,7 @@ app.use(
       "https://www.usekredibly.com",
       "https://kredibly.shop",
       "https://www.kredibly.shop",
+      /^https:\/\/[a-z0-9-]+\.kredibly\.shop$/,
       "http://localhost:3000",
       "http://localhost:3001",
     ],

@@ -96,7 +96,7 @@ function BrandHeader({
           {storeName || "My Store"}
         </span>
         <span className="text-[11px] font-mono font-medium text-[#2e1065] truncate">
-          kredibly.shop/{storeSlug || "store"}
+          {storeSlug || "store"}.kredibly.shop
         </span>
       </div>
     </Link>
@@ -114,7 +114,7 @@ function SidebarContent({
   const { store } = useAuthStore();
 
   const storeSlug = store?.slug || "mystore";
-  const storeUrl = `https://kredibly.shop/${storeSlug}`;
+  const storeUrl = `https://${storeSlug}.kredibly.shop`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(storeUrl);
@@ -226,7 +226,7 @@ export function AdminSidebar({
       </Sheet>
 
       {/* Desktop Persistent Sidebar */}
-      <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white px-5 py-6 sticky top-0 h-screen">
+      <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white px-5 py-6 sticky top-0 h-screen overflow-y-auto">
         <SidebarContent onRequestLogout={() => setLogoutDialogOpen(true)} />
       </aside>
 

@@ -115,7 +115,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-[#FAF9F5] text-[#0f172a]">
+    <div className="flex min-h-screen w-full max-w-[100vw] overflow-x-clip bg-[#FAF9F5] text-[#0f172a]">
       <AdminSidebar open={openSidebar} setOpen={setOpenSidebar} />
       <div className="flex flex-1 flex-col min-w-0">
         <AdminHeader setOpen={setOpenSidebar} />

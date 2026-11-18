@@ -2,13 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { formatCurrency } from "@/lib/utils";
 import {
-  Copy,
-  Check,
   Package,
   TrendingUp,
   BadgeCheck,
@@ -51,16 +48,12 @@ interface Order {
 }
 
 export default function DashboardPage() {
-  const { user, store } = useAuthStore();
-  const [copied, setCopied] = useState(false);
+  const { user } = useAuthStore();
 
   const [loading, setLoading] = useState(true);
   const [totalProducts, setTotalProducts] = useState(0);
   const [totalCustomers, setTotalCustomers] = useState(0);
   const [orders, setOrders] = useState<Order[]>([]);
-
-  const storeSlug = store?.slug || "mystore";
-  const storeUrl = `https://kredibly.shop/${storeSlug}`;
 
   useEffect(() => {
     const loadOverview = async () => {
@@ -91,13 +84,6 @@ export default function DashboardPage() {
   const totalRevenue = orders
     .filter((o) => o.paymentStatus === "PAID")
     .reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
-
-  const copyStoreLink = () => {
-    navigator.clipboard.writeText(storeUrl);
-    setCopied(true);
-    toast.success("Store link copied! Share it on WhatsApp or Instagram.");
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -147,46 +133,6 @@ export default function DashboardPage() {
           Storefront Live
         </Badge>
       </div>
-
-      {/* Store Bio Link Card */}
-      <Card className="border-[#2e1065]/15 bg-gradient-to-r from-white via-white to-[#2e1065]/[0.04]">
-        <CardContent className="p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-[#2e1065]">
-              Your Official Store Link
-            </p>
-            <h2 className="text-lg font-bold text-[#0f172a]">
-              Share this link on WhatsApp &amp; Instagram
-            </h2>
-            <p className="text-xs text-slate-500">
-              Customers can browse your products, add to cart, and pay online in 1 step.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto min-w-0">
-            <div className="min-w-0 flex-1 md:flex-initial px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs sm:text-sm text-[#2e1065] font-semibold select-all truncate sm:max-w-xs">
-              {storeUrl}
-            </div>
-            <Button
-              onClick={copyStoreLink}
-              size="default"
-              className="shrink-0 w-full sm:w-auto"
-            >
-              {copied ? (
-                <>
-                  <Check className="w-4 h-4" />
-                  Copied
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4" />
-                  Copy Link
-                </>
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* 4 Overview Metric Cards (4 in a row desktop, 2 in a row mobile) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

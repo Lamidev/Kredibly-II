@@ -166,7 +166,9 @@ export function ProductDetailClient({
                 <img
                   src={getImageUrl(images[activeImageIndex])}
                   alt={product.title}
-                  className="w-full h-full object-cover"
+                  className={`w-full h-full object-cover ${
+                    isSoldOut ? "opacity-65 grayscale-[30%]" : ""
+                  }`}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-[#c5c8be]">
@@ -174,11 +176,31 @@ export function ProductDetailClient({
                 </div>
               )}
 
-              {isSoldOut && (
-                <div className="absolute top-3 left-3 bg-[#202020df] text-white text-[10px] font-bold px-2.5 py-1 rounded-[3px] uppercase tracking-wider">
-                  Out of Stock
-                </div>
-              )}
+              {/* Top-Left: Discount Percentage */}
+              {product.comparePrice &&
+                Number(product.comparePrice) > activePrice &&
+                activePrice > 0 && (
+                  <span className="absolute top-3 left-3 bg-[#2e1065] text-white text-[11px] font-bold px-2.5 py-1 rounded-[4px] uppercase tracking-wide">
+                    -
+                    {Math.round(
+                      ((Number(product.comparePrice) - activePrice) /
+                        Number(product.comparePrice)) *
+                        100
+                    )}
+                    %
+                  </span>
+                )}
+
+              {/* Top-Right: Stock Count or Out of Stock */}
+              <span
+                className={`absolute top-3 right-3 text-[11px] font-semibold px-2.5 py-1 rounded-[4px] backdrop-blur-[5px] ${
+                  isSoldOut
+                    ? "bg-red-600/90 text-white uppercase tracking-wider"
+                    : "bg-[#202020df] text-white"
+                }`}
+              >
+                {isSoldOut ? "Out of Stock" : `${maxStock} in stock`}
+              </span>
             </div>
           </div>
 
@@ -265,10 +287,6 @@ export function ProductDetailClient({
                     <Plus className="w-3.5 h-3.5" />
                   </button>
                 </div>
-
-                <span className="text-xs text-[#62665d] font-medium">
-                  {isSoldOut ? "Sold out" : `${maxStock} available in stock`}
-                </span>
               </div>
             </div>
 
@@ -278,19 +296,27 @@ export function ProductDetailClient({
                 type="button"
                 onClick={handleBuyNow}
                 disabled={isSoldOut}
-                className="w-full h-[48px] bg-[#2e1065] hover:bg-[#3b0764] disabled:opacity-40 text-white font-display font-bold rounded-[8px] transition flex items-center justify-center gap-2 text-sm shadow-sm cursor-pointer"
+                className="w-full h-[48px] bg-[#2e1065] hover:bg-[#3b0764] disabled:opacity-40 disabled:cursor-not-allowed text-white font-display font-bold rounded-[8px] transition flex items-center justify-center gap-2 text-sm shadow-sm cursor-pointer"
               >
-                <span>Buy Now — Instant Checkout</span>
+                <span>
+                  {isSoldOut ? "Out of Stock" : "Buy Now — Instant Checkout"}
+                </span>
               </button>
 
               <button
                 type="button"
                 onClick={handleAddToCart}
                 disabled={isSoldOut}
-                className="w-full h-[46px] bg-white hover:bg-[#f3f4ef] border border-[#daddd4] disabled:opacity-40 text-[#20231e] font-display font-bold rounded-[8px] transition flex items-center justify-center gap-2 text-xs cursor-pointer"
+                className="w-full h-[46px] bg-white hover:bg-[#f3f4ef] border border-[#daddd4] disabled:opacity-40 disabled:cursor-not-allowed text-[#20231e] font-display font-bold rounded-[8px] transition flex items-center justify-center gap-2 text-xs cursor-pointer"
               >
                 <ShoppingBag className="w-4 h-4 text-[#3b0764]" />
-                <span>{addedAnimation ? "Added to Bag ✓" : "Add to Cart"}</span>
+                <span>
+                  {isSoldOut
+                    ? "Unavailable"
+                    : addedAnimation
+                    ? "Added to Bag ✓"
+                    : "Add to Cart"}
+                </span>
               </button>
             </div>
 

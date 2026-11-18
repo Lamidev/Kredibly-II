@@ -41,6 +41,9 @@ export interface ShippingConfig {
   freeDeliveryStates: string[];
   freeDeliveryMinOrder?: number | null;
   stateRates: Record<string, number>;
+  offerBannerEnabled?: boolean;
+  offerBannerText?: string | null;
+  offerBannerExpiresAt?: string | null;
 }
 
 export interface StoreData {
@@ -118,6 +121,21 @@ export function getFreeDeliveryBannerText(
   return `Free delivery to ${states.slice(0, 2).join(", ")} + ${
     states.length - 2
   } more states${minSuffix}`;
+}
+
+export function getStorefrontBannerText(
+  cfg: ShippingConfig | null | undefined
+): string | null {
+  if (cfg?.offerBannerEnabled && cfg.offerBannerText?.trim()) {
+    if (cfg.offerBannerExpiresAt) {
+      const expiresEnd = new Date(`${cfg.offerBannerExpiresAt}T23:59:59`);
+      if (!Number.isNaN(expiresEnd.getTime()) && expiresEnd < new Date()) {
+        return getFreeDeliveryBannerText(cfg);
+      }
+    }
+    return cfg.offerBannerText.trim();
+  }
+  return getFreeDeliveryBannerText(cfg);
 }
 
 export function toSocialUrl(

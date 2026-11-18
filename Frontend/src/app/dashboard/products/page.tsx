@@ -1,30 +1,30 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
-import { formatCurrency, getImageUrl } from "@/lib/utils";
+import {
+  formatCurrency,
+  formatNumberInput,
+  getImageUrl,
+  parseNumberInput,
+} from "@/lib/utils";
 import { compressProductImage } from "@/lib/compressor";
 import {
-  ArrowLeft,
   Plus,
   Package,
   UploadCloud,
   X,
   Trash2,
-  CheckCircle2,
   AlertCircle,
   Loader2,
-  Tag,
   Layers,
-  Sparkles,
   Edit2,
   Eye,
   EyeOff,
+  Search,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,6 +71,11 @@ export default function ProductsPage() {
   const { store } = useAuthStore();
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [activeTab, setActiveTab] = useState<"all" | "published" | "drafts">("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<
+    "newest" | "price-asc" | "price-desc" | "low-stock"
+  >("newest");
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -105,7 +110,18 @@ export default function ProductsPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [compressing, setCompressing] = useState(false);
-  const [compressionStats, setCompressionStats] = useState<string>("");
+
+  // Lock background page scroll while the slide-over product sheet is open
+  useEffect(() => {
+    if (modalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [modalOpen]);
 
   const fetchProducts = async () => {
     try {
@@ -138,25 +154,17 @@ export default function ProductsPage() {
 
     const newFiles: File[] = [...selectedFiles];
     const newPreviews: string[] = [...imagePreviews];
-    let totalOriginal = 0;
-    let totalCompressed = 0;
 
-    for (let i = 0; i < files.length && newFiles.length < 2; i++) {
+    for (let i = 0; i < files.length && newPreviews.length < 2; i++) {
       const result = await compressProductImage(files[i]);
       newFiles.push(result.file);
       newPreviews.push(result.previewUrl);
-      totalOriginal += result.originalSizeKB;
-      totalCompressed += result.compressedSizeKB;
     }
 
     setSelectedFiles(newFiles);
     setImagePreviews(newPreviews);
     setCompressing(false);
-    setCompressionStats(
-      `WebP compressed: ${totalOriginal} KB ➔ ${totalCompressed} KB (-${Math.round(
-        ((totalOriginal - totalCompressed) / totalOriginal) * 100
-      )}%)`
-    );
+    e.target.value = "";
   };
 
   const removeImage = (index: number) => {
@@ -190,7 +198,6 @@ export default function ProductsPage() {
     setStockQuantity("1");
     setSelectedFiles([]);
     setImagePreviews([]);
-    setCompressionStats("");
     setHasVariants(false);
     setVariants([{ name: "Size: M", price: 0, stockQuantity: 1 }]);
     setErrorMsg("");
@@ -217,8 +224,17 @@ export default function ProductsPage() {
       setAttributes([]);
     }
     setIsFeatured(Boolean(product.isFeatured));
-    setBasePrice(String(product.basePrice));
-    setComparePrice(product.comparePrice ? String(product.comparePrice) : "");
+    const hasDiscount =
+      product.comparePrice !== null &&
+      product.comparePrice !== undefined &&
+      Number(product.comparePrice) > Number(product.basePrice);
+    if (hasDiscount) {
+      setBasePrice(formatNumberInput(product.comparePrice!));
+      setComparePrice(formatNumberInput(product.basePrice));
+    } else {
+      setBasePrice(formatNumberInput(product.basePrice));
+      setComparePrice("");
+    }
     setStockQuantity(String(product.stockQuantity));
     setHasVariants(Boolean(product.hasVariants));
     setVariants(
@@ -234,7 +250,6 @@ export default function ProductsPage() {
     setExistingImages(savedImgs);
     setImagePreviews(savedImgs.map((img) => getImageUrl(img)));
     setSelectedFiles([]);
-    setCompressionStats("");
     setErrorMsg("");
     setModalOpen(true);
   };
@@ -254,12 +269,54 @@ export default function ProductsPage() {
     }
   };
 
+  const actualPriceNum = parseNumberInput(basePrice);
+  const discountPriceNum = comparePrice.trim()
+    ? parseNumberInput(comparePrice)
+    : null;
+  const effectiveSellingPrice =
+    discountPriceNum !== null &&
+    discountPriceNum >= 100 &&
+    discountPriceNum < actualPriceNum
+      ? discountPriceNum
+      : actualPriceNum;
+
+  const isTitleValid =
+    title.trim().length >= 2 && /[a-zA-Z]/.test(title.trim());
+  const isDescValid = description.trim().length >= 5;
+  const isActualPriceValid = actualPriceNum >= 100;
+  const isDiscountValid =
+    discountPriceNum === null ||
+    (discountPriceNum >= 100 && discountPriceNum < actualPriceNum);
+  const isStockValid =
+    stockQuantity.trim() !== "" &&
+    /^\d+$/.test(stockQuantity.trim()) &&
+    Number(stockQuantity) >= 0;
+  const areVariantsValid =
+    !hasVariants ||
+    (variants.length > 0 &&
+      variants.every(
+        (v) =>
+          v.name.trim().length > 0 &&
+          /[a-zA-Z]/.test(v.name.trim()) &&
+          v.price >= 50 &&
+          Number.isInteger(v.stockQuantity) &&
+          v.stockQuantity >= 0
+      ));
+
+  const isFormValid =
+    isTitleValid &&
+    isDescValid &&
+    isActualPriceValid &&
+    isDiscountValid &&
+    isStockValid &&
+    areVariantsValid;
+
   const addVariantRow = () => {
     setVariants((prev) => [
       ...prev,
       {
         name: "",
-        price: Number(basePrice) || 0,
+        price: effectiveSellingPrice || 0,
         stockQuantity: 1,
       },
     ]);
@@ -286,7 +343,7 @@ export default function ProductsPage() {
   };
 
   const applyVariantTemplate = (template: "size" | "color" | "storage" | "pack") => {
-    const defaultPrice = Number(basePrice) || 0;
+    const defaultPrice = effectiveSellingPrice || 0;
     const templates: Record<typeof template, Variant[]> = {
       size: [
         { name: "Size: S", price: defaultPrice, stockQuantity: 5 },
@@ -353,8 +410,18 @@ export default function ProductsPage() {
         brand: brandAttr ? brandAttr.value : null,
         attributes: cleanedAttributes.length > 0 ? cleanedAttributes : null,
         isFeatured,
-        basePrice: Number(basePrice),
-        comparePrice: comparePrice ? Number(comparePrice) : null,
+        basePrice:
+          discountPriceNum !== null &&
+          discountPriceNum >= 100 &&
+          discountPriceNum < actualPriceNum
+            ? discountPriceNum
+            : actualPriceNum,
+        comparePrice:
+          discountPriceNum !== null &&
+          discountPriceNum >= 100 &&
+          discountPriceNum < actualPriceNum
+            ? actualPriceNum
+            : null,
         images: finalImages,
         stockQuantity: Number(stockQuantity),
         hasVariants,
@@ -409,22 +476,52 @@ export default function ProductsPage() {
 
   const getFullImageUrl = (path: string) => getImageUrl(path);
 
+  const publishedCount = products.filter((p) => p.isActive).length;
+  const draftCount = products.filter((p) => !p.isActive).length;
+  const displayedProducts = products
+    .filter((p) => {
+      if (activeTab === "published") return p.isActive;
+      if (activeTab === "drafts") return !p.isActive;
+      return true;
+    })
+    .filter((p) => {
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return true;
+      return (
+        p.title.toLowerCase().includes(q) ||
+        (p.category || "").toLowerCase().includes(q) ||
+        (p.brand || "").toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      if (sortBy === "price-asc") {
+        return Number(a.basePrice) - Number(b.basePrice);
+      }
+      if (sortBy === "price-desc") {
+        return Number(b.basePrice) - Number(a.basePrice);
+      }
+      if (sortBy === "low-stock") {
+        return a.stockQuantity - b.stockQuantity;
+      }
+      return 0;
+    });
+
   return (
-    <div className="space-y-6">
-      {/* Page Title & Add Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-xl sm:text-2xl font-extrabold text-[#0f172a] tracking-tight">
+    <div className="space-y-5">
+      {/* Page Title & Add Action (Compact opposite title on mobile) */}
+      <div className="flex items-start sm:items-center justify-between gap-2.5">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-lg sm:text-2xl font-extrabold text-[#0f172a] tracking-tight truncate">
               Product Catalog
             </h1>
             {!loading && (
-              <Badge variant="secondary">
+              <Badge variant="secondary" className="text-[10px] sm:text-xs">
                 {store?.subscriptionTier === "BUSINESS"
                   ? `${products.length} products`
                   : `${products.length} / ${
                       store?.subscriptionTier === "PRO" ? 300 : 20
-                    } used (incl. drafts)`}
+                    } used`}
               </Badge>
             )}
           </div>
@@ -433,11 +530,81 @@ export default function ProductsPage() {
           </p>
         </div>
 
-        <Button onClick={openCreateModal}>
-          <Plus className="w-4 h-4" />
-          Add Product
+        <Button
+          onClick={openCreateModal}
+          size="sm"
+          className="shrink-0 h-9 px-3 sm:h-10 sm:px-4 text-xs sm:text-sm"
+        >
+          <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <span>Add Product</span>
         </Button>
       </div>
+
+      {/* Filter Tabs + Search + Sort */}
+      {!loading && products.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-4 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2.5">
+            <div className="flex items-center gap-1.5 overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => setActiveTab("all")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer shrink-0 ${
+                  activeTab === "all"
+                    ? "bg-[#2e1065] text-white"
+                    : "bg-slate-50 border border-slate-200 text-slate-600 hover:text-[#0f172a]"
+                }`}
+              >
+                All ({products.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("published")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer shrink-0 ${
+                  activeTab === "published"
+                    ? "bg-[#2e1065] text-white"
+                    : "bg-slate-50 border border-slate-200 text-slate-600 hover:text-[#0f172a]"
+                }`}
+              >
+                Published ({publishedCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("drafts")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer shrink-0 ${
+                  activeTab === "drafts"
+                    ? "bg-[#2e1065] text-white"
+                    : "bg-slate-50 border border-slate-200 text-slate-600 hover:text-[#0f172a]"
+                }`}
+              >
+                Drafts ({draftCount})
+              </button>
+            </div>
+
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+              aria-label="Sort products"
+              className="px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-semibold text-[#0f172a] focus:outline-none focus:border-[#2e1065] cursor-pointer"
+            >
+              <option value="newest">Sort: Newest</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="low-stock">Stock: Low to High</option>
+            </select>
+          </div>
+
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search products by name, category, or brand..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-slate-50 focus:bg-white border border-slate-200 text-xs sm:text-sm text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065]"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <div>
@@ -463,128 +630,384 @@ export default function ProductsPage() {
               </Button>
             </CardContent>
           </Card>
+        ) : displayedProducts.length === 0 ? (
+          <Card className="max-w-lg mx-auto">
+            <CardContent className="text-center py-12 px-6 flex flex-col items-center">
+              <p className="text-sm font-bold text-[#0f172a]">
+                {searchQuery
+                  ? "No matching products"
+                  : activeTab === "drafts"
+                  ? "No products in Drafts"
+                  : "No published products"}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
+                {searchQuery
+                  ? "Try another search term."
+                  : activeTab === "drafts"
+                  ? "Click \"Move to Draft\" on any product to hide it from your storefront."
+                  : "Publish a draft product or add a new product to show it on your storefront."}
+              </p>
+            </CardContent>
+          </Card>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
-            {products.map((product) => (
-              <Card
-                key={product.id}
-                className="overflow-hidden flex flex-col justify-between"
-              >
-                <div>
-                  {/* Image banner */}
-                  <div className="relative aspect-square w-full bg-slate-100">
-                    {product.images && product.images.length > 0 ? (
-                      <img
-                        src={getFullImageUrl(product.images[0])}
-                        alt={product.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-300">
-                        <Package className="w-12 h-12" />
-                      </div>
-                    )}
-                    {!product.isActive && (
-                      <div className="absolute top-3 left-3">
-                        <Badge variant="warning">Draft (Hidden)</Badge>
-                      </div>
-                    )}
-                    {product.isActive && product.stockQuantity === 0 && (
-                      <div className="absolute top-3 left-3">
-                        <Badge variant="destructive">Sold Out</Badge>
-                      </div>
-                    )}
-                  </div>
+          <>
+            {/* Desktop Table View (matching clean admin table design) */}
+            <div className="hidden md:block bg-white border border-slate-200 rounded-2xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wider text-slate-500 bg-slate-50/70">
+                      <th className="py-3 px-4 font-semibold">Product</th>
+                      <th className="py-3 px-4 font-semibold">Status</th>
+                      <th className="py-3 px-4 font-semibold">Price</th>
+                      <th className="py-3 px-4 font-semibold">Inventory</th>
+                      <th className="py-3 px-4 font-semibold">Category</th>
+                      <th className="py-3 px-4 font-semibold text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {displayedProducts.map((product) => {
+                      const baseNum = Number(product.basePrice || 0);
+                      const compareNum = Number(product.comparePrice || 0);
+                      const hasDiscount = compareNum > baseNum && baseNum > 0;
+                      const discountPct = hasDiscount
+                        ? Math.round(((compareNum - baseNum) / compareNum) * 100)
+                        : 0;
+                      const subMeta = [
+                        product.brand,
+                        product.hasVariants
+                          ? `${product.variants?.length || 0} options`
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ");
 
-                  {/* Details */}
-                  <div className="p-4 space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-bold text-[#0f172a] text-sm line-clamp-1">
-                        {product.title}
-                      </h3>
-                      <div className="flex items-center gap-1 shrink-0">
+                      return (
+                        <tr
+                          key={product.id}
+                          className="hover:bg-slate-50/70 transition"
+                        >
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-3 min-w-[200px]">
+                              <div className="h-11 w-11 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0">
+                                {product.images && product.images.length > 0 ? (
+                                  <img
+                                    src={getFullImageUrl(product.images[0])}
+                                    alt={product.title}
+                                    className="h-full w-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="h-full w-full flex items-center justify-center text-slate-300">
+                                    <Package className="w-5 h-5" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-bold text-[#0f172a] text-xs sm:text-sm truncate max-w-[260px]">
+                                  {product.title}
+                                </p>
+                                {subMeta && (
+                                  <p className="text-[11px] text-slate-500 truncate max-w-[260px]">
+                                    {subMeta}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            {!product.isActive ? (
+                              <Badge variant="warning">Draft</Badge>
+                            ) : product.stockQuantity === 0 ? (
+                              <Badge variant="destructive">Sold Out</Badge>
+                            ) : (
+                              <Badge variant="success">Active</Badge>
+                            )}
+                          </td>
+
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className={`font-bold text-xs sm:text-sm ${
+                                  hasDiscount ? "text-red-600" : "text-[#0f172a]"
+                                }`}
+                              >
+                                {formatCurrency(baseNum)}
+                              </span>
+                              {hasDiscount && (
+                                <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-600 text-[10px] font-bold">
+                                  -{discountPct}%
+                                </span>
+                              )}
+                            </div>
+                            {hasDiscount && (
+                              <p className="text-[11px] text-slate-400 line-through">
+                                {formatCurrency(compareNum)}
+                              </p>
+                            )}
+                          </td>
+
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <div className="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg p-0.5">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleStockChange(
+                                    product.id,
+                                    product.stockQuantity,
+                                    -1
+                                  )
+                                }
+                                aria-label="Decrease stock"
+                                className="h-6 w-6 rounded bg-white hover:bg-slate-100 flex items-center justify-center font-bold text-[#0f172a] cursor-pointer"
+                              >
+                                -
+                              </button>
+                              <span className="font-mono font-bold text-[#0f172a] min-w-[26px] text-center">
+                                {product.stockQuantity}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleStockChange(
+                                    product.id,
+                                    product.stockQuantity,
+                                    1
+                                  )
+                                }
+                                aria-label="Increase stock"
+                                className="h-6 w-6 rounded bg-white hover:bg-slate-100 flex items-center justify-center font-bold text-[#0f172a] cursor-pointer"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </td>
+
+                          <td className="py-3 px-4 text-slate-600 whitespace-nowrap">
+                            {product.category || "—"}
+                          </td>
+
+                          <td className="py-3 px-4 text-right whitespace-nowrap">
+                            <div className="inline-flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => openEditModal(product)}
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-[#2e1065] hover:bg-slate-100 transition cursor-pointer"
+                                title="Edit product"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleDraft(product)}
+                                className={`p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer ${
+                                  product.isActive
+                                    ? "text-slate-500 hover:text-amber-600"
+                                    : "text-amber-600 hover:text-emerald-600"
+                                }`}
+                                title={
+                                  product.isActive
+                                    ? "Move to Draft"
+                                    : "Publish to Store"
+                                }
+                              >
+                                {product.isActive ? (
+                                  <EyeOff className="w-4 h-4" />
+                                ) : (
+                                  <Eye className="w-4 h-4" />
+                                )}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteProduct(product.id)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                                title="Delete product"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Mobile 1-Column List Cards (Full title + inline stock controls) */}
+            <div className="md:hidden space-y-3">
+              {displayedProducts.map((product) => {
+                const baseNum = Number(product.basePrice || 0);
+                const compareNum = Number(product.comparePrice || 0);
+                const hasDiscount = compareNum > baseNum && baseNum > 0;
+                const discountPct = hasDiscount
+                  ? Math.round(((compareNum - baseNum) / compareNum) * 100)
+                  : 0;
+
+                return (
+                  <Card key={product.id} className="overflow-hidden">
+                    <div className="p-3.5 flex items-start gap-3">
+                      {/* Thumbnail */}
+                      <div className="h-16 w-16 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0">
+                        {product.images && product.images.length > 0 ? (
+                          <img
+                            src={getFullImageUrl(product.images[0])}
+                            alt={product.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-slate-300">
+                            <Package className="w-6 h-6" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Full-width Title, Price & Status */}
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-bold text-[#0f172a] text-sm line-clamp-2 leading-snug">
+                            {product.title}
+                          </h3>
+                          {!product.isActive ? (
+                            <Badge variant="warning" className="shrink-0">
+                              Draft
+                            </Badge>
+                          ) : product.stockQuantity === 0 ? (
+                            <Badge variant="destructive" className="shrink-0">
+                              Sold Out
+                            </Badge>
+                          ) : (
+                            <Badge variant="success" className="shrink-0">
+                              Active
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span
+                            className={`text-sm font-extrabold ${
+                              hasDiscount ? "text-red-600" : "text-[#2e1065]"
+                            }`}
+                          >
+                            {formatCurrency(baseNum)}
+                          </span>
+                          {hasDiscount && (
+                            <>
+                              <span className="text-xs text-slate-400 line-through">
+                                {formatCurrency(compareNum)}
+                              </span>
+                              <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-600 text-[10px] font-bold">
+                                -{discountPct}%
+                              </span>
+                            </>
+                          )}
+                        </div>
+
+                        {(product.category || product.hasVariants) && (
+                          <p className="text-[11px] text-slate-500">
+                            {[
+                              product.category,
+                              product.hasVariants
+                                ? `${product.variants?.length || 0} options`
+                                : null,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Mobile Bottom Bar: Stock Stepper + Actions */}
+                    <div className="px-3.5 py-2.5 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="text-slate-500 font-medium">Stock:</span>
+                        <div className="inline-flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg p-0.5">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleStockChange(
+                                product.id,
+                                product.stockQuantity,
+                                -1
+                              )
+                            }
+                            aria-label="Decrease stock"
+                            className="h-7 w-7 rounded bg-slate-50 hover:bg-slate-100 flex items-center justify-center font-bold text-[#0f172a] cursor-pointer"
+                          >
+                            -
+                          </button>
+                          <span className="font-mono font-bold text-[#0f172a] min-w-[24px] text-center">
+                            {product.stockQuantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleStockChange(
+                                product.id,
+                                product.stockQuantity,
+                                1
+                              )
+                            }
+                            aria-label="Increase stock"
+                            className="h-7 w-7 rounded bg-slate-50 hover:bg-slate-100 flex items-center justify-center font-bold text-[#0f172a] cursor-pointer"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1">
                         <button
+                          type="button"
                           onClick={() => openEditModal(product)}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-[#2e1065] hover:bg-slate-100 transition cursor-pointer"
+                          className="p-2 rounded-lg text-slate-600 hover:text-[#2e1065] hover:bg-white transition cursor-pointer"
                           title="Edit product"
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
+                          <Edit2 className="w-4 h-4" />
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleToggleDraft(product)}
-                          className={`p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer ${
+                          className={`p-2 rounded-lg hover:bg-white transition cursor-pointer ${
                             product.isActive
-                              ? "text-slate-500 hover:text-amber-600"
+                              ? "text-slate-600 hover:text-amber-600"
                               : "text-amber-600 hover:text-emerald-600"
                           }`}
-                          title={product.isActive ? "Move to Draft" : "Publish to Store"}
+                          title={
+                            product.isActive
+                              ? "Move to Draft"
+                              : "Publish to Store"
+                          }
                         >
                           {product.isActive ? (
-                            <EyeOff className="w-3.5 h-3.5" />
+                            <EyeOff className="w-4 h-4" />
                           ) : (
-                            <Eye className="w-3.5 h-3.5" />
+                            <Eye className="w-4 h-4" />
                           )}
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleDeleteProduct(product.id)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                          className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
                           title="Delete product"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
-
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-base font-extrabold text-[#2e1065]">
-                        {formatCurrency(product.basePrice)}
-                      </span>
-                      {product.comparePrice && (
-                        <span className="text-xs text-slate-400 line-through">
-                          {formatCurrency(product.comparePrice)}
-                        </span>
-                      )}
-                    </div>
-
-                    {product.hasVariants && (
-                      <Badge variant="secondary">
-                        <Layers className="w-3 h-3 text-[#2e1065]" />
-                        {product.variants?.length || 0} variants
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-
-                {/* Stock Quick Controller */}
-                <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between text-xs bg-slate-50/50">
-                  <span className="text-slate-500 font-medium">Stock:</span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleStockChange(product.id, product.stockQuantity, -1)}
-                      className="h-6 w-6 rounded-md bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center font-bold text-[#0f172a] cursor-pointer"
-                    >
-                      -
-                    </button>
-                    <span className="font-mono font-bold text-[#0f172a] px-1">
-                      {product.stockQuantity}
-                    </span>
-                    <button
-                      onClick={() => handleStockChange(product.id, product.stockQuantity, 1)}
-                      className="h-6 w-6 rounded-md bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center font-bold text-[#0f172a] cursor-pointer"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
 
       {/* Slide-Over Product Sheet (Full-screen on mobile, right sheet on desktop) */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="fixed inset-0 z-50 flex justify-end overflow-hidden">
           {/* Backdrop */}
           <div
             onClick={() => !submitting && setModalOpen(false)}
@@ -592,7 +1015,7 @@ export default function ProductsPage() {
           />
 
           {/* Sheet Panel */}
-          <div className="relative z-10 w-full sm:max-w-lg h-full bg-white border-l border-slate-200 shadow-2xl flex flex-col">
+          <div className="relative z-10 w-screen sm:w-full sm:max-w-lg h-[100dvh] sm:h-full bg-white sm:border-l border-slate-200 shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
             {/* Sticky Header */}
             <div className="px-5 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
               <div>
@@ -679,27 +1102,23 @@ export default function ProductsPage() {
                     <UploadCloud className="w-5 h-5 text-[#2e1065]" />
                     <span className="text-xs font-semibold text-[#0f172a]">
                       {compressing
-                        ? "Optimizing image..."
-                        : `Upload Image (Slot ${imagePreviews.length + 1})`}
+                        ? "Optimizing images..."
+                        : imagePreviews.length === 0
+                        ? "Upload Images (Up to 2 at once)"
+                        : "Add 1 More Image (Slot 2)"}
                     </span>
                     <span className="text-[11px] text-slate-400">
-                      Click to choose a photo (PNG, JPG, WebP)
+                      Select 1 or 2 photos (PNG, JPG, WebP)
                     </span>
                     <input
                       type="file"
                       accept="image/*"
+                      multiple
                       className="hidden"
                       onChange={handleImageSelect}
                       disabled={compressing}
                     />
                   </label>
-                )}
-
-                {compressionStats && (
-                  <p className="text-[11px] text-[#2e1065] mt-2 font-mono flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" />
-                    {compressionStats}
-                  </p>
                 )}
               </div>
 
@@ -711,11 +1130,17 @@ export default function ProductsPage() {
                 <input
                   type="text"
                   required
+                  maxLength={150}
                   placeholder="e.g. Silk Midi Dress, iPhone 15 Pro, Red Velvet Cake"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065] text-sm"
                 />
+                {title.length > 0 && !isTitleValid && (
+                  <p className="text-[11px] text-red-600 mt-1">
+                    Enter a valid product name (at least 2 letters).
+                  </p>
+                )}
               </div>
 
               {/* 3. Description (Required, directly after Title) */}
@@ -732,6 +1157,11 @@ export default function ProductsPage() {
                   onChange={(e) => setDescription(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065] text-sm resize-none"
                 />
+                {description.length > 0 && !isDescValid && (
+                  <p className="text-[11px] text-red-600 mt-1">
+                    Description must be at least 5 characters.
+                  </p>
+                )}
               </div>
 
               {/* 4. Category (keeps storefront tabs organized) */}
@@ -768,33 +1198,65 @@ export default function ProductsPage() {
               </div>
 
               {/* 5. Pricing & Stock */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-[#0f172a] mb-1.5">
-                    Price (₦) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min={100}
-                    placeholder="15000"
-                    value={basePrice}
-                    onChange={(e) => setBasePrice(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065] text-sm"
-                  />
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#0f172a] mb-1.5">
+                      Actual Price (₦) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      required
+                      placeholder="15,000"
+                      value={basePrice}
+                      onChange={(e) =>
+                        setBasePrice(formatNumberInput(e.target.value))
+                      }
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065] text-sm"
+                    />
+                    {basePrice.length > 0 && !isActualPriceValid && (
+                      <p className="text-[11px] text-red-600 mt-1">
+                        Minimum price is ₦100.
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#0f172a] mb-1.5">
+                      Discount Price (₦)
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Optional sale price"
+                      value={comparePrice}
+                      onChange={(e) =>
+                        setComparePrice(formatNumberInput(e.target.value))
+                      }
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065] text-sm"
+                    />
+                    {comparePrice.length > 0 && !isDiscountValid && (
+                      <p className="text-[11px] text-red-600 mt-1">
+                        Must be ₦100+ and lower than Actual Price.
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[#0f172a] mb-1.5">
-                    Compare-at Price (₦)
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="Optional old price"
-                    value={comparePrice}
-                    onChange={(e) => setComparePrice(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065] text-sm"
-                  />
-                </div>
+                {discountPriceNum !== null &&
+                  isDiscountValid &&
+                  isActualPriceValid && (
+                    <p className="text-[11px] text-slate-500">
+                      Customers pay{" "}
+                      <span className="font-bold text-[#2e1065]">
+                        {formatCurrency(discountPriceNum)}
+                      </span>{" "}
+                      and{" "}
+                      <span className="line-through text-slate-400">
+                        {formatCurrency(actualPriceNum)}
+                      </span>{" "}
+                      will be crossed out.
+                    </p>
+                  )}
               </div>
 
               <div>
@@ -802,11 +1264,14 @@ export default function ProductsPage() {
                   Stock Quantity <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="number"
-                  min={0}
+                  type="text"
+                  inputMode="numeric"
                   required
+                  placeholder="1"
                   value={stockQuantity}
-                  onChange={(e) => setStockQuantity(e.target.value)}
+                  onChange={(e) =>
+                    setStockQuantity(e.target.value.replace(/\D/g, ""))
+                  }
                   className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065] text-sm"
                 />
               </div>
@@ -901,7 +1366,20 @@ export default function ProductsPage() {
                   <input
                     type="checkbox"
                     checked={hasVariants}
-                    onChange={(e) => setHasVariants(e.target.checked)}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setHasVariants(checked);
+                      if (
+                        checked &&
+                        variants.length === 1 &&
+                        variants[0].price === 0 &&
+                        effectiveSellingPrice > 0
+                      ) {
+                        setVariants([
+                          { ...variants[0], price: effectiveSellingPrice },
+                        ]);
+                      }
+                    }}
                     className="h-4 w-4 rounded accent-[#2e1065] cursor-pointer"
                   />
                 </label>
@@ -942,53 +1420,76 @@ export default function ProductsPage() {
                       </button>
                     </div>
 
-                    <div className="space-y-2">
-                      {variants.map((v, i) => (
-                        <div key={i} className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            placeholder="Option (e.g. Size: M)"
-                            value={v.name}
-                            onChange={(e) => {
-                              const updated = [...variants];
-                              updated[i].name = e.target.value;
-                              setVariants(updated);
-                            }}
-                            className="flex-1 px-2.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-[#0f172a]"
-                          />
-                          <input
-                            type="number"
-                            placeholder="Price"
-                            value={v.price}
-                            onChange={(e) => {
-                              const updated = [...variants];
-                              updated[i].price = Number(e.target.value);
-                              setVariants(updated);
-                            }}
-                            className="w-24 px-2.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-[#0f172a]"
-                          />
-                          <input
-                            type="number"
-                            placeholder="Qty"
-                            value={v.stockQuantity}
-                            onChange={(e) => {
-                              const updated = [...variants];
-                              updated[i].stockQuantity = Number(e.target.value);
-                              setVariants(updated);
-                            }}
-                            className="w-16 px-2.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-[#0f172a]"
-                          />
-                          {variants.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => removeVariantRow(i)}
-                              className="text-slate-400 hover:text-red-600 cursor-pointer"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      ))}
+                    <div className="space-y-2.5">
+                      <div className="grid grid-cols-[1fr_92px_58px_20px] gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 px-0.5">
+                        <span>Option Name</span>
+                        <span>Price (₦)</span>
+                        <span>Qty</span>
+                        <span />
+                      </div>
+                      {variants.map((v, i) => {
+                        const badName =
+                          v.name.trim().length > 0 &&
+                          !/[a-zA-Z]/.test(v.name.trim());
+                        return (
+                          <div key={i} className="space-y-1">
+                            <div className="grid grid-cols-[1fr_92px_58px_20px] items-center gap-2">
+                              <input
+                                type="text"
+                                placeholder="e.g. Size: M"
+                                value={v.name}
+                                onChange={(e) => {
+                                  const updated = [...variants];
+                                  updated[i].name = e.target.value;
+                                  setVariants(updated);
+                                }}
+                                className="w-full min-w-0 px-2.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-[#0f172a]"
+                              />
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                placeholder="15,000"
+                                value={v.price > 0 ? formatNumberInput(v.price) : ""}
+                                onChange={(e) => {
+                                  const updated = [...variants];
+                                  updated[i].price = parseNumberInput(e.target.value);
+                                  setVariants(updated);
+                                }}
+                                className="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-[#0f172a]"
+                              />
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                placeholder="1"
+                                value={String(v.stockQuantity)}
+                                onChange={(e) => {
+                                  const updated = [...variants];
+                                  const digits = e.target.value.replace(/\D/g, "");
+                                  updated[i].stockQuantity = digits ? Number(digits) : 0;
+                                  setVariants(updated);
+                                }}
+                                className="w-full px-2 py-2 bg-white border border-slate-200 rounded-lg text-xs text-[#0f172a] text-center"
+                              />
+                              {variants.length > 1 ? (
+                                <button
+                                  type="button"
+                                  onClick={() => removeVariantRow(i)}
+                                  className="text-slate-400 hover:text-red-600 cursor-pointer flex items-center justify-center"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              ) : (
+                                <span />
+                              )}
+                            </div>
+                            {badName && (
+                              <p className="text-[10px] text-red-600">
+                                Option name must include text (e.g. Size: 42 or 128GB), not just numbers.
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
 
                     <button
@@ -1016,8 +1517,8 @@ export default function ProductsPage() {
               <Button
                 type="submit"
                 form="product-sheet-form"
-                disabled={submitting || compressing}
-                className="bg-[#2e1065] hover:bg-[#3b0764] text-white"
+                disabled={submitting || compressing || !isFormValid}
+                className="bg-[#2e1065] hover:bg-[#3b0764] text-white disabled:opacity-45 disabled:cursor-not-allowed"
               >
                 {submitting ? (
                   <>

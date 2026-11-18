@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatNumberInput, parseNumberInput } from "@/lib/utils";
 import { ShippingConfig } from "@/types/storefront";
 import {
   Card,
@@ -21,6 +21,7 @@ import {
   Trash2,
   Loader2,
   Save,
+  RotateCcw,
   X,
 } from "lucide-react";
 
@@ -76,6 +77,8 @@ interface PromoCode {
   isActive: boolean;
 }
 
+const PROMOS_ENABLED = false;
+
 const DEFAULT_SHIPPING: ShippingConfig = {
   defaultFee: 0,
   freeDeliveryEnabled: false,
@@ -83,6 +86,9 @@ const DEFAULT_SHIPPING: ShippingConfig = {
   freeDeliveryStates: [],
   freeDeliveryMinOrder: null,
   stateRates: {},
+  offerBannerEnabled: false,
+  offerBannerText: "",
+  offerBannerExpiresAt: null,
 };
 
 export default function DeliveryAndPromosPage() {
@@ -91,6 +97,8 @@ export default function DeliveryAndPromosPage() {
   const [savingShipping, setSavingShipping] = useState(false);
 
   const [shipping, setShipping] = useState<ShippingConfig>(DEFAULT_SHIPPING);
+  const [initialShipping, setInitialShipping] =
+    useState<ShippingConfig>(DEFAULT_SHIPPING);
   const [newStateName, setNewStateName] = useState("Lagos");
   const [newStateFee, setNewStateFee] = useState("");
 
@@ -116,7 +124,7 @@ export default function DeliveryAndPromosPage() {
 
         const cfg = settingsRes.data.data?.shippingConfig;
         if (cfg && typeof cfg === "object") {
-          setShipping({
+          const loaded: ShippingConfig = {
             defaultFee: Number(cfg.defaultFee || 0),
             freeDeliveryEnabled: Boolean(cfg.freeDeliveryEnabled),
             freeDeliveryScope: cfg.freeDeliveryScope || "ALL",
@@ -125,7 +133,12 @@ export default function DeliveryAndPromosPage() {
               : [],
             freeDeliveryMinOrder: cfg.freeDeliveryMinOrder ?? null,
             stateRates: cfg.stateRates || {},
-          });
+            offerBannerEnabled: Boolean(cfg.offerBannerEnabled),
+            offerBannerText: cfg.offerBannerText || "",
+            offerBannerExpiresAt: cfg.offerBannerExpiresAt || null,
+          };
+          setShipping(loaded);
+          setInitialShipping(loaded);
         }
 
         setPromos(promosRes.data.data || []);
@@ -143,6 +156,9 @@ export default function DeliveryAndPromosPage() {
     fetchAll();
   }, [router]);
 
+  const hasShippingChanges =
+    JSON.stringify(shipping) !== JSON.stringify(initialShipping);
+
   const handleSaveShipping = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingShipping(true);
@@ -150,7 +166,8 @@ export default function DeliveryAndPromosPage() {
       await api.put("/store/settings", {
         shippingConfig: shipping,
       });
-      toast.success("Delivery rates saved!");
+      setInitialShipping(shipping);
+      toast.success("Delivery settings saved!");
     } catch (err: any) {
       toast.error(
         err.response?.data?.message || "Failed to save delivery settings."
@@ -158,6 +175,10 @@ export default function DeliveryAndPromosPage() {
     } finally {
       setSavingShipping(false);
     }
+  };
+
+  const handleDiscardShipping = () => {
+    setShipping(initialShipping);
   };
 
   const toggleFreeState = (st: string) => {
@@ -173,8 +194,8 @@ export default function DeliveryAndPromosPage() {
   };
 
   const handleAddStateRate = () => {
-    const fee = Number(newStateFee);
-    if (!newStateName || Number.isNaN(fee) || fee < 0) {
+    const fee = parseNumberInput(newStateFee);
+    if (!newStateName || !newStateFee.trim() || Number.isNaN(fee) || fee < 0) {
       toast.error("Enter a valid delivery fee.");
       return;
     }
@@ -193,15 +214,25 @@ export default function DeliveryAndPromosPage() {
     });
   };
 
+  const parsedDiscountValue =
+    discountType === "PERCENTAGE"
+      ? Number(discountValue)
+      : parseNumberInput(discountValue);
+  const isPromoValid =
+    promoCode.trim().length >= 3 &&
+    parsedDiscountValue >= 1 &&
+    (discountType !== "PERCENTAGE" || parsedDiscountValue <= 100);
+
   const handleCreatePromo = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isPromoValid) return;
     setCreatingPromo(true);
     try {
       const res = await api.post("/store/promos", {
         code: promoCode.trim().toUpperCase(),
         discountType,
-        discountValue: Number(discountValue),
-        minOrderAmount: minOrderAmount ? Number(minOrderAmount) : null,
+        discountValue: parsedDiscountValue,
+        minOrderAmount: minOrderAmount ? parseNumberInput(minOrderAmount) : null,
         maxUses: maxUses ? Number(maxUses) : null,
         expiresAt: expiresAt || null,
       });
@@ -286,16 +317,16 @@ export default function DeliveryAndPromosPage() {
                 Default Delivery Fee (All Other States, ₦)
               </label>
               <input
-                type="number"
-                min={0}
-                value={shipping.defaultFee}
+                type="text"
+                inputMode="numeric"
+                value={formatNumberInput(shipping.defaultFee)}
                 onChange={(e) =>
                   setShipping({
                     ...shipping,
-                    defaultFee: Number(e.target.value || 0),
+                    defaultFee: parseNumberInput(e.target.value),
                   })
                 }
-                placeholder="e.g. 3500"
+                placeholder="e.g. 3,500"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 focus:bg-white border border-slate-200 text-sm text-[#0f172a] focus:outline-none focus:border-[#2e1065]"
               />
             </div>
@@ -434,11 +465,13 @@ export default function DeliveryAndPromosPage() {
                   ))}
                 </select>
                 <input
-                  type="number"
-                  min={0}
+                  type="text"
+                  inputMode="numeric"
                   placeholder="Fee (₦)"
                   value={newStateFee}
-                  onChange={(e) => setNewStateFee(e.target.value)}
+                  onChange={(e) =>
+                    setNewStateFee(formatNumberInput(e.target.value))
+                  }
                   className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-[#0f172a] w-full sm:w-36"
                 />
                 <Button
@@ -475,21 +508,165 @@ export default function DeliveryAndPromosPage() {
               )}
             </div>
 
-            <div className="pt-2 flex justify-end">
-              <Button type="submit" disabled={savingShipping}>
-                {savingShipping ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4" />
-                )}
-                <span>Save Delivery Settings</span>
-              </Button>
+            {/* Exclusive Offer Banner (Storefront Top Bar) */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+              <label className="flex items-center justify-between cursor-pointer gap-4">
+                <div>
+                  <p className="text-xs font-bold text-[#0f172a]">
+                    Exclusive Offer Banner (Top of Storefront)
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Write any custom offer or announcement to stay pinned right above your storefront header.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={Boolean(shipping.offerBannerEnabled)}
+                  onChange={(e) =>
+                    setShipping({
+                      ...shipping,
+                      offerBannerEnabled: e.target.checked,
+                    })
+                  }
+                  className="w-4 h-4 accent-[#2e1065] cursor-pointer shrink-0"
+                />
+              </label>
+
+              {shipping.offerBannerEnabled && (
+                <div className="pt-3 border-t border-slate-200 space-y-3">
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-semibold text-[#0f172a]">
+                        Your Offer / Announcement Text
+                      </label>
+                      <span className="text-[11px] text-slate-400">
+                        {(shipping.offerBannerText || "").length}/120
+                      </span>
+                    </div>
+                    <input
+                      type="text"
+                      maxLength={120}
+                      placeholder="e.g. Free gift on every order above ₦30,000 this weekend"
+                      value={shipping.offerBannerText || ""}
+                      onChange={(e) =>
+                        setShipping({
+                          ...shipping,
+                          offerBannerText: e.target.value,
+                        })
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065]"
+                    />
+                  </div>
+
+                  {/* Optional Quick-Fill Starters */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] text-slate-500">Ideas:</span>
+                    {[
+                      "Same-day Lagos dispatch for orders before 2 PM",
+                      "Free gift on all orders above ₦30,000",
+                      "Weekend Flash Sale — limited stock available!",
+                      "Buy 2 items & get a free surprise bonus",
+                    ].map((idea) => (
+                      <button
+                        key={idea}
+                        type="button"
+                        onClick={() =>
+                          setShipping({ ...shipping, offerBannerText: idea })
+                        }
+                        className="px-2.5 py-1 rounded-full bg-white border border-slate-200 hover:border-[#2e1065] text-[11px] text-slate-600 transition cursor-pointer"
+                      >
+                        {idea}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="max-w-xs">
+                    <label className="block text-xs font-semibold text-[#0f172a] mb-1.5">
+                      Auto-Hide After Date (Optional)
+                    </label>
+                    <input
+                      type="date"
+                      value={shipping.offerBannerExpiresAt || ""}
+                      onChange={(e) =>
+                        setShipping({
+                          ...shipping,
+                          offerBannerExpiresAt: e.target.value || null,
+                        })
+                      }
+                      className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-[#0f172a]"
+                    />
+                  </div>
+
+                  {shipping.offerBannerText?.trim() && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Storefront Preview
+                      </span>
+                      <div className="w-full rounded-lg bg-[#2e1065] text-white text-center py-2 px-3 text-[11px] sm:text-xs font-semibold tracking-wide">
+                        {shipping.offerBannerText.trim()}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
+
+            {hasShippingChanges && (
+              <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
+                <p className="text-xs font-medium text-slate-600">
+                  You have unsaved changes.
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDiscardShipping}
+                    disabled={savingShipping}
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Discard</span>
+                  </Button>
+                  <Button type="submit" size="sm" disabled={savingShipping}>
+                    {savingShipping ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Save className="w-3.5 h-3.5" />
+                    )}
+                    <span>Save Changes</span>
+                  </Button>
+                </div>
+              </div>
+            )}
           </form>
         </CardContent>
       </Card>
 
       {/* 2. Promo / Discount Codes */}
+      {!PROMOS_ENABLED ? (
+        <Card className="border-dashed border-slate-300 bg-slate-50/70">
+          <CardHeader>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-slate-200/70 flex items-center justify-center text-slate-600">
+                  <Tag className="w-4 h-4" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">
+                    Promo &amp; Discount Codes
+                  </CardTitle>
+                  <CardDescription>
+                    Create coupon codes shoppers can apply at checkout.
+                  </CardDescription>
+                </div>
+              </div>
+              <span className="px-2.5 py-1 rounded-full bg-[#2e1065]/10 text-[#2e1065] text-[11px] font-bold uppercase tracking-wider">
+                Upcoming Update
+              </span>
+            </div>
+          </CardHeader>
+        </Card>
+      ) : (
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2.5">
@@ -543,13 +720,19 @@ export default function DeliveryAndPromosPage() {
                   {discountType === "PERCENTAGE" ? "Percent (%) *" : "Amount (₦) *"}
                 </label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   required
-                  min={1}
-                  max={discountType === "PERCENTAGE" ? 100 : undefined}
-                  placeholder={discountType === "PERCENTAGE" ? "10" : "2000"}
+                  placeholder={discountType === "PERCENTAGE" ? "10" : "2,000"}
                   value={discountValue}
-                  onChange={(e) => setDiscountValue(e.target.value)}
+                  onChange={(e) => {
+                    if (discountType === "PERCENTAGE") {
+                      const digits = e.target.value.replace(/\D/g, "");
+                      setDiscountValue(digits ? String(Math.min(100, Number(digits))) : "");
+                    } else {
+                      setDiscountValue(formatNumberInput(e.target.value));
+                    }
+                  }}
                   className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-[#0f172a]"
                 />
               </div>
@@ -561,11 +744,13 @@ export default function DeliveryAndPromosPage() {
                   Min Order (₦, Optional)
                 </label>
                 <input
-                  type="number"
-                  min={0}
-                  placeholder="e.g. 10000"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="e.g. 10,000"
                   value={minOrderAmount}
-                  onChange={(e) => setMinOrderAmount(e.target.value)}
+                  onChange={(e) =>
+                    setMinOrderAmount(formatNumberInput(e.target.value))
+                  }
                   className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-[#0f172a]"
                 />
               </div>
@@ -596,7 +781,11 @@ export default function DeliveryAndPromosPage() {
             </div>
 
             <div className="flex justify-end">
-              <Button type="submit" size="sm" disabled={creatingPromo}>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={creatingPromo || !isPromoValid}
+              >
                 {creatingPromo ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
@@ -662,6 +851,7 @@ export default function DeliveryAndPromosPage() {
           )}
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }

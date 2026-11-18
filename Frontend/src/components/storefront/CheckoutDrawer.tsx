@@ -66,6 +66,8 @@ const NIGERIAN_STATES = [
   "Zamfara",
 ];
 
+const PROMOS_ENABLED = false;
+
 interface CheckoutDrawerProps {
   storeSlug: string;
   shippingConfig?: ShippingConfig | null;
@@ -771,7 +773,8 @@ export function CheckoutDrawer({
                     ))}
                   </div>
 
-                  {/* Promo Code */}
+                  {/* Promo Code (disabled until upcoming update) */}
+                  {PROMOS_ENABLED && (
                   <div className="pt-2 border-t border-[#f1f5f9]">
                     <div className="flex gap-2">
                       <input
@@ -818,6 +821,7 @@ export function CheckoutDrawer({
                       </p>
                     )}
                   </div>
+                  )}
 
                   {/* Totals */}
                   <div className="pt-3 border-t border-[#f1f5f9] space-y-2 text-xs">

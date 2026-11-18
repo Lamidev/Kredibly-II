@@ -82,7 +82,7 @@ export function AdminHeader({ setOpen }: { setOpen: (val: boolean) => void }) {
           <span className="font-semibold text-[#0f172a]">Merchant Portal</span>
           <span>/</span>
           <span className="font-mono text-[#2e1065]">
-            kredibly.shop/{storeSlug}
+            {storeSlug}.kredibly.shop
           </span>
         </div>
       </div>

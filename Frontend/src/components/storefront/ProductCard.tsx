@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { getImageUrl } from "@/lib/utils";
+import { getImageUrl, getStorePath } from "@/lib/utils";
 import { useWishlistStore } from "@/store/useWishlistStore";
 import { ShoppingCart, ShoppingBag, Heart } from "lucide-react";
 
@@ -67,19 +67,13 @@ export function ProductCard({
 
   const badgeText =
     featuredBadge ||
-    (isSoldOut
-      ? "OUT OF STOCK"
-      : hasDiscount
-      ? `SAVE ${discountPct}%`
-      : product.hasVariants
-      ? "MULTIPLE OPTIONS"
-      : "");
+    (product.hasVariants && !isSoldOut ? "MULTIPLE OPTIONS" : "");
 
   return (
     <article className="swot-product-card w-full group font-sans cursor-pointer">
       {/* Full-Bleed Product Image Container */}
       <Link
-        href={`/${store.slug}/p/${product.slug}`}
+        href={getStorePath(store.slug, `/p/${product.slug}`)}
         className="block h-[205px] sm:h-[225px] bg-white border border-[#e6e8e1] rounded-[5px] overflow-hidden relative group-hover:border-[#cfd2c6] transition-colors"
       >
         {primaryImage ? (
@@ -87,7 +81,9 @@ export function ProductCard({
             src={getFullImageUrl(primaryImage)}
             alt={product.title}
             loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+            className={`w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105 ${
+              isSoldOut ? "opacity-65 grayscale-[30%]" : ""
+            }`}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-[#c5c8be]">
@@ -95,38 +91,57 @@ export function ProductCard({
           </div>
         )}
 
-        {/* Quick Wishlist Heart in top-left */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleWishlist(store.slug, product as any);
-          }}
-          aria-label="Save to wishlist"
-          className={`absolute top-2.5 left-2.5 w-8 h-8 rounded-[6px] backdrop-blur-[5px] flex items-center justify-center transition-all duration-200 cursor-pointer z-10 ${
-            isWishlisted
-              ? "bg-[#2e1065] text-white"
-              : "bg-white/85 text-[#20231e] hover:text-[#2e1065] md:opacity-0 md:group-hover:opacity-100"
-          }`}
-        >
-          <Heart className={`h-3.5 w-3.5 ${isWishlisted ? "fill-current" : ""}`} />
-        </button>
-
-        {/* Quick Add-to-Cart button in top-right */}
-        {!isSoldOut && onAddToCart && (
-          <button
-            type="button"
-            onClick={(e) => onAddToCart(product, e)}
-            aria-label="Add to cart"
-            className="absolute top-2.5 right-2.5 w-8 h-8 rounded-[6px] bg-[#202020df] backdrop-blur-[5px] text-white flex items-center justify-center transition-all duration-200 hover:bg-[#2e1065] md:opacity-0 md:group-hover:opacity-100 cursor-pointer z-10"
-          >
-            <ShoppingCart className="h-3.5 w-3.5" />
-          </button>
+        {/* Top-Left: Discount Percentage */}
+        {hasDiscount && discountPct > 0 && (
+          <span className="absolute top-2.5 left-2.5 bg-[#2e1065] text-white px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase rounded-[4px] shadow-xs z-10">
+            -{discountPct}%
+          </span>
         )}
 
+        {/* Top-Right: Stock Count or Out of Stock */}
+        <span
+          className={`absolute top-2.5 right-2.5 px-2 py-0.5 text-[10px] font-semibold rounded-[4px] backdrop-blur-[5px] z-10 ${
+            isSoldOut
+              ? "bg-red-600/90 text-white uppercase tracking-wide"
+              : "bg-[#202020df] text-white"
+          }`}
+        >
+          {isSoldOut ? "Out of Stock" : `${product.stockQuantity} in stock`}
+        </span>
+
+        {/* Quick Actions (Bottom-Right): Wishlist & Add-to-Cart */}
+        <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5 z-10">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleWishlist(store.slug, product as any);
+            }}
+            aria-label="Save to wishlist"
+            className={`w-8 h-8 rounded-[6px] backdrop-blur-[5px] flex items-center justify-center transition-all duration-200 cursor-pointer ${
+              isWishlisted
+                ? "bg-[#2e1065] text-white"
+                : "bg-white/90 text-[#20231e] hover:text-[#2e1065] md:opacity-0 md:group-hover:opacity-100"
+            }`}
+          >
+            <Heart className={`h-3.5 w-3.5 ${isWishlisted ? "fill-current" : ""}`} />
+          </button>
+
+          {!isSoldOut && onAddToCart && (
+            <button
+              type="button"
+              onClick={(e) => onAddToCart(product, e)}
+              aria-label="Add to cart"
+              className="w-8 h-8 rounded-[6px] bg-[#202020df] backdrop-blur-[5px] text-white flex items-center justify-center transition-all duration-200 hover:bg-[#2e1065] md:opacity-0 md:group-hover:opacity-100 cursor-pointer"
+            >
+              <ShoppingCart className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+
         {badgeText && (
-          <span className="absolute bottom-[10px] left-[11px] max-w-[calc(100%-22px)] truncate bg-[#202020df] backdrop-blur-[5px] text-white px-[8px] py-[3px] text-[7px] sm:text-[8px] tracking-[0.4px] sm:tracking-[1px] uppercase rounded-[2px] font-medium">
+          <span className="absolute bottom-[10px] left-[11px] max-w-[calc(100%-96px)] truncate bg-[#202020df] backdrop-blur-[5px] text-white px-[8px] py-[3px] text-[7px] sm:text-[8px] tracking-[0.4px] sm:tracking-[1px] uppercase rounded-[2px] font-medium">
             {badgeText}
           </span>
         )}
@@ -138,7 +153,7 @@ export function ProductCard({
       </p>
 
       {/* SWOT Product Title */}
-      <Link href={`/${store.slug}/p/${product.slug}`}>
+      <Link href={getStorePath(store.slug, `/p/${product.slug}`)}>
         <h3 className="font-display text-[13px] sm:text-[15px] font-semibold text-[#20231e] mt-[4px] mb-0 tracking-[-0.3px] line-clamp-1 group-hover:text-[#2e1065] transition-colors">
           {product.title}
         </h3>
