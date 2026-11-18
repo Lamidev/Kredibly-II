@@ -1,18 +1,13 @@
 /**
- * Sanitizes a store name into a URL-friendly slug:
+ * Sanitizes a store name into a clean, hyphen-free subdomain slug:
  * - Converts to lowercase
- * - Replaces spaces and underscores with hyphens
- * - Removes any non-alphanumeric characters except hyphens
- * - Strips leading and trailing hyphens
+ * - Removes all spaces, hyphens, underscores, and non-alphanumeric characters
  */
 export function sanitizeSlug(name: string): string {
   return name
     .toLowerCase()
     .trim()
-    .replace(/[\s_]+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+    .replace(/[^a-z0-9]/g, "");
 }
 
 /**

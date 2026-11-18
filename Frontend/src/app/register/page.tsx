@@ -64,9 +64,7 @@ function RegisterFormContent() {
       const slugVal = (prefillSlug || prefillStoreName || "")
         .toLowerCase()
         .trim()
-        .replace(/[\s_]+/g, "-")
-        .replace(/[^a-z0-9-]/g, "")
-        .replace(/-+/g, "-");
+        .replace(/[^a-z0-9]/g, "");
 
       setFormData((prev) => ({
         ...prev,
@@ -82,9 +80,7 @@ function RegisterFormContent() {
     const generatedSlug = name
       .toLowerCase()
       .trim()
-      .replace(/[\s_]+/g, "-")
-      .replace(/[^a-z0-9-]/g, "")
-      .replace(/-+/g, "-");
+      .replace(/[^a-z0-9]/g, "");
 
     setFormData((prev) => ({
       ...prev,
@@ -399,9 +395,9 @@ function RegisterFormContent() {
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
               <span className="text-rose-600 font-medium">Handle taken. Try:</span>
               {[
-                `${formData.slug}-ng`,
-                `the-${formData.slug}`,
-                `${formData.slug}-official`,
+                `${formData.slug}ng`,
+                `the${formData.slug}`,
+                `${formData.slug}official`,
               ].map((sug) => (
                 <button
                   key={sug}
