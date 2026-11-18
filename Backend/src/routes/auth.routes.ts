@@ -6,6 +6,8 @@ const router = Router();
 
 // Public auth endpoints
 router.post("/register", AuthController.register);
+router.post("/verify-email", AuthController.verifyEmail);
+router.post("/resend-verification", AuthController.resendVerification);
 router.post("/login", AuthController.login);
 router.post("/forgot-password", AuthController.forgotPassword);
 router.post("/reset-password", AuthController.resetPassword);

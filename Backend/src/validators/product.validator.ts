@@ -8,11 +8,20 @@ export const variantSchema = z.object({
   sku: z.string().optional(),
 });
 
+export const attributeSchema = z.object({
+  label: z.string().trim().min(1, "Detail name is required").max(40),
+  value: z.string().trim().min(1, "Detail value is required").max(120),
+});
+
 export const createProductSchema = z.object({
   title: z.string().min(2, "Product title must be at least 2 characters").max(150),
-  description: z.string().optional(),
+  description: z
+    .string()
+    .trim()
+    .min(5, "Product description is required (at least 5 characters)"),
   category: z.string().max(60).optional().nullable(),
   brand: z.string().max(60).optional().nullable(),
+  attributes: z.array(attributeSchema).max(10).optional().nullable(),
   basePrice: z.coerce.number().min(100, "Base price must be at least ₦100"),
   comparePrice: z.coerce.number().optional().nullable(),
   images: z.array(z.string()).max(2, "Maximum 2 images allowed per product"),

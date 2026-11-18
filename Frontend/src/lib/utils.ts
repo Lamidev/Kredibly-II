@@ -13,3 +13,19 @@ export function formatCurrency(amount: number | string, currency = "NGN"): strin
     maximumFractionDigits: 0,
   }).format(numericAmount);
 }
+
+export function getImageUrl(path?: string | null): string {
+  if (!path) return "";
+  if (
+    path.startsWith("http://") ||
+    path.startsWith("https://") ||
+    path.startsWith("blob:") ||
+    path.startsWith("data:")
+  ) {
+    return path;
+  }
+  const rawApi = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+  const base = rawApi.replace(/\/api\/?$/, "").replace(/\/+$/, "");
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  return `${base}${cleanPath}`;
+}

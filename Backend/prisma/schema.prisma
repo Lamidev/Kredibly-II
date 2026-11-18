@@ -42,6 +42,9 @@ model User {
   passwordHash         String
   fullName             String
   role                 Role      @default(MERCHANT)
+  emailVerified        Boolean   @default(true)
+  emailVerifyCodeHash  String?
+  emailVerifyExpires   DateTime?
   resetPasswordToken   String?
   resetPasswordExpires DateTime?
   createdAt            DateTime  @default(now())
@@ -63,6 +66,10 @@ model Store {
   bannerUrl        String?
   themeColor       String           @default("#0f172a")
   whatsappNumber   String
+  contactPhone     String?
+  contactEmail     String?
+  address          String?
+  socialLinks      Json?            // e.g. { instagram, tiktok, facebook, twitter }
   currency         String           @default("NGN")
   
   subscriptionTier  SubscriptionTier @default(STARTER)
@@ -97,7 +104,8 @@ model Product {
   slug          String
   description   String?
   category      String?          // Merchant-defined custom category (e.g. "iPhones", "Bone Straight", "Sneakers")
-  brand         String?          // Optional brand name (e.g. "Apple", "Nike")
+  brand         String?          // Optional legacy brand name
+  attributes    Json?            // Dynamic key-value details e.g. [{ label: "Material", value: "Cotton" }]
   basePrice     Decimal          @db.Decimal(12, 2)
   comparePrice  Decimal?         @db.Decimal(12, 2)
   images        String[]         // Max 2 URLs (WebP on VPS storage)

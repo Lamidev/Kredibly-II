@@ -15,6 +15,7 @@ export interface Store {
   whatsappNumber: string;
   currency: string;
   subscriptionTier: string;
+  logoUrl?: string | null;
   bankCode?: string | null;
   bankName?: string | null;
   accountNumber?: string | null;

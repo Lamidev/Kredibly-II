@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { AdminSidebar } from "@/components/dashboard/AdminSidebar";
 import { AdminHeader } from "@/components/dashboard/AdminHeader";
@@ -13,7 +14,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { isAuthenticated, user, initialize } = useAuthStore();
+  const { isAuthenticated, user, initialize, updateStore } = useAuthStore();
   const [openSidebar, setOpenSidebar] = useState(false);
   const [checking, setChecking] = useState(true);
 
@@ -27,8 +28,15 @@ export default function DashboardLayout({
       router.replace("/login");
     } else {
       setChecking(false);
+      api
+        .get("/auth/me")
+        .then((res) => {
+          const primaryStore = res.data?.data?.stores?.[0];
+          if (primaryStore) updateStore(primaryStore);
+        })
+        .catch(() => {});
     }
-  }, [initialize, router]);
+  }, [initialize, router, updateStore]);
 
   if (checking || (!isAuthenticated && !user)) {
     return (

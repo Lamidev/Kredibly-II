@@ -7,7 +7,7 @@ import { CartDrawer } from "@/components/storefront/CartDrawer";
 import { FloatingCartBar } from "@/components/storefront/FloatingCartBar";
 import { CheckoutDrawer } from "@/components/storefront/CheckoutDrawer";
 import { ProductCard } from "@/components/storefront/ProductCard";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, getImageUrl } from "@/lib/utils";
 import { api, API_BASE_URL } from "@/lib/api";
 import {
   ShieldCheck,
@@ -22,6 +22,11 @@ import {
   ChevronRight,
   Loader2,
   SlidersHorizontal,
+  MapPin,
+  Phone,
+  Mail,
+  ArrowDown,
+  Menu,
 } from "lucide-react";
 
 interface Variant {
@@ -47,6 +52,13 @@ interface Product {
   variants: Variant[];
 }
 
+interface SocialLinks {
+  instagram?: string | null;
+  tiktok?: string | null;
+  facebook?: string | null;
+  twitter?: string | null;
+}
+
 interface StoreData {
   id: string;
   name: string;
@@ -56,9 +68,27 @@ interface StoreData {
   bannerUrl?: string;
   themeColor: string;
   whatsappNumber: string;
+  contactPhone?: string | null;
+  contactEmail?: string | null;
+  address?: string | null;
+  socialLinks?: SocialLinks | null;
   currency: string;
   verifiedOrdersCount?: number;
   products: Product[];
+}
+
+function toSocialUrl(platform: keyof SocialLinks, raw?: string | null): string | null {
+  const val = raw?.trim();
+  if (!val) return null;
+  if (/^https?:\/\//i.test(val)) return val;
+  const handle = val.replace(/^@/, "");
+  const bases: Record<keyof SocialLinks, string> = {
+    instagram: `https://instagram.com/${handle}`,
+    tiktok: `https://tiktok.com/@${handle}`,
+    facebook: `https://facebook.com/${handle}`,
+    twitter: `https://x.com/${handle}`,
+  };
+  return bases[platform];
 }
 
 const ITEMS_PER_PAGE = 20;
@@ -70,6 +100,8 @@ export function StorefrontClient({ store }: { store: StoreData }) {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [headerSearchOpen, setHeaderSearchOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sortBy, setSortBy] = useState<"newest" | "price-asc" | "price-desc" | "sale">("newest");
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
 
@@ -80,12 +112,7 @@ export function StorefrontClient({ store }: { store: StoreData }) {
   const [trackedOrders, setTrackedOrders] = useState<any[] | null>(null);
   const [trackError, setTrackError] = useState("");
 
-  const getFullImageUrl = (path?: string) => {
-    if (!path) return "";
-    if (path.startsWith("http")) return path;
-    const base = API_BASE_URL.replace("/api", "");
-    return `${base}${path}`;
-  };
+  const getFullImageUrl = (path?: string) => getImageUrl(path);
 
   const handleQuickAdd = (product: Product, e: React.MouseEvent) => {
     e.preventDefault();
@@ -116,17 +143,39 @@ export function StorefrontClient({ store }: { store: StoreData }) {
 
   // Dynamically extract custom merchant categories from active products
   const customCategories = useMemo(() => {
-    const map = new Map<string, string>();
+    const map = new Map<string, { label: string; count: number }>();
     store.products.forEach((p) => {
       if (p.category && p.category.trim()) {
         const key = p.category.trim().toLowerCase();
-        if (!map.has(key)) {
-          map.set(key, p.category.trim());
+        const existing = map.get(key);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          map.set(key, { label: p.category.trim(), count: 1 });
         }
       }
     });
-    return Array.from(map.entries()).map(([key, label]) => ({ key, label }));
+    return Array.from(map.entries()).map(([key, { label, count }]) => ({
+      key,
+      label,
+      count,
+    }));
   }, [store.products]);
+
+  // Top 5 categories by product count for clean header navigation
+  const headerCategories = useMemo(() => {
+    return [...customCategories]
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [customCategories]);
+
+  const handleCategoryNav = (catKey: string) => {
+    setSelectedCategory(catKey);
+    setVisibleCount(ITEMS_PER_PAGE);
+    setMobileMenuOpen(false);
+    const el = document.getElementById("catalogue");
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+  };
 
   // Top 4 Curated / Featured Arrivals
   const topArrivals = useMemo(() => {
@@ -207,36 +256,74 @@ export function StorefrontClient({ store }: { store: StoreData }) {
       {/* 1. Top Sticky Store Header */}
       <header className="sticky top-0 z-30 bg-[#fafaf8]/95 backdrop-blur-md border-b border-[#daddd4]">
         <div className="mx-auto w-[min(1180px,calc(100%-32px))] md:w-[min(1180px,calc(100%-48px))] py-3.5 flex items-center justify-between gap-3">
-          {/* Brand Identity */}
-          <Link href={`/${store.slug}`} className="flex items-center gap-2.5 min-w-0">
-            {store.logoUrl ? (
-              <img
-                src={getFullImageUrl(store.logoUrl)}
-                alt={store.name}
-                className="h-9 w-9 rounded-[6px] object-cover border border-[#daddd4] shrink-0"
-              />
-            ) : (
-              <div className="h-9 w-9 rounded-[6px] bg-[#2e1065] flex items-center justify-center font-display font-extrabold text-white text-sm shrink-0">
-                {store.name.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <div className="flex flex-col min-w-0">
-              <span className="font-display text-[15px] sm:text-[17px] leading-tight font-extrabold text-[#20231e] tracking-[-0.5px] uppercase truncate">
-                {store.name}
-              </span>
-              <span className="text-[8.5px] sm:text-[9px] font-bold text-[#62665d] uppercase tracking-[0.14em] flex items-center gap-1 truncate">
-                <ShieldCheck className="w-3 h-3 text-[#3b0764] shrink-0" />
-                <span>Verified Escrow Store</span>
-              </span>
-            </div>
-          </Link>
+          {/* Left: Hamburger (Mobile) + Brand Identity */}
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+              aria-label="Toggle store menu"
+              className="lg:hidden p-2 rounded-[6px] bg-[#f3f4ef] hover:bg-[#e6e8e1] border border-[#daddd4] text-[#20231e] flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            >
+              {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
 
-          {/* Header Actions: Track Order & Cart Bag (WhatsApp only after checkout) */}
+            <Link href={`/${store.slug}`} className="flex items-center gap-2.5 min-w-0">
+              {store.logoUrl ? (
+                <img
+                  src={getFullImageUrl(store.logoUrl)}
+                  alt={store.name}
+                  className="h-9 w-9 rounded-[6px] object-cover border border-[#daddd4] shrink-0"
+                />
+              ) : (
+                <div className="h-9 w-9 rounded-[6px] bg-[#2e1065] flex items-center justify-center font-display font-extrabold text-white text-sm shrink-0">
+                  {store.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="flex flex-col min-w-0">
+                <span className="font-display text-[15px] sm:text-[17px] leading-tight font-extrabold text-[#20231e] tracking-[-0.5px] uppercase truncate">
+                  {store.name}
+                </span>
+              </div>
+            </Link>
+          </div>
+
+          {/* Center: Top 5 Category Links (Desktop) */}
+          {headerCategories.length > 0 && (
+            <nav className="hidden lg:flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => handleCategoryNav("all")}
+                className={`px-3 py-1.5 rounded-[6px] text-xs font-semibold transition-colors cursor-pointer ${
+                  selectedCategory === "all"
+                    ? "bg-[#2e1065] text-white"
+                    : "text-[#62665d] hover:text-[#20231e] hover:bg-[#f3f4ef]"
+                }`}
+              >
+                All
+              </button>
+              {headerCategories.map((cat) => (
+                <button
+                  key={cat.key}
+                  type="button"
+                  onClick={() => handleCategoryNav(cat.key)}
+                  className={`px-3 py-1.5 rounded-[6px] text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                    selectedCategory === cat.key
+                      ? "bg-[#2e1065] text-white"
+                      : "text-[#62665d] hover:text-[#20231e] hover:bg-[#f3f4ef]"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </nav>
+          )}
+
+          {/* Header Actions: Track Order, Search & Cart Bag */}
           <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             <button
               type="button"
               onClick={() => setTrackModalOpen(true)}
-              className="px-3 py-2 rounded-[6px] bg-[#f3f4ef] hover:bg-[#e6e8e1] border border-[#daddd4] text-[11.5px] sm:text-[12.5px] font-semibold text-[#20231e] flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="hidden sm:flex px-3 py-2 rounded-[6px] bg-[#f3f4ef] hover:bg-[#e6e8e1] border border-[#daddd4] text-[11.5px] sm:text-[12.5px] font-semibold text-[#20231e] items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Truck className="w-3.5 h-3.5 text-[#3b0764]" />
               <span>Track Order</span>
@@ -244,114 +331,167 @@ export function StorefrontClient({ store }: { store: StoreData }) {
 
             <button
               type="button"
-              onClick={openCart}
-              className="relative px-3.5 py-2 rounded-[6px] bg-[#2e1065] hover:bg-[#3b0764] text-white text-[12px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              onClick={() => setHeaderSearchOpen((prev) => !prev)}
+              aria-label="Search products"
+              className="p-2.5 rounded-[6px] bg-[#f3f4ef] hover:bg-[#e6e8e1] border border-[#daddd4] text-[#20231e] flex items-center justify-center transition-colors cursor-pointer"
             >
-              <ShoppingBag className="w-3.5 h-3.5" />
-              <span className="font-mono font-bold">{cartCount}</span>
+              <Search className="w-4 h-4" />
+            </button>
+
+            <button
+              type="button"
+              onClick={openCart}
+              aria-label="Open shopping bag"
+              className="relative p-2.5 rounded-[6px] bg-[#f3f4ef] hover:bg-[#e6e8e1] border border-[#daddd4] text-[#20231e] flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#2e1065] text-white text-[10px] font-mono font-bold flex items-center justify-center leading-none shadow-sm">
+                  {cartCount}
+                </span>
+              )}
             </button>
           </div>
         </div>
-      </header>
 
-      {/* 2. Store Editorial Hero Section */}
-      <section className="w-full bg-[#fafaf8] border-b border-[#daddd4]">
-        <div className="mx-auto w-[min(1180px,calc(100%-32px))] md:w-[min(1180px,calc(100%-48px))] py-10 sm:py-16">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
-            {/* Hero Left Copy & Search */}
-            <div className="lg:col-span-7 space-y-5">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-[4px] bg-[#f3f4ef] border border-[#daddd4] text-[10px] tracking-[1.6px] uppercase font-semibold text-[#20231e]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#3b0764]" />
-                <span>
-                  OFFICIAL CATALOGUE · 100% DELIVERY GUARANTEE
-                </span>
-              </div>
-
-              <h1 className="font-display text-[clamp(30px,4.2vw,52px)] leading-[1.12] tracking-[-1.8px] font-semibold text-[#20231e] m-0">
-                {store.description || `Authentic pieces from ${store.name}. Honest quality. Zero stories.`}
-              </h1>
-
-              {/* Instant Search Input inside Hero */}
-              <div className="pt-1 max-w-xl">
-                <div className="relative flex items-center">
-                  <Search className="w-4 h-4 text-[#62665d] absolute left-3.5 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value);
-                      setVisibleCount(ITEMS_PER_PAGE);
-                    }}
-                    placeholder={`Search in ${store.name} (product name, category, brand)...`}
-                    className="w-full h-[46px] pl-10 pr-9 rounded-[6px] bg-white border border-[#daddd4] focus:border-[#2e1065] text-[13.5px] text-[#20231e] placeholder:text-[#62665d] outline-none shadow-2xs transition-colors"
-                  />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery("")}
-                      className="absolute right-3 text-[#62665d] hover:text-[#20231e]"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* 3 Trust Pillars */}
-              <div className="pt-2 flex flex-wrap items-center gap-x-6 gap-y-2 text-[11.5px] text-[#62665d] font-medium">
-                <span className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-[#3b0764]" />
-                  <span>Protected by Kredibly Escrow</span>
-                </span>
-                <span>•</span>
-                <span>Instant Bank Transfer &amp; Card Checkout</span>
-                <span>•</span>
-                <span>Verified Merchant</span>
+        {/* Mobile Hamburger Menu Dropdown */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden border-t border-[#daddd4] bg-[#fafaf8] py-3">
+            <div className="mx-auto w-[min(1180px,calc(100%-32px))] space-y-1">
+              <button
+                type="button"
+                onClick={() => handleCategoryNav("all")}
+                className={`w-full text-left px-3 py-2 rounded-[6px] text-xs font-semibold transition-colors cursor-pointer ${
+                  selectedCategory === "all"
+                    ? "bg-[#2e1065] text-white"
+                    : "text-[#20231e] hover:bg-[#f3f4ef]"
+                }`}
+              >
+                All Products
+              </button>
+              {headerCategories.map((cat) => (
+                <button
+                  key={cat.key}
+                  type="button"
+                  onClick={() => handleCategoryNav(cat.key)}
+                  className={`w-full text-left px-3 py-2 rounded-[6px] text-xs font-semibold transition-colors cursor-pointer ${
+                    selectedCategory === cat.key
+                      ? "bg-[#2e1065] text-white"
+                      : "text-[#20231e] hover:bg-[#f3f4ef]"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+              <div className="pt-1.5 mt-1.5 border-t border-[#e6e8e1]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setTrackModalOpen(true);
+                  }}
+                  className="w-full text-left px-3 py-2 rounded-[6px] text-xs font-semibold text-[#20231e] hover:bg-[#f3f4ef] flex items-center gap-2 cursor-pointer"
+                >
+                  <Truck className="w-3.5 h-3.5 text-[#3b0764]" />
+                  <span>Track Order</span>
+                </button>
               </div>
             </div>
-
-            {/* Hero Right: Showcase Spotlight Card (If store has products) */}
-            {topArrivals.length > 0 && (
-              <div className="lg:col-span-5">
-                <div className="grid grid-cols-2 gap-3">
-                  {topArrivals.slice(0, 2).map((item) => (
-                    <Link
-                      key={item.id}
-                      href={`/${store.slug}/p/${item.slug}`}
-                      className="group bg-white border border-[#e6e8e1] hover:border-[#2e1065] rounded-[6px] p-3.5 transition-all flex flex-col justify-between h-[210px] relative overflow-hidden"
-                    >
-                      <span className="text-[8px] tracking-[1.2px] uppercase font-semibold text-[#62665d] truncate">
-                        {item.category || item.brand || "SPOTLIGHT"}
-                      </span>
-
-                      <div className="my-auto h-[110px] w-full flex items-center justify-center">
-                        {item.images?.[0] ? (
-                          <img
-                            src={getFullImageUrl(item.images[0])}
-                            alt={item.title}
-                            className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500"
-                          />
-                        ) : (
-                          <ShoppingBag className="w-8 h-8 text-[#daddd4]" />
-                        )}
-                      </div>
-
-                      <div>
-                        <p className="font-display text-[12.5px] font-semibold text-[#20231e] truncate">
-                          {item.title}
-                        </p>
-                        <p className="font-display text-[12px] font-bold text-[#3b0764]">
-                          ₦{Number(item.basePrice).toLocaleString("en-NG")}
-                        </p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
-        </div>
-      </section>
+        )}
+
+        {headerSearchOpen && (
+          <div className="border-t border-[#daddd4] bg-[#fafaf8] py-2.5">
+            <div className="mx-auto w-[min(1180px,calc(100%-32px))] md:w-[min(1180px,calc(100%-48px))] relative flex items-center">
+              <Search className="w-4 h-4 text-[#62665d] absolute left-3.5 pointer-events-none" />
+              <input
+                type="text"
+                autoFocus
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={`Search ${store.name} products...`}
+                className="w-full h-10 pl-10 pr-9 rounded-[6px] bg-white border border-[#daddd4] text-xs sm:text-sm text-[#20231e] placeholder-[#62665d] focus:outline-none focus:border-[#2e1065]"
+              />
+              {searchQuery ? (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  aria-label="Clear search"
+                  className="absolute right-3 text-[#62665d] hover:text-[#20231e] cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setHeaderSearchOpen(false)}
+                  aria-label="Close search"
+                  className="absolute right-3 text-[#62665d] hover:text-[#20231e] cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* 2. Store Hero Section (Banner-backed when uploaded, clean compact header by default) */}
+      {store.bannerUrl ? (
+        <section className="relative w-full border-b border-[#daddd4] overflow-hidden bg-slate-950">
+          <img
+            src={getFullImageUrl(store.bannerUrl)}
+            alt={store.name}
+            className="absolute inset-0 w-full h-full object-cover opacity-55"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/55 to-slate-950/35" />
+          <div className="relative mx-auto w-[min(1180px,calc(100%-32px))] md:w-[min(1180px,calc(100%-48px))] py-12 sm:py-20 text-center max-w-2xl space-y-4">
+            <h1 className="font-display text-[clamp(28px,4.2vw,46px)] leading-[1.12] tracking-[-1.2px] font-bold text-white m-0">
+              {store.name}
+            </h1>
+            <p className="text-sm sm:text-base text-slate-200 leading-relaxed max-w-xl mx-auto">
+              {store.description || `Browse and shop directly from ${store.name}.`}
+            </p>
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <a
+                href="#catalogue"
+                className="px-5 py-2.5 rounded-[6px] bg-white hover:bg-slate-100 text-[#0f172a] font-display font-bold text-xs sm:text-sm inline-flex items-center gap-2 transition"
+              >
+                <span>Browse Products</span>
+                <ArrowDown className="w-3.5 h-3.5" />
+              </a>
+            </div>
+            <p className="text-[11px] text-slate-300 flex items-center justify-center gap-1.5 pt-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-white/90" />
+              <span>Protected by Kredibly Escrow • Instant Checkout</span>
+            </p>
+          </div>
+        </section>
+      ) : (
+        <section className="w-full bg-[#fafaf8] border-b border-[#daddd4]">
+          <div className="mx-auto w-[min(1180px,calc(100%-32px))] md:w-[min(1180px,calc(100%-48px))] py-8 sm:py-12 text-center max-w-2xl space-y-3.5">
+            <h1 className="font-display text-[clamp(28px,4vw,42px)] leading-[1.15] tracking-[-1.2px] font-bold text-[#20231e] m-0">
+              {store.name}
+            </h1>
+            <p className="text-sm sm:text-base text-[#62665d] leading-relaxed max-w-xl mx-auto">
+              {store.description || `Shop directly from ${store.name}. Fast delivery & verified checkout.`}
+            </p>
+            <div className="pt-1.5 flex items-center justify-center">
+              <a
+                href="#catalogue"
+                className="px-5 py-2.5 rounded-[6px] bg-[#2e1065] hover:bg-[#3b0764] text-white font-display font-bold text-xs sm:text-sm inline-flex items-center gap-2 transition"
+              >
+                <span>Browse Products</span>
+                <ArrowDown className="w-3.5 h-3.5" />
+              </a>
+            </div>
+            <p className="text-[11px] text-[#62665d] flex items-center justify-center gap-1.5 pt-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#3b0764]" />
+              <span>Protected by Kredibly Escrow • Instant Checkout</span>
+            </p>
+          </div>
+        </section>
+      )}
 
       {/* 3. Section 1: Curated Arrivals (Only shown when not searching and store has >4 products) */}
       {!searchQuery && selectedCategory === "all" && store.products.length > 4 && (
@@ -608,6 +748,108 @@ export function StorefrontClient({ store }: { store: StoreData }) {
           </div>
         </div>
       )}
+
+      {/* Minimalist Storefront Footer */}
+      <footer className="mt-12 border-t border-[#daddd4] bg-white">
+        <div className="mx-auto w-[min(1180px,calc(100%-32px))] md:w-[min(1180px,calc(100%-48px))] py-8">
+          {/* Row 1: Brand & Contact/Socials */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2.5">
+                {store.logoUrl ? (
+                  <img
+                    src={getFullImageUrl(store.logoUrl)}
+                    alt={store.name}
+                    className="h-7 w-7 rounded-[6px] object-cover border border-[#daddd4]"
+                  />
+                ) : (
+                  <div className="h-7 w-7 rounded-[6px] bg-[#2e1065] flex items-center justify-center font-display font-extrabold text-white text-xs">
+                    {store.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="font-display text-sm font-extrabold uppercase tracking-tight text-[#20231e]">
+                  {store.name}
+                </span>
+              </div>
+              {store.address && (
+                <p className="text-xs text-[#62665d] flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-[#3b0764] shrink-0" />
+                  <span>{store.address}</span>
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              {(store.contactPhone || store.whatsappNumber) && (
+                <a
+                  href={`tel:${store.contactPhone || store.whatsappNumber}`}
+                  className="px-3 py-1.5 rounded-[6px] bg-[#f3f4ef] hover:bg-[#e6e8e1] border border-[#daddd4] font-semibold text-[#20231e] inline-flex items-center gap-1.5 transition-colors"
+                >
+                  <Phone className="w-3.5 h-3.5 text-[#3b0764]" />
+                  <span>{store.contactPhone || store.whatsappNumber}</span>
+                </a>
+              )}
+              {store.contactEmail && (
+                <a
+                  href={`mailto:${store.contactEmail}`}
+                  className="px-3 py-1.5 rounded-[6px] bg-[#f3f4ef] hover:bg-[#e6e8e1] border border-[#daddd4] font-semibold text-[#20231e] inline-flex items-center gap-1.5 transition-colors"
+                >
+                  <Mail className="w-3.5 h-3.5 text-[#3b0764]" />
+                  <span>{store.contactEmail}</span>
+                </a>
+              )}
+              {(
+                [
+                  { key: "instagram", label: "Instagram" },
+                  { key: "tiktok", label: "TikTok" },
+                  { key: "facebook", label: "Facebook" },
+                  { key: "twitter", label: "X" },
+                ] as const
+              ).map(({ key, label }) => {
+                const href = toSocialUrl(key, store.socialLinks?.[key]);
+                if (!href) return null;
+                return (
+                  <a
+                    key={key}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 rounded-[6px] bg-[#f3f4ef] hover:bg-[#e6e8e1] border border-[#daddd4] font-semibold text-[#20231e] transition-colors"
+                  >
+                    {label}
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Row 2: Hairline Meta */}
+          <div className="mt-6 pt-5 border-t border-[#e6e8e1] flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#62665d]">
+            <span>© {new Date().getFullYear()} {store.name}</span>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setTrackModalOpen(true)}
+                className="hover:text-[#20231e] font-medium cursor-pointer"
+              >
+                Track Order
+              </button>
+              <span>·</span>
+              <span>
+                Powered by{" "}
+                <a
+                  href="https://usekredibly.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-[#2e1065] hover:underline"
+                >
+                  Kredibly
+                </a>
+              </span>
+            </div>
+          </div>
+        </div>
+      </footer>
 
       {/* Floating Sticky Bottom Cart Bar */}
       <FloatingCartBar />

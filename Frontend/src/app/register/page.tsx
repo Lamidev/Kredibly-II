@@ -41,6 +41,20 @@ function RegisterFormContent() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Email verification step state
+  const [verifyStep, setVerifyStep] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
+
   // Pre-populate storeName and slug if passed from landing page claim bar
   useEffect(() => {
     const prefillStoreName = searchParams.get("storeName");
@@ -114,7 +128,17 @@ function RegisterFormContent() {
         ...formData,
         fullName,
       });
-      const { token, user, store } = res.data.data;
+      const data = res.data.data;
+
+      if (data?.requiresEmailVerification) {
+        setPendingEmail(data.email || formData.email.trim());
+        setVerifyStep(true);
+        setResendCooldown(60);
+        toast.success("Verification code sent! Check your email.");
+        return;
+      }
+
+      const { token, user, store } = data;
       setAuth(token, user, store);
       toast.success("Your store is live! Welcome to Kredibly.");
       router.push("/dashboard");
@@ -129,6 +153,142 @@ function RegisterFormContent() {
       setLoading(false);
     }
   };
+
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage("");
+    setVerifying(true);
+
+    try {
+      const res = await api.post("/auth/verify-email", {
+        email: pendingEmail,
+        code: verificationCode.trim(),
+      });
+      const { token, user, store } = res.data.data;
+      setAuth(token, user, store);
+      toast.success("Email verified! Welcome to Kredibly.");
+      router.push("/dashboard");
+    } catch (err: any) {
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.errors?.[0]?.message ||
+        "Invalid or expired verification code.";
+      setErrorMessage(msg);
+      toast.error(msg);
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (resendCooldown > 0 || resending) return;
+    setResending(true);
+    setErrorMessage("");
+
+    try {
+      await api.post("/auth/resend-verification", { email: pendingEmail });
+      setResendCooldown(60);
+      toast.success("A new 6-digit code has been sent to your email.");
+    } catch (err: any) {
+      const msg =
+        err.response?.data?.message || "Failed to resend verification code.";
+      setErrorMessage(msg);
+      toast.error(msg);
+    } finally {
+      setResending(false);
+    }
+  };
+
+  if (verifyStep) {
+    return (
+      <div className="w-full max-w-full font-sans">
+        <div className="mb-6">
+          <h1 className="font-display text-[25px] sm:text-[28px] font-bold text-[#0f172a] tracking-[-0.7px] leading-tight">
+            Verify your email
+          </h1>
+          <p className="text-[13px] text-[#64748b] mt-1">
+            We sent a 6-digit confirmation code to{" "}
+            <span className="font-semibold text-[#0f172a]">{pendingEmail}</span>.
+          </p>
+        </div>
+
+        {errorMessage && (
+          <div className="mb-4 p-3 rounded-[6px] bg-red-50 border border-red-200 text-red-600 text-[12.5px] flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleVerifyCode} className="space-y-4">
+          <div>
+            <label
+              htmlFor="verify-code-input"
+              className="block text-[12px] font-medium text-[#1e293b] mb-1.5"
+            >
+              6-Digit Verification Code <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="verify-code-input"
+              type="text"
+              inputMode="numeric"
+              pattern="\d{6}"
+              maxLength={6}
+              required
+              autoFocus
+              value={verificationCode}
+              onChange={(e) =>
+                setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+              }
+              placeholder="000000"
+              className="w-full h-12 px-4 rounded-[8px] bg-[#f8fafc] focus:bg-white border border-[#e2e8f0] focus:border-[#2e1065] text-center font-mono text-xl font-bold tracking-[0.35em] text-[#0f172a] outline-none"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={verifying || verificationCode.length !== 6}
+            className="w-full h-[46px] rounded-[8px] bg-[#2e1065] hover:bg-[#3b0764] disabled:opacity-50 text-white font-display font-bold text-sm flex items-center justify-center gap-2 transition cursor-pointer"
+          >
+            {verifying ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Verifying...</span>
+              </>
+            ) : (
+              <span>Verify &amp; Launch Store</span>
+            )}
+          </button>
+        </form>
+
+        <div className="mt-5 flex items-center justify-between text-xs text-[#64748b]">
+          <button
+            type="button"
+            onClick={handleResendCode}
+            disabled={resendCooldown > 0 || resending}
+            className="font-semibold text-[#2e1065] hover:underline disabled:opacity-50 cursor-pointer"
+          >
+            {resending
+              ? "Sending..."
+              : resendCooldown > 0
+              ? `Resend code in ${resendCooldown}s`
+              : "Resend code"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setVerifyStep(false);
+              setVerificationCode("");
+              setErrorMessage("");
+            }}
+            className="hover:text-[#0f172a] cursor-pointer"
+          >
+            Back to signup
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-full font-sans">

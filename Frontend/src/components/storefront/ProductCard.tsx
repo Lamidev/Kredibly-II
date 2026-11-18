@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { API_BASE_URL } from "@/lib/api";
+import { getImageUrl } from "@/lib/utils";
 import { ShoppingCart, ShoppingBag } from "lucide-react";
 
 export interface ProductCardProps {
@@ -42,12 +42,7 @@ export function ProductCard({
 }: ProductCardProps) {
   const isSoldOut = product.stockQuantity <= 0;
 
-  const getFullImageUrl = (path?: string) => {
-    if (!path) return "";
-    if (path.startsWith("http")) return path;
-    const base = API_BASE_URL.replace("/api", "");
-    return `${base}${path}`;
-  };
+  const getFullImageUrl = (path?: string) => getImageUrl(path);
 
   const primaryImage = product.images?.[0];
 

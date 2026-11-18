@@ -1,7 +1,7 @@
 "use client";
 
 import { useCartStore } from "@/store/useCartStore";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, getImageUrl } from "@/lib/utils";
 import { API_BASE_URL } from "@/lib/api";
 import { X, Trash2, ShieldCheck, ShoppingBag, ArrowRight } from "lucide-react";
 
@@ -25,12 +25,7 @@ export function CartDrawer({ onCheckoutClick }: CartDrawerProps) {
   const subtotal = getSubtotal();
   const count = getTotalCount();
 
-  const getFullImageUrl = (path?: string) => {
-    if (!path) return "";
-    if (path.startsWith("http")) return path;
-    const base = API_BASE_URL.replace("/api", "");
-    return `${base}${path}`;
-  };
+  const getFullImageUrl = (path?: string) => getImageUrl(path);
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
