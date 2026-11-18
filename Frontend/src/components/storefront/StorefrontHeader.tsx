@@ -173,10 +173,10 @@ export function StorefrontHeader({
               <button
                 type="button"
                 onClick={() => handleCategoryClick("all")}
-                className={`px-3 py-1.5 rounded-[6px] text-xs font-semibold transition-colors cursor-pointer ${
+                className={`px-3 py-1.5 rounded-[6px] text-xs transition-colors cursor-pointer ${
                   selectedCategory === "all"
-                    ? "bg-[#2e1065] text-white"
-                    : "text-[#62665d] hover:text-[#20231e] hover:bg-[#f3f4ef]"
+                    ? "text-[#20231e] font-bold underline underline-offset-4"
+                    : "font-semibold text-[#62665d] hover:text-[#20231e] hover:bg-[#f3f4ef]"
                 }`}
               >
                 All
@@ -186,10 +186,10 @@ export function StorefrontHeader({
                   key={cat.key}
                   type="button"
                   onClick={() => handleCategoryClick(cat.key)}
-                  className={`px-3 py-1.5 rounded-[6px] text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                  className={`px-3 py-1.5 rounded-[6px] text-xs transition-colors cursor-pointer whitespace-nowrap ${
                     selectedCategory === cat.key
-                      ? "bg-[#2e1065] text-white"
-                      : "text-[#62665d] hover:text-[#20231e] hover:bg-[#f3f4ef]"
+                      ? "text-[#20231e] font-bold underline underline-offset-4"
+                      : "font-semibold text-[#62665d] hover:text-[#20231e] hover:bg-[#f3f4ef]"
                   }`}
                 >
                   {cat.label}
@@ -256,10 +256,10 @@ export function StorefrontHeader({
               <button
                 type="button"
                 onClick={() => handleCategoryClick("all")}
-                className={`w-full text-left px-3 py-2 rounded-[6px] text-xs font-semibold transition-colors cursor-pointer ${
+                className={`w-full text-left px-3 py-2 rounded-[6px] text-xs transition-colors cursor-pointer ${
                   selectedCategory === "all"
-                    ? "bg-[#2e1065] text-white"
-                    : "text-[#20231e] hover:bg-[#f3f4ef]"
+                    ? "text-[#20231e] font-bold bg-[#f3f4ef]"
+                    : "font-semibold text-[#20231e] hover:bg-[#f3f4ef]"
                 }`}
               >
                 All Products
@@ -269,10 +269,10 @@ export function StorefrontHeader({
                   key={cat.key}
                   type="button"
                   onClick={() => handleCategoryClick(cat.key)}
-                  className={`w-full text-left px-3 py-2 rounded-[6px] text-xs font-semibold transition-colors cursor-pointer ${
+                  className={`w-full text-left px-3 py-2 rounded-[6px] text-xs transition-colors cursor-pointer ${
                     selectedCategory === cat.key
-                      ? "bg-[#2e1065] text-white"
-                      : "text-[#20231e] hover:bg-[#f3f4ef]"
+                      ? "text-[#20231e] font-bold bg-[#f3f4ef]"
+                      : "font-semibold text-[#20231e] hover:bg-[#f3f4ef]"
                   }`}
                 >
                   {cat.label}
