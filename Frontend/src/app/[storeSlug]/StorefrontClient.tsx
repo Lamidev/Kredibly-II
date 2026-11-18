@@ -250,8 +250,27 @@ export function StorefrontClient({ store }: { store: StoreData }) {
           </div>
         </section>
       ) : (
-        <section className="w-full bg-[#fafaf8] border-b border-[#daddd4]">
-          <div className="mx-auto w-[min(1180px,calc(100%-32px))] md:w-[min(1180px,calc(100%-48px))] py-8 sm:py-12 text-center max-w-2xl space-y-3.5">
+        <section className="relative w-full bg-gradient-to-b from-[#f5f2fa] via-[#fafaf8] to-[#fafaf8] border-b border-[#daddd4] overflow-hidden">
+          {/* Storefront Architectural Grid Pattern */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage:
+                "linear-gradient(to right, rgba(46, 16, 101, 0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(46, 16, 101, 0.05) 1px, transparent 1px)",
+              backgroundSize: "40px 40px",
+              maskImage:
+                "radial-gradient(ellipse 75% 80% at 50% 45%, black 35%, transparent 100%)",
+              WebkitMaskImage:
+                "radial-gradient(ellipse 75% 80% at 50% 45%, black 35%, transparent 100%)",
+            }}
+          />
+
+          {/* Subtle Concentric Storefront Halo */}
+          <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[540px] h-[280px] rounded-full bg-[#2e1065]/[0.06] blur-3xl pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[360px] h-[360px] rounded-full border border-[#2e1065]/[0.06] pointer-events-none" />
+          <div className="hidden sm:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[540px] h-[540px] rounded-full border border-[#2e1065]/[0.04] pointer-events-none" />
+
+          <div className="relative z-10 mx-auto w-[min(1180px,calc(100%-32px))] md:w-[min(1180px,calc(100%-48px))] py-12 sm:py-16 text-center max-w-2xl space-y-3.5">
             <h1 className="font-display text-[clamp(28px,4vw,42px)] leading-[1.15] tracking-[-1.2px] font-bold text-[#20231e] m-0">
               {store.name}
             </h1>

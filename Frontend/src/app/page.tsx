@@ -1027,8 +1027,9 @@ export default function HomePage() {
         </section>
 
         {/* 6. Section 5: Subscription Plans (Kept UI/UX as requested) */}
-        <section id="pricing" className="py-20 sm:py-28 px-4 sm:px-6 max-w-6xl mx-auto">
-          <div className="text-center max-w-3xl mx-auto mb-12 space-y-4">
+        <section id="pricing" className="py-20 sm:py-28 bg-[#F7F4FC]">
+          <div className="px-4 sm:px-6 max-w-6xl mx-auto">
+            <div className="text-center max-w-3xl mx-auto mb-12 space-y-4">
             <div className="inline-flex items-center justify-center gap-2.5">
               <span className="w-5 h-[2px] bg-[#3b0764]" />
               <span className="text-[11px] font-mono tracking-[0.2em] uppercase font-bold text-[#3b0764]">
@@ -1295,6 +1296,7 @@ export default function HomePage() {
                 Get Started
               </Link>
             </div>
+          </div>
           </div>
         </section>
 
