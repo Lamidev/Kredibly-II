@@ -197,7 +197,7 @@ export default function AdminStoresPage() {
                         {s.name}
                       </Link>
                       <p className="text-[11px] text-slate-500">
-                        kredibly.shop/{s.slug}
+                        {s.slug}.kredibly.shop
                       </p>
                     </td>
                     <td className="px-5 py-3.5">

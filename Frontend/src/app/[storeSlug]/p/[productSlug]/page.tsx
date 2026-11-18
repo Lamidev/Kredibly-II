@@ -58,7 +58,7 @@ export async function generateMetadata({
     title,
     description,
     alternates: {
-      canonical: `https://kredibly.shop/${params.storeSlug}/p/${params.productSlug}`,
+      canonical: `https://${params.storeSlug}.kredibly.shop/p/${params.productSlug}`,
     },
     openGraph: {
       title,
@@ -66,7 +66,7 @@ export async function generateMetadata({
       siteName: store.name,
       locale: "en_NG",
       type: "website",
-      url: `https://kredibly.shop/${params.storeSlug}/p/${params.productSlug}`,
+      url: `https://${params.storeSlug}.kredibly.shop/p/${params.productSlug}`,
       images: primaryImage ? [{ url: primaryImage }] : [],
     },
     twitter: {
@@ -107,7 +107,7 @@ export default async function ProductPage({
 
   const storeForClient = fullStore || data.store;
 
-  const productUrl = `https://kredibly.shop/${data.store.slug}/p/${data.product.slug}`;
+  const productUrl = `https://${data.store.slug}.kredibly.shop/p/${data.product.slug}`;
   const images = (data.product.images || []).map((img: string) =>
     img.startsWith("http") ? img : `${API_URL.replace("/api", "")}${img}`
   );
