@@ -75,7 +75,7 @@ export default function AdminStoreDetailPage() {
               {store.name}
             </h1>
             <p className="text-xs text-slate-500">
-              kredibly.shop/{store.slug} • Owner: {store.owner?.fullName} (
+              {store.slug}.kredibly.shop • Owner: {store.owner?.fullName} (
               {store.owner?.email})
             </p>
           </div>

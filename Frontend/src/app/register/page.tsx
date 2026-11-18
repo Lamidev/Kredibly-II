@@ -369,7 +369,7 @@ function RegisterFormContent() {
                     : "text-[#3b0764]"
                 }`}
               >
-                kredibly.shop/{formData.slug}
+                {formData.slug}.kredibly.shop
                 {slugStatus.checking ? (
                   <Loader2 className="w-3 h-3 animate-spin text-[#3b0764]" />
                 ) : slugStatus.available === true ? (

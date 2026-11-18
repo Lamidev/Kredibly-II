@@ -87,7 +87,7 @@ const FAQS = [
   {
     value: "item-5",
     q: "Can I get my own shop link with my brand name?",
-    a: "Yes. The moment you sign up, you get your own clean link like kredibly.shop/yourbrand. You can put this link in your Instagram bio, WhatsApp status, or TikTok profile. You can also connect your own custom website (like yourbrand.com or yourbrand.ng) on paid plans.",
+    a: "Yes. The moment you sign up, you get your own clean link like yourbrand.kredibly.shop. You can put this link in your Instagram bio, WhatsApp status, or TikTok profile. You can also connect your own custom website (like yourbrand.com or yourbrand.ng) on paid plans.",
   },
   {
     value: "item-6",
@@ -150,35 +150,35 @@ export default function HomePage() {
           setCheckResult({
             status: "available",
             slug: raw,
-            message: `kredibly.shop/${raw} is available!`,
+            message: `${raw}.kredibly.shop is available!`,
             suggestions: [],
           });
         } else {
           const suggestions =
             data?.suggestions && data.suggestions.length > 0
               ? data.suggestions
-              : [`${raw}-ng`, `${raw}-store`, `shop-${raw}`];
+              : [`${raw}ng`, `${raw}store`, `shop${raw}`];
           setCheckResult({
             status: "taken",
             slug: raw,
-            message: data?.message || `kredibly.shop/${raw} is already taken`,
+            message: data?.message || `${raw}.kredibly.shop is already taken`,
             suggestions,
           });
         }
       } catch (err) {
-        const reserved = new Set(["admin", "api", "dashboard", "kredibly", "shop", "login", "register", "urban-luxe"]);
+        const reserved = new Set(["admin", "api", "dashboard", "kredibly", "shop", "login", "register", "urbanluxe", "urban-luxe"]);
         if (reserved.has(raw)) {
           setCheckResult({
             status: "taken",
             slug: raw,
-            message: `kredibly.shop/${raw} is reserved`,
-            suggestions: [`${raw}-ng`, `${raw}-store`, `shop-${raw}`],
+            message: `${raw}.kredibly.shop is reserved`,
+            suggestions: [`${raw}ng`, `${raw}store`, `shop${raw}`],
           });
         } else {
           setCheckResult({
             status: "available",
             slug: raw,
-            message: `kredibly.shop/${raw} is available!`,
+            message: `${raw}.kredibly.shop is available!`,
             suggestions: [],
           });
         }
@@ -405,20 +405,20 @@ export default function HomePage() {
                 className="w-full bg-white border border-[#CBD5E1] hover:border-[#2e1065] focus-within:border-[#2e1065] p-2 rounded-xl shadow-[0_10px_30px_-8px_rgba(46,16,101,0.12)] flex flex-col sm:flex-row items-center gap-2 transition-all"
               >
                 <div className="flex items-center flex-1 w-full pl-3.5 pr-2 py-2 font-mono">
-                  <span className="text-[#64748B] select-none shrink-0 text-[16px] sm:text-sm font-semibold">
-                    kredibly.shop/
-                  </span>
                   <input
                     type="text"
                     required
-                    placeholder="your-brand-name"
+                    placeholder="yourbrandname"
                     value={claimInput}
                     autoComplete="off"
                     autoCorrect="off"
                     spellCheck="false"
                     onChange={(e) => setClaimInput(e.target.value)}
-                    className="bg-transparent text-[#090D16] font-bold placeholder-[#94A3B8] focus:outline-none w-full ml-1 lowercase text-[16px] sm:text-sm"
+                    className="bg-transparent text-[#090D16] font-bold placeholder-[#94A3B8] focus:outline-none w-full lowercase text-[16px] sm:text-sm"
                   />
+                  <span className="text-[#64748B] select-none shrink-0 text-[15px] sm:text-sm font-semibold ml-1">
+                    .kredibly.shop
+                  </span>
                   {isChecking && (
                     <Loader2 className="w-4 h-4 text-[#2e1065] animate-spin shrink-0 ml-1" />
                   )}
@@ -513,7 +513,7 @@ export default function HomePage() {
 
                 <div className="flex-1 max-w-md mx-auto hidden sm:flex items-center justify-center gap-2 px-3 py-1 bg-white border border-[#DADDD4] rounded-md text-xs font-mono text-[#525B6C]">
                   <Lock className="w-3 h-3 text-[#3b0764]" />
-                  <span className="text-[#090D16] font-semibold">kredibly.shop/urban-luxe</span>
+                  <span className="text-[#090D16] font-semibold">urbanluxe.kredibly.shop</span>
                   <span className="text-[10px] text-[#3b0764] font-bold ml-1">• LIVE STORE</span>
                 </div>
 
@@ -545,7 +545,7 @@ export default function HomePage() {
 
                   <div className="flex items-center gap-2 sm:self-center">
                     <span className="px-3 py-1 rounded-[6px] bg-white border border-[#DADDD4] text-xs font-mono font-bold text-[#3b0764] shadow-2xs">
-                      kredibly.shop/urban-luxe
+                      urbanluxe.kredibly.shop
                     </span>
                   </div>
                 </div>
@@ -876,7 +876,7 @@ export default function HomePage() {
                   num: "01",
                   tag: "CLAIM LINK",
                   title: "Choose Your Store Name",
-                  desc: "Pick a simple web address like kredibly.shop/yourbrand. No computer or web designer needed.",
+                  desc: "Pick a simple web address like yourbrand.kredibly.shop. No computer or web designer needed.",
                 },
                 {
                   num: "02",
@@ -1101,7 +1101,7 @@ export default function HomePage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span>Official <code className="font-mono text-[#3b0764]">kredibly.shop/name</code></span>
+                    <span>Official <code className="font-mono text-[#3b0764]">yourname.kredibly.shop</code></span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
