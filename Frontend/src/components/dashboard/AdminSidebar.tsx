@@ -11,6 +11,7 @@ import {
   ShoppingBasket,
   BadgeCheck,
   Users,
+  Truck,
   Wallet,
   Settings,
   Copy,
@@ -52,6 +53,12 @@ const MENU_ITEMS = [
     label: "Customers",
     path: "/dashboard/customers",
     icon: Users,
+  },
+  {
+    id: "delivery",
+    label: "Delivery & Promos",
+    path: "/dashboard/delivery",
+    icon: Truck,
   },
   {
     id: "wallet",

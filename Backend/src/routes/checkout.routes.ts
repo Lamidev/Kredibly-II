@@ -3,8 +3,9 @@ import { CheckoutController } from "../controllers/checkout.controller";
 
 const router = Router();
 
-// 1-Step Checkout Initialization (Public)
+// 1-Step Checkout Initialization & Promo Validation (Public)
 router.post("/initialize", CheckoutController.initialize);
+router.post("/validate-promo", CheckoutController.validatePromo);
 
 // Dev Simulation Endpoint
 router.post("/simulate-payment", CheckoutController.simulatePayment);

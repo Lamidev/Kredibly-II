@@ -3,6 +3,8 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { OrderConfirmationClient } from "./OrderConfirmationClient";
 
+export const dynamic = "force-dynamic";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 async function getOrder(orderNumber: string) {
@@ -11,6 +13,19 @@ async function getOrder(orderNumber: string) {
       cache: "no-store",
     });
 
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.data;
+  } catch {
+    return null;
+  }
+}
+
+async function getStore(storeSlug: string) {
+  try {
+    const res = await fetch(`${API_URL}/public/stores/${storeSlug}`, {
+      next: { revalidate: 30 },
+    });
     if (!res.ok) return null;
     const json = await res.json();
     return json.data;
@@ -35,7 +50,10 @@ export default async function OrderPage({
 }: {
   params: { storeSlug: string; orderNumber: string };
 }) {
-  const order = await getOrder(params.orderNumber);
+  const [order, store] = await Promise.all([
+    getOrder(params.orderNumber),
+    getStore(params.storeSlug),
+  ]);
 
   if (!order) {
     notFound();
@@ -44,12 +62,12 @@ export default async function OrderPage({
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center text-xs">
+        <div className="min-h-screen bg-[#fafaf8] text-[#20231e] flex items-center justify-center text-xs">
           Loading order details...
         </div>
       }
     >
-      <OrderConfirmationClient initialOrder={order} />
+      <OrderConfirmationClient initialOrder={order} storeData={store} />
     </Suspense>
   );
 }

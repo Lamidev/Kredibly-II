@@ -32,6 +32,7 @@ interface AuthState {
   store: Store | null;
   isAuthenticated: boolean;
   setAuth: (token: string, user: User, store: Store) => void;
+  updateUser: (user: Partial<User>) => void;
   updateStore: (store: Partial<Store>) => void;
   logout: () => void;
   initialize: () => void;
@@ -50,6 +51,17 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.setItem("kredibly_store", JSON.stringify(store));
     }
     set({ token, user, store, isAuthenticated: true });
+  },
+
+  updateUser: (updatedFields) => {
+    set((state) => {
+      if (!state.user) return state;
+      const newUser = { ...state.user, ...updatedFields };
+      if (typeof window !== "undefined") {
+        localStorage.setItem("kredibly_user", JSON.stringify(newUser));
+      }
+      return { user: newUser };
+    });
   },
 
   updateStore: (updatedFields) => {

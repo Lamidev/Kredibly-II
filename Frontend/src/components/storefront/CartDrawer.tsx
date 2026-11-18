@@ -29,41 +29,42 @@ export function CartDrawer({ onCheckoutClick }: CartDrawerProps) {
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
-      {/* Backdrop */}
+      {/* Soft Light Backdrop */}
       <div
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-slate-950/30 backdrop-blur-[2px] transition-opacity"
         onClick={closeCart}
       />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-slate-900 border-l border-slate-800 text-white flex flex-col justify-between shadow-2xl">
+      <div className="fixed inset-y-0 right-0 max-w-full flex">
+        <div className="w-screen sm:w-[50vw] sm:max-w-lg bg-white border-l border-[#daddd4] text-[#20231e] flex flex-col justify-between shadow-2xl">
           {/* Header */}
-          <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+          <div className="p-5 border-b border-[#e6e8e1] flex items-center justify-between bg-white">
             <div className="flex items-center gap-2">
-              <ShoppingBag className="w-5 h-5 text-brand-500" />
-              <h2 className="text-base font-bold text-white">
+              <ShoppingBag className="w-5 h-5 text-[#2e1065]" />
+              <h2 className="font-display text-base font-bold text-[#20231e]">
                 Your Shopping Bag ({count})
               </h2>
             </div>
             <button
               onClick={closeCart}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              aria-label="Close shopping bag"
+              className="p-1.5 rounded-full text-[#62665d] hover:text-[#20231e] hover:bg-[#f3f4ef] transition cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Cart Item List */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          <div className="flex-1 overflow-y-auto p-5 space-y-3.5 bg-[#fafaf8]">
             {items.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center py-12">
-                <div className="h-16 w-16 rounded-2xl bg-slate-800/80 text-slate-500 flex items-center justify-center mb-3">
-                  <ShoppingBag className="w-8 h-8" />
+                <div className="h-14 w-14 rounded-2xl bg-[#f3f4ef] border border-[#daddd4] text-[#62665d] flex items-center justify-center mb-3">
+                  <ShoppingBag className="w-6 h-6" />
                 </div>
-                <p className="text-sm font-semibold text-slate-300">
+                <p className="text-sm font-semibold text-[#20231e]">
                   Your bag is empty
                 </p>
-                <p className="text-xs text-slate-500 mt-1 max-w-xs">
+                <p className="text-xs text-[#62665d] mt-1 max-w-xs">
                   Discover products from the store and tap &quot;Add to Cart&quot;.
                 </p>
               </div>
@@ -71,10 +72,10 @@ export function CartDrawer({ onCheckoutClick }: CartDrawerProps) {
               items.map((item, idx) => (
                 <div
                   key={`${item.productId}-${item.variantId || idx}`}
-                  className="flex items-center gap-3.5 p-3 rounded-2xl bg-slate-950/70 border border-slate-800/80"
+                  className="flex items-center gap-3.5 p-3 rounded-xl bg-white border border-[#e6e8e1]"
                 >
                   {/* Thumbnail */}
-                  <div className="h-16 w-16 rounded-xl bg-slate-900 border border-slate-800 overflow-hidden shrink-0">
+                  <div className="h-16 w-16 rounded-lg bg-[#fafaf8] border border-[#e6e8e1] overflow-hidden shrink-0">
                     {item.image ? (
                       <img
                         src={getFullImageUrl(item.image)}
@@ -82,7 +83,7 @@ export function CartDrawer({ onCheckoutClick }: CartDrawerProps) {
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <div className="h-full w-full flex items-center justify-center text-slate-700">
+                      <div className="h-full w-full flex items-center justify-center text-[#c5c8be]">
                         <ShoppingBag className="w-6 h-6" />
                       </div>
                     )}
@@ -90,15 +91,15 @@ export function CartDrawer({ onCheckoutClick }: CartDrawerProps) {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-xs font-bold text-white truncate">
+                    <h3 className="text-xs font-bold text-[#20231e] truncate">
                       {item.title}
                     </h3>
                     {item.variantName && (
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-[11px] text-[#62665d]">
                         {item.variantName}
                       </p>
                     )}
-                    <p className="text-xs font-extrabold text-brand-400 mt-0.5">
+                    <p className="text-xs font-extrabold text-[#2e1065] mt-0.5">
                       {formatCurrency(item.price)}
                     </p>
                   </div>
@@ -107,11 +108,11 @@ export function CartDrawer({ onCheckoutClick }: CartDrawerProps) {
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <button
                       onClick={() => removeItem(item.productId, item.variantId)}
-                      className="text-slate-500 hover:text-red-400 transition"
+                      className="text-[#62665d] hover:text-red-600 transition cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
-                    <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded-lg p-0.5">
+                    <div className="flex items-center gap-1.5 bg-[#fafaf8] border border-[#daddd4] rounded-lg p-0.5">
                       <button
                         onClick={() =>
                           updateQuantity(
@@ -120,11 +121,11 @@ export function CartDrawer({ onCheckoutClick }: CartDrawerProps) {
                             item.quantity - 1
                           )
                         }
-                        className="h-5 w-5 rounded bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center text-xs font-bold"
+                        className="h-5 w-5 rounded bg-white hover:bg-[#f3f4ef] text-[#20231e] flex items-center justify-center text-xs font-bold cursor-pointer"
                       >
                         -
                       </button>
-                      <span className="text-xs font-mono font-bold px-1 text-white">
+                      <span className="text-xs font-mono font-bold px-1 text-[#20231e]">
                         {item.quantity}
                       </span>
                       <button
@@ -135,7 +136,7 @@ export function CartDrawer({ onCheckoutClick }: CartDrawerProps) {
                             item.quantity + 1
                           )
                         }
-                        className="h-5 w-5 rounded bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center text-xs font-bold"
+                        className="h-5 w-5 rounded bg-white hover:bg-[#f3f4ef] text-[#20231e] flex items-center justify-center text-xs font-bold cursor-pointer"
                       >
                         +
                       </button>
@@ -148,17 +149,11 @@ export function CartDrawer({ onCheckoutClick }: CartDrawerProps) {
 
           {/* Footer & Checkout CTA */}
           {items.length > 0 && (
-            <div className="p-5 border-t border-slate-800 bg-slate-950/80 space-y-4">
-              {/* Escrow Shield Reminder */}
-              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs">
-                <ShieldCheck className="w-4 h-4 shrink-0 text-brand-500" />
-                <span>Protected by Kredibly Escrow. Funds held until delivery.</span>
-              </div>
-
+            <div className="p-5 border-t border-[#e6e8e1] bg-white space-y-4">
               {/* Subtotal */}
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-400 font-medium">Subtotal</span>
-                <span className="text-lg font-extrabold text-white">
+                <span className="text-xs text-[#62665d] font-medium">Subtotal</span>
+                <span className="font-display text-lg font-extrabold text-[#20231e]">
                   {formatCurrency(subtotal)}
                 </span>
               </div>
@@ -169,9 +164,9 @@ export function CartDrawer({ onCheckoutClick }: CartDrawerProps) {
                   closeCart();
                   if (onCheckoutClick) onCheckoutClick();
                 }}
-                className="w-full py-3.5 bg-brand-500 hover:bg-brand-600 text-slate-950 font-bold rounded-xl transition flex items-center justify-center gap-2 text-sm shadow-lg shadow-brand-500/25"
+                className="w-full py-3.5 bg-[#2e1065] hover:bg-[#3b0764] text-white font-display font-bold rounded-xl transition flex items-center justify-center gap-2 text-sm shadow-sm cursor-pointer"
               >
-                <span>Proceed to 1-Step Checkout</span>
+                <span>Proceed to Checkout</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>

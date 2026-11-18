@@ -28,6 +28,7 @@ function RegisterFormContent() {
     password: "",
     storeName: "",
     slug: "",
+    description: "",
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -415,6 +416,27 @@ function RegisterFormContent() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* What do you sell? (Optional -> powers Hero & Share Previews) */}
+        <div className="min-w-0">
+          <label
+            htmlFor="register-store-description"
+            className="block text-[12px] font-medium text-[#1e293b] mb-1.5"
+          >
+            What do you sell? <span className="text-[#94a3b8] font-normal">(Optional)</span>
+          </label>
+          <input
+            id="register-store-description"
+            type="text"
+            maxLength={300}
+            value={formData.description}
+            onChange={(e) =>
+              setFormData({ ...formData, description: e.target.value })
+            }
+            placeholder="e.g. Women's dresses, sneakers, skincare, or homemade cakes"
+            className="w-full min-w-0 max-w-full box-border h-[45px] sm:h-[46px] rounded-[6px] px-3 sm:px-4 bg-[#f4f5f7] focus:bg-white text-[13.5px] text-[#0f172a] placeholder:text-[13px] placeholder:text-[#94a3b8] border border-[#e2e8f0] focus:border-[#3b0764] focus:ring-2 focus:ring-[#3b0764]/10 outline-none transition-all"
+          />
         </div>
 
         {/* Email Address */}

@@ -5,21 +5,37 @@ import { OrderService } from "../services/order.service";
 import { NombaService } from "../services/nomba.service";
 
 export class WebhookController {
-  static async handlePaystack(req: Request, res: Response, next: NextFunction) {
+  static async handlePaystack(
+    req: Request & { rawBody?: Buffer },
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       const secret = ENV.PAYSTACK_SECRET_KEY;
-      const signature = req.headers["x-paystack-signature"] as string;
+      const signature = req.headers["x-paystack-signature"] as string | undefined;
 
-      // 1. Verify HMAC SHA512 signature in production
-      if (secret && !secret.includes("placeholder")) {
-        const hash = crypto
+      // Fail closed in production when secret or signature is missing
+      if (!secret || secret.includes("placeholder") || !signature) {
+        if (ENV.NODE_ENV === "production" || signature) {
+          console.warn("Missing or unconfigured Paystack webhook signature");
+          return res.status(401).send("Invalid signature");
+        }
+      } else {
+        const payload = req.rawBody ?? Buffer.from(JSON.stringify(req.body));
+        const expectedHex = crypto
           .createHmac("sha512", secret)
-          .update(JSON.stringify(req.body))
+          .update(payload)
           .digest("hex");
 
-        if (hash !== signature) {
+        const expectedBuf = Buffer.from(expectedHex, "utf8");
+        const sigBuf = Buffer.from(signature, "utf8");
+
+        if (
+          expectedBuf.length !== sigBuf.length ||
+          !crypto.timingSafeEqual(expectedBuf, sigBuf)
+        ) {
           console.warn("Invalid Paystack webhook signature detected");
-          return res.status(400).send("Invalid signature");
+          return res.status(401).send("Invalid signature");
         }
       }
 
@@ -36,21 +52,32 @@ export class WebhookController {
       return res.status(200).json({ received: true });
     } catch (error) {
       console.error("Paystack Webhook Handler Error:", error);
-      // Return 200 so Paystack doesn't keep hammering if payload was bad, but log error
       return res.status(200).json({ received: true, error: "Processing logged" });
     }
   }
 
-  static async handleNomba(req: Request, res: Response, next: NextFunction) {
+  static async handleNomba(
+    req: Request & { rawBody?: Buffer },
+    res: Response,
+    next: NextFunction
+  ) {
     try {
-      const signature = (req.headers["x-nomba-signature"] || req.headers["x-webhook-signature"]) as string;
+      const signature = (req.headers["x-nomba-signature"] ||
+        req.headers["x-webhook-signature"]) as string | undefined;
 
-      // In production with webhook secret configured, verify signature
-      if (signature && ENV.NOMBA_WEBHOOK_SECRET) {
-        const isValid = NombaService.verifyWebhookSignature(signature, JSON.stringify(req.body));
+      // Fail closed in production when signature or secret is missing
+      const hasNombaSecret = Boolean(ENV.NOMBA_WEBHOOK_SECRET || ENV.NOMBA_PRIVATE_KEY);
+      if (ENV.NODE_ENV === "production" && (!signature || !hasNombaSecret)) {
+        console.warn("⚠️ Missing Nomba webhook signature or secret in production");
+        return res.status(401).send("Invalid signature");
+      }
+
+      if (signature && hasNombaSecret) {
+        const payload = req.rawBody ?? JSON.stringify(req.body);
+        const isValid = NombaService.verifyWebhookSignature(signature, payload);
         if (!isValid) {
           console.warn("⚠️ Invalid Nomba webhook signature");
-          return res.status(400).send("Invalid signature");
+          return res.status(401).send("Invalid signature");
         }
       }
 

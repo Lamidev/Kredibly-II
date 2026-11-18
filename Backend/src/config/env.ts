@@ -19,4 +19,7 @@ export const ENV = {
   NOMBA_CLIENT_ID: process.env.NOMBA_CLIENT_ID || "",
   NOMBA_PRIVATE_KEY: process.env.NOMBA_PRIVATE_KEY || "",
   NOMBA_WEBHOOK_SECRET: process.env.NOMBA_WEBHOOK_SECRET || "",
+  VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY || "",
+  VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY || "",
+  VAPID_SUBJECT: process.env.VAPID_SUBJECT || "mailto:hello@usekredibly.com",
 };

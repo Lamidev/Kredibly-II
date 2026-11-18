@@ -10,6 +10,7 @@ export const registerSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
   storeName: z.string().min(2, "Store name must be at least 2 characters"),
   slug: z.string().optional(),
+  description: z.string().max(300, "Keep description under 300 characters").optional(),
 });
 
 export const loginSchema = z.object({

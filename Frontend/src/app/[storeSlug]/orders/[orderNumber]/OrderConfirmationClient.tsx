@@ -5,6 +5,11 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
+import { StorefrontHeader } from "@/components/storefront/StorefrontHeader";
+import { StorefrontFooter } from "@/components/storefront/StorefrontFooter";
+import { CartDrawer } from "@/components/storefront/CartDrawer";
+import { CheckoutDrawer } from "@/components/storefront/CheckoutDrawer";
+import { StoreData } from "@/types/storefront";
 import {
   CheckCircle2,
   ShieldCheck,
@@ -52,12 +57,24 @@ interface OrderData {
 
 export function OrderConfirmationClient({
   initialOrder,
+  storeData,
 }: {
   initialOrder: OrderData;
+  storeData?: StoreData | null;
 }) {
   const searchParams = useSearchParams();
   const [order, setOrder] = useState<OrderData>(initialOrder);
   const [simulating, setSimulating] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+
+  const headerStore: StoreData = storeData || {
+    id: order.store.slug,
+    name: order.store.name,
+    slug: order.store.slug,
+    whatsappNumber: order.store.whatsappNumber,
+    currency: order.store.currency || "NGN",
+    products: [],
+  };
 
   // If redirected with ?simulated=true&ref=..., trigger dev simulation
   useEffect(() => {
@@ -100,26 +117,11 @@ export function OrderConfirmationClient({
   const isPaid = order.paymentStatus === "PAID";
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white pb-16">
-      {/* Top Bar */}
-      <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-30 px-4 sm:px-8 py-3.5 flex items-center justify-between max-w-3xl mx-auto">
-        <Link
-          href={`/${order.store.slug}`}
-          className="flex items-center gap-2 font-bold text-sm text-white"
-        >
-          <div className="h-7 w-7 rounded-lg bg-brand-500 flex items-center justify-center text-slate-950 font-extrabold text-xs">
-            {order.store.name.charAt(0).toUpperCase()}
-          </div>
-          <span>{order.store.name}</span>
-        </Link>
-
-        <span className="text-xs font-mono text-slate-400">
-          #{order.orderNumber}
-        </span>
-      </header>
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col">
+      <StorefrontHeader store={headerStore} />
 
       {/* Main Content */}
-      <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+      <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-8 space-y-6">
         {/* Status Hero Card */}
         <div className="text-center p-6 sm:p-8 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-2xl flex flex-col items-center">
           {simulating ? (
@@ -230,6 +232,14 @@ export function OrderConfirmationClient({
           </Link>
         </div>
       </main>
+
+      <StorefrontFooter store={headerStore} />
+      <CartDrawer onCheckoutClick={() => setCheckoutOpen(true)} />
+      <CheckoutDrawer
+        storeSlug={headerStore.slug}
+        isOpen={checkoutOpen}
+        onClose={() => setCheckoutOpen(false)}
+      />
     </div>
   );
 }

@@ -6,8 +6,61 @@ import { AppError } from "../middleware/errorHandler";
 import { InitializeCheckoutInput } from "../validators/order.validator";
 import { EmailService } from "./email.service";
 import { NombaService } from "./nomba.service";
+import { PushService } from "./push.service";
+import { calculateShippingFee } from "../utils/shipping";
 
 export class OrderService {
+  /**
+   * Preview/validate a promo code during checkout
+   */
+  static async validatePromoPreview(
+    storeSlug: string,
+    code: string,
+    subtotal: number
+  ) {
+    const store = await prisma.store.findUnique({
+      where: { slug: storeSlug.toLowerCase().trim() },
+      select: { id: true },
+    });
+    if (!store) {
+      throw new AppError("Store not found", 404);
+    }
+
+    const cleanCode = code.trim().toUpperCase();
+    const promo = await prisma.promoCode.findUnique({
+      where: { storeId_code: { storeId: store.id, code: cleanCode } },
+    });
+
+    if (!promo || !promo.isActive) {
+      throw new AppError("Invalid or inactive promo code", 400);
+    }
+    if (promo.expiresAt && promo.expiresAt < new Date()) {
+      throw new AppError("This promo code has expired", 400);
+    }
+    if (promo.maxUses !== null && promo.usedCount >= promo.maxUses) {
+      throw new AppError("This promo code has reached its usage limit", 400);
+    }
+    const minOrder = promo.minOrderAmount ? Number(promo.minOrderAmount) : 0;
+    if (minOrder > 0 && subtotal < minOrder) {
+      throw new AppError(
+        `Minimum order of ₦${minOrder.toLocaleString()} required for this promo code`,
+        400
+      );
+    }
+
+    const rawDiscount =
+      promo.discountType === "PERCENTAGE"
+        ? Math.round(subtotal * (Number(promo.discountValue) / 100) * 100) / 100
+        : Number(promo.discountValue);
+    const discountAmount = Math.min(subtotal, Math.max(0, rawDiscount));
+
+    return {
+      code: promo.code,
+      discountType: promo.discountType,
+      discountValue: Number(promo.discountValue),
+      discountAmount,
+    };
+  }
   /**
    * Initialize a checkout order and request Paystack authorization
    */
@@ -114,42 +167,91 @@ export class OrderService {
     const orderNumber = `KRD-${Date.now().toString().slice(-4)}${Math.floor(100 + Math.random() * 900)}`;
     const paymentRef = `REF-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    // 5. Net Price Protection & Fee Calculation
+    // 5. Server-side Shipping, Promo Discount & Protection Fee Calculation
+    const shippingFee = calculateShippingFee(
+      store.shippingConfig,
+      input.customer.state,
+      subtotal
+    );
+
+    let appliedPromoCode: string | null = null;
+    let discountAmount = 0;
+
+    if (input.promoCode && input.promoCode.trim()) {
+      const promoResult = await OrderService.validatePromoPreview(
+        store.slug,
+        input.promoCode,
+        subtotal
+      );
+      appliedPromoCode = promoResult.code;
+      discountAmount = promoResult.discountAmount;
+    }
+
+    const discountedSubtotal = Math.max(0, subtotal - discountAmount);
+
     // On Pro & Business with passFeeToCustomer enabled, buyer covers the 1.5% Escrow & Payment Protection fee (capped at ₦2,000) so the merchant receives 100% of subtotal.
     let protectionFee = 0;
     if (store.subscriptionTier !== "STARTER" && store.passFeeToCustomer) {
-      protectionFee = Math.min(2000, Math.round(subtotal * 0.015 * 100) / 100);
+      protectionFee = Math.min(
+        2000,
+        Math.round((discountedSubtotal + shippingFee) * 0.015 * 100) / 100
+      );
     }
-    const totalAmount = subtotal + protectionFee;
+    const totalAmount = discountedSubtotal + shippingFee + protectionFee;
 
-    // 6. Create Order and OrderItems in database (PENDING status)
-    const order = await prisma.order.create({
-      data: {
-        orderNumber,
-        storeId: store.id,
-        customerId: customer.id,
-        subtotal,
-        shippingFee: 0,
-        totalAmount,
-        orderStatus: "PENDING",
-        paymentStatus: "UNPAID",
-        paymentRef,
-        notes: input.notes?.trim() || null,
-        items: {
-          create: validatedItems.map((item) => ({
-            productId: item.productId,
-            variantId: item.variantId,
-            productTitle: item.productTitle,
-            variantName: item.variantName,
-            unitPrice: item.unitPrice,
-            quantity: item.quantity,
-            subtotal: item.subtotal,
-          })),
+    // 6. Create Order and OrderItems (and atomically increment promo usage if applied)
+    const order = await prisma.$transaction(async (tx) => {
+      if (appliedPromoCode) {
+        const promoRecord = await tx.promoCode.findUnique({
+          where: {
+            storeId_code: { storeId: store.id, code: appliedPromoCode },
+          },
+        });
+        if (!promoRecord || !promoRecord.isActive) {
+          throw new AppError("Promo code is no longer valid", 400);
+        }
+        if (
+          promoRecord.maxUses !== null &&
+          promoRecord.usedCount >= promoRecord.maxUses
+        ) {
+          throw new AppError("Promo code usage limit reached", 400);
+        }
+        await tx.promoCode.update({
+          where: { id: promoRecord.id },
+          data: { usedCount: { increment: 1 } },
+        });
+      }
+
+      return tx.order.create({
+        data: {
+          orderNumber,
+          storeId: store.id,
+          customerId: customer.id,
+          subtotal,
+          shippingFee,
+          discountAmount,
+          promoCode: appliedPromoCode,
+          totalAmount,
+          orderStatus: "PENDING",
+          paymentStatus: "UNPAID",
+          paymentRef,
+          notes: input.notes?.trim() || null,
+          items: {
+            create: validatedItems.map((item) => ({
+              productId: item.productId,
+              variantId: item.variantId,
+              productTitle: item.productTitle,
+              variantName: item.variantName,
+              unitPrice: item.unitPrice,
+              quantity: item.quantity,
+              subtotal: item.subtotal,
+            })),
+          },
         },
-      },
-      include: {
-        items: true,
-      },
+        include: {
+          items: true,
+        },
+      });
     });
 
     const customerEmail =
@@ -384,11 +486,11 @@ export class OrderService {
         },
       });
 
-      // 6. Deposit net amount into Merchant Escrow Balance
+      // 6. Deposit net amount directly into Merchant Available Balance
       await tx.wallet.update({
         where: { id: walletId },
         data: {
-          escrowBalance: {
+          availableBalance: {
             increment: netAmount,
           },
         },
@@ -396,7 +498,7 @@ export class OrderService {
 
       return {
         success: true,
-        message: "Payment processed and escrow credited",
+        message: "Payment processed and available balance credited",
         order: updatedOrder,
         items: order.items,
         customer: order.customer,
@@ -433,6 +535,12 @@ export class OrderService {
           totalAmount: Number(result.order.totalAmount),
         }).catch((err) => console.error("Merchant alert dispatch failed:", err));
       }
+
+      PushService.sendStorePush(result.order.storeId, {
+        title: `New Paid Order #${result.order.orderNumber}`,
+        body: `₦${Number(result.order.totalAmount).toLocaleString("en-NG")} from ${result.customer.fullName}`,
+        url: "/dashboard/orders",
+      }).catch((err) => console.error("Push notification failed:", err));
     }
 
     return {
