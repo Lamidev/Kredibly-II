@@ -35,8 +35,8 @@ export function CartDrawer({ onCheckoutClick }: CartDrawerProps) {
         onClick={closeCart}
       />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex">
-        <div className="w-screen sm:w-[50vw] sm:max-w-lg h-full bg-white border-l border-[#daddd4] text-[#20231e] flex flex-col justify-between shadow-2xl">
+      <div className="fixed inset-x-0 bottom-0 sm:inset-y-0 sm:left-auto sm:right-0 max-w-full flex">
+        <div className="w-full h-[65dvh] rounded-t-2xl sm:rounded-none sm:w-[50vw] sm:max-w-lg sm:h-full bg-white border-t sm:border-t-0 sm:border-l border-[#daddd4] text-[#20231e] flex flex-col justify-between shadow-2xl overflow-hidden">
           {/* Header */}
           <div className="px-4 py-4 sm:p-5 border-b border-[#e6e8e1] flex items-center justify-between bg-white shrink-0">
             <div className="flex items-center gap-2 min-w-0">
