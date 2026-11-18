@@ -16,6 +16,7 @@ import {
   StoreProduct,
   extractStoreCategories,
   getFreeDeliveryBannerText,
+  getStorefrontBannerText,
 } from "@/types/storefront";
 import {
   Package,
@@ -191,17 +192,13 @@ export function StorefrontClient({ store }: { store: StoreData }) {
 
   const visibleProducts = filteredProducts.slice(0, HOME_COLLECTION_LIMIT);
   const freeDeliveryBanner = getFreeDeliveryBannerText(store.shippingConfig);
+  const topOfferBanner = getStorefrontBannerText(store.shippingConfig);
 
   return (
     <div className="min-h-screen bg-[#fafaf8] text-[#20231e] font-sans flex flex-col">
-      {freeDeliveryBanner && (
-        <div className="w-full bg-[#2e1065] text-white text-center py-2 px-4 text-[11px] sm:text-xs font-semibold tracking-wide">
-          {freeDeliveryBanner}
-        </div>
-      )}
-
       <StorefrontHeader
         store={store}
+        topBanner={topOfferBanner}
         selectedCategory={filters.category}
         onSelectCategory={(catKey) =>
           setFilters((prev) => ({ ...prev, category: catKey }))
@@ -369,6 +366,26 @@ export function StorefrontClient({ store }: { store: StoreData }) {
 
             {/* Filter + Sort Controls (Always right-aligned) */}
             <div className="flex items-center gap-2 shrink-0">
+              {products.some(
+                (p) => p.comparePrice && Number(p.comparePrice) > Number(p.basePrice)
+              ) && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      onSaleOnly: !prev.onSaleOnly,
+                    }))
+                  }
+                  className={`hidden sm:inline-flex h-9 px-3 rounded-[6px] border text-[12.5px] font-semibold items-center transition-colors cursor-pointer ${
+                    filters.onSaleOnly
+                      ? "bg-[#2e1065] border-[#2e1065] text-white"
+                      : "bg-white border-[#daddd4] text-[#20231e] hover:border-[#2e1065]"
+                  }`}
+                >
+                  On Sale
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setFilterDrawerOpen(true)}

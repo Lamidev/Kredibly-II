@@ -260,7 +260,6 @@ export default function CustomersPage() {
                     <th className="py-3 px-4 font-semibold hidden lg:table-cell">
                       Joined Date
                     </th>
-                    <th className="py-3 px-4 font-semibold text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -270,7 +269,11 @@ export default function CustomersPage() {
                     const locationText =
                       [c.city, c.state].filter(Boolean).join(", ") || "Nigeria";
                     return (
-                      <tr key={c.id} className="hover:bg-slate-50/60 transition">
+                      <tr
+                        key={c.id}
+                        onClick={() => setSelectedCustomer(c)}
+                        className="hover:bg-slate-50/80 transition cursor-pointer"
+                      >
                         <td className="py-3.5 px-4">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-[#2e1065] text-white font-display font-bold text-xs flex items-center justify-center shrink-0">
@@ -315,17 +318,6 @@ export default function CustomersPage() {
                                 year: "numeric",
                               })}`
                             : "—"}
-                        </td>
-                        <td className="py-3.5 px-4 text-right">
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => setSelectedCustomer(c)}
-                            className="h-8 px-3 text-xs"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>View</span>
-                          </Button>
                         </td>
                       </tr>
                     );

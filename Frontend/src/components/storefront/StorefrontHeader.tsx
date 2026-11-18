@@ -6,12 +6,13 @@ import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/useCartStore";
 import { useShopperStore } from "@/store/useShopperStore";
 import { api } from "@/lib/api";
-import { formatCurrency, getImageUrl } from "@/lib/utils";
+import { formatCurrency, getImageUrl, getStorePath } from "@/lib/utils";
 import { StoreData, extractStoreCategories } from "@/types/storefront";
 import { Menu, X, Search, ShoppingBag, Truck, Loader2, User } from "lucide-react";
 
 interface StorefrontHeaderProps {
   store: StoreData;
+  topBanner?: string | null;
   selectedCategory?: string;
   onSelectCategory?: (categoryKey: string) => void;
   searchQuery?: string;
@@ -23,6 +24,7 @@ interface StorefrontHeaderProps {
 
 export function StorefrontHeader({
   store,
+  topBanner,
   selectedCategory,
   onSelectCategory,
   searchQuery,
@@ -81,8 +83,8 @@ export function StorefrontHeader({
     } else {
       const target =
         catKey === "all"
-          ? `/${store.slug}/products`
-          : `/${store.slug}/products?category=${encodeURIComponent(catKey)}`;
+          ? getStorePath(store.slug, "/products")
+          : getStorePath(store.slug, `/products?category=${encodeURIComponent(catKey)}`);
       router.push(target);
     }
   };
@@ -98,7 +100,7 @@ export function StorefrontHeader({
     e.preventDefault();
     if (!onSearchChange && localSearch.trim()) {
       router.push(
-        `/${store.slug}/products?q=${encodeURIComponent(localSearch.trim())}`
+        getStorePath(store.slug, `/products?q=${encodeURIComponent(localSearch.trim())}`)
       );
       setHeaderSearchOpen(false);
     }
@@ -129,7 +131,13 @@ export function StorefrontHeader({
 
   return (
     <>
-      <header className="sticky top-0 z-30 bg-[#fafaf8]/95 backdrop-blur-md border-b border-[#daddd4]">
+      <div className="sticky top-0 z-30">
+        {topBanner && (
+          <div className="w-full bg-[#2e1065] text-white text-center py-2 px-4 text-[11px] sm:text-xs font-semibold tracking-wide">
+            {topBanner}
+          </div>
+        )}
+        <header className="bg-[#fafaf8]/95 backdrop-blur-md border-b border-[#daddd4]">
         <div className="mx-auto w-[min(1180px,calc(100%-32px))] md:w-[min(1180px,calc(100%-48px))] py-3 flex items-center justify-between gap-3">
           {/* Left: Borderless Hamburger (Mobile) + Brand Identity */}
           <div className="flex items-center gap-2.5 min-w-0">
@@ -147,7 +155,7 @@ export function StorefrontHeader({
             </button>
 
             <Link
-              href={`/${store.slug}`}
+              href={getStorePath(store.slug)}
               className="flex items-center gap-2.5 min-w-0"
             >
               {store.logoUrl ? (
@@ -221,8 +229,8 @@ export function StorefrontHeader({
             <Link
               href={
                 isShopperLoggedIn
-                  ? `/${store.slug}/account`
-                  : `/${store.slug}/account/login`
+                  ? getStorePath(store.slug, "/account")
+                  : getStorePath(store.slug, "/account/login")
               }
               aria-label={isShopperLoggedIn ? "My Account" : "Sign in"}
               className="relative p-2 text-[#20231e] hover:text-[#2e1065] flex items-center justify-center transition-colors"
@@ -328,7 +336,8 @@ export function StorefrontHeader({
             </form>
           </div>
         )}
-      </header>
+        </header>
+      </div>
 
       {/* Track Order Modal */}
       {isTrackOpen && (

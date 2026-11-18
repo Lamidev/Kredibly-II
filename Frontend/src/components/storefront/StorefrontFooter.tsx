@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { getImageUrl } from "@/lib/utils";
+import { getImageUrl, getStorePath } from "@/lib/utils";
 import { StoreData, toSocialUrl } from "@/types/storefront";
 import { MapPin, Phone, Mail } from "lucide-react";
 
@@ -27,7 +27,7 @@ export function StorefrontFooter({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
           <div className="space-y-1.5">
             <Link
-              href={`/${store.slug}`}
+              href={getStorePath(store.slug)}
               className="inline-flex items-center gap-2.5"
             >
               {store.logoUrl ? (
@@ -53,47 +53,54 @@ export function StorefrontFooter({
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
-            {(store.contactPhone || store.whatsappNumber) && (
-              <a
-                href={`tel:${store.contactPhone || store.whatsappNumber}`}
-                className="font-semibold text-[#20231e] hover:text-[#2e1065] inline-flex items-center gap-1.5 transition-colors"
-              >
-                <Phone className="w-3.5 h-3.5 text-[#3b0764]" />
-                <span>{store.contactPhone || store.whatsappNumber}</span>
-              </a>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-xs">
+            {(store.contactPhone || store.whatsappNumber || store.contactEmail) && (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                {(store.contactPhone || store.whatsappNumber) && (
+                  <a
+                    href={`tel:${store.contactPhone || store.whatsappNumber}`}
+                    className="font-semibold text-[#20231e] hover:text-[#2e1065] inline-flex items-center gap-1.5 transition-colors whitespace-nowrap"
+                  >
+                    <Phone className="w-3.5 h-3.5 text-[#3b0764] shrink-0" />
+                    <span>{store.contactPhone || store.whatsappNumber}</span>
+                  </a>
+                )}
+                {store.contactEmail && (
+                  <a
+                    href={`mailto:${store.contactEmail}`}
+                    className="font-semibold text-[#20231e] hover:text-[#2e1065] inline-flex items-center gap-1.5 transition-colors whitespace-nowrap"
+                  >
+                    <Mail className="w-3.5 h-3.5 text-[#3b0764] shrink-0" />
+                    <span>{store.contactEmail}</span>
+                  </a>
+                )}
+              </div>
             )}
-            {store.contactEmail && (
-              <a
-                href={`mailto:${store.contactEmail}`}
-                className="font-semibold text-[#20231e] hover:text-[#2e1065] inline-flex items-center gap-1.5 transition-colors"
-              >
-                <Mail className="w-3.5 h-3.5 text-[#3b0764]" />
-                <span>{store.contactEmail}</span>
-              </a>
-            )}
-            {(
-              [
-                { key: "instagram", label: "Instagram" },
-                { key: "tiktok", label: "TikTok" },
-                { key: "facebook", label: "Facebook" },
-                { key: "twitter", label: "X" },
-              ] as const
-            ).map(({ key, label }) => {
-              const href = toSocialUrl(key, store.socialLinks?.[key]);
-              if (!href) return null;
-              return (
-                <a
-                  key={key}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-semibold text-[#20231e] hover:text-[#2e1065] hover:underline transition-colors"
-                >
-                  {label}
-                </a>
-              );
-            })}
+
+            <div className="flex items-center gap-4 flex-wrap">
+              {(
+                [
+                  { key: "instagram", label: "Instagram" },
+                  { key: "tiktok", label: "TikTok" },
+                  { key: "facebook", label: "Facebook" },
+                  { key: "twitter", label: "X" },
+                ] as const
+              ).map(({ key, label }) => {
+                const href = toSocialUrl(key, store.socialLinks?.[key]);
+                if (!href) return null;
+                return (
+                  <a
+                    key={key}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-[#20231e] hover:text-[#2e1065] hover:underline transition-colors whitespace-nowrap"
+                  >
+                    {label}
+                  </a>
+                );
+              })}
+            </div>
           </div>
         </div>
 

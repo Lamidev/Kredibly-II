@@ -10,6 +10,7 @@ const RESERVED_PATHS = new Set([
   "/forgot-password",
   "/reset-password",
   "/dashboard",
+  "/admin",
   "/api",
   "/terms",
   "/privacy",
@@ -21,8 +22,8 @@ const RESERVED_PATHS = new Set([
 ]);
 
 export function middleware(request: NextRequest) {
-  const host = request.headers.get("host")?.toLowerCase() || "";
-  const { pathname } = request.nextUrl;
+  const host = (request.headers.get("host") || "").split(":")[0].toLowerCase();
+  const { pathname, search } = request.nextUrl;
 
   // Allow static files, Next.js internal chunks, and images to pass through
   if (
@@ -33,33 +34,89 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const isKrediblyShop = host.includes("kredibly.shop");
+  const isSubdomainStore =
+    host.endsWith(".kredibly.shop") &&
+    host !== "kredibly.shop" &&
+    host !== "www.kredibly.shop";
 
-  // 1. Root of kredibly.shop -> Redirect curious visitors to main marketing platform
-  if (isKrediblyShop && pathname === "/") {
-    return NextResponse.redirect(new URL("https://usekredibly.com", request.url));
-  }
+  // 1. Subdomain Storefront: <slug>.kredibly.shop -> internally rewrite to /<slug>...
+  if (isSubdomainStore) {
+    const slug = host.slice(0, -".kredibly.shop".length);
 
-  // 2. Prevent dashboard or auth access directly under kredibly.shop (keep merchant operations on usekredibly.com)
-  if (
-    isKrediblyShop &&
-    (pathname.startsWith("/dashboard") ||
+    // Keep merchant dashboard & auth on usekredibly.com
+    if (
+      pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/admin") ||
       pathname.startsWith("/login") ||
-      pathname.startsWith("/register"))
-  ) {
-    return NextResponse.redirect(
-      new URL(`https://usekredibly.com${pathname}`, request.url)
+      pathname.startsWith("/register")
+    ) {
+      return NextResponse.redirect(
+        new URL(`https://usekredibly.com${pathname}${search}`, request.url)
+      );
+    }
+
+    // Normalize any accidental /<slug>/... path on the subdomain back to /...
+    if (pathname === `/${slug}` || pathname.startsWith(`/${slug}/`)) {
+      const stripped = pathname.slice(slug.length + 1) || "/";
+      return NextResponse.redirect(
+        new URL(`https://${host}${stripped}${search}`, request.url)
+      );
+    }
+
+    const rewriteTarget =
+      pathname === "/" ? `/${slug}` : `/${slug}${pathname}`;
+    return NextResponse.rewrite(
+      new URL(`${rewriteTarget}${search}`, request.url)
     );
   }
 
-  // 3. Optional: If someone visits a store on usekredibly.com/urbanwears instead of kredibly.shop/urbanwears,
-  // redirect them to the official storefront domain
-  const isUseKredibly = host.includes("usekredibly.com");
-  const firstSegment = "/" + pathname.split("/")[1];
+  const isKrediblyApex =
+    host === "kredibly.shop" || host === "www.kredibly.shop";
 
-  if (isUseKredibly && !RESERVED_PATHS.has(firstSegment) && !firstSegment.startsWith("/dashboard")) {
+  // 2. Apex kredibly.shop
+  if (isKrediblyApex) {
+    if (pathname === "/") {
+      return NextResponse.redirect(new URL("https://usekredibly.com", request.url));
+    }
+
+    if (
+      pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/admin") ||
+      pathname.startsWith("/login") ||
+      pathname.startsWith("/register")
+    ) {
+      return NextResponse.redirect(
+        new URL(`https://usekredibly.com${pathname}${search}`, request.url)
+      );
+    }
+
+    // Redirect legacy kredibly.shop/<slug>/... -> <slug>.kredibly.shop/...
+    const parts = pathname.split("/").filter(Boolean);
+    if (parts.length > 0 && !RESERVED_PATHS.has(`/${parts[0]}`)) {
+      const slug = parts[0];
+      const rest = parts.length > 1 ? `/${parts.slice(1).join("/")}` : "/";
+      return NextResponse.redirect(
+        new URL(`https://${slug}.kredibly.shop${rest}${search}`, request.url)
+      );
+    }
+  }
+
+  // 3. usekredibly.com/<slug> -> <slug>.kredibly.shop
+  const isUseKredibly =
+    host === "usekredibly.com" || host === "www.usekredibly.com";
+  const firstSegment = "/" + (pathname.split("/")[1] || "");
+
+  if (
+    isUseKredibly &&
+    !RESERVED_PATHS.has(firstSegment) &&
+    !firstSegment.startsWith("/dashboard") &&
+    !firstSegment.startsWith("/admin")
+  ) {
+    const parts = pathname.split("/").filter(Boolean);
+    const slug = parts[0];
+    const rest = parts.length > 1 ? `/${parts.slice(1).join("/")}` : "/";
     return NextResponse.redirect(
-      new URL(`https://kredibly.shop${pathname}`, request.url)
+      new URL(`https://${slug}.kredibly.shop${rest}${search}`, request.url)
     );
   }
 

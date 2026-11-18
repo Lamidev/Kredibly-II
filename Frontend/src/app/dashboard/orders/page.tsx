@@ -343,12 +343,15 @@ export default function OrdersPage() {
                     <th className="py-3 px-4 font-semibold">Customer</th>
                     <th className="py-3 px-4 font-semibold">Status</th>
                     <th className="py-3 px-4 font-semibold">Total</th>
-                    <th className="py-3 px-4 font-semibold text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredOrders.map((order) => (
-                    <tr key={order.id} className="hover:bg-slate-50/60 transition">
+                    <tr
+                      key={order.id}
+                      onClick={() => setSelectedOrder(order)}
+                      className="hover:bg-slate-50/80 transition cursor-pointer"
+                    >
                       <td className="py-3.5 px-4 font-mono font-bold text-[#0f172a] whitespace-nowrap">
                         #{order.orderNumber}
                       </td>
@@ -372,17 +375,6 @@ export default function OrdersPage() {
                       </td>
                       <td className="py-3.5 px-4 font-mono font-bold text-[#0f172a] whitespace-nowrap">
                         {formatCurrency(order.totalAmount)}
-                      </td>
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => setSelectedOrder(order)}
-                          className="h-8 px-3 text-xs"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>View</span>
-                        </Button>
                       </td>
                     </tr>
                   ))}

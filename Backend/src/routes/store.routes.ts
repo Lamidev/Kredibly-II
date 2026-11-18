@@ -26,6 +26,9 @@ const shippingConfigSchema = z
     freeDeliveryStates: z.array(z.string()).default([]),
     freeDeliveryMinOrder: z.coerce.number().min(0).optional().nullable(),
     stateRates: z.record(z.string(), z.coerce.number().min(0)).default({}),
+    offerBannerEnabled: z.boolean().optional().default(false),
+    offerBannerText: z.string().max(120).optional().nullable(),
+    offerBannerExpiresAt: z.string().optional().nullable(),
   })
   .optional()
   .nullable();
