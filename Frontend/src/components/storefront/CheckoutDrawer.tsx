@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/useCartStore";
 import { useShopperStore } from "@/store/useShopperStore";
 import { api } from "@/lib/api";
-import { formatCurrency, getImageUrl } from "@/lib/utils";
+import { formatCurrency, getImageUrl, getStorePath } from "@/lib/utils";
 import {
   ShippingConfig,
   calculateClientShippingFee,
@@ -196,7 +196,9 @@ export function CheckoutDrawer({
           clearInterval(interval);
           setTimeout(() => {
             onClose();
-            router.push(`/${storeSlug}/orders/${transferDetails.orderNumber}`);
+            router.push(
+              getStorePath(storeSlug, `/orders/${transferDetails.orderNumber}`)
+            );
           }, 1200);
         }
       } catch {

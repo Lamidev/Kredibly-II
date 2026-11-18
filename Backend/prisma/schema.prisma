@@ -96,6 +96,8 @@ model Store {
   withdrawalLockedUntil  DateTime?
   bankChangeOtpHash      String?
   bankChangeOtpExpires   DateTime?
+  withdrawalOtpHash      String?
+  withdrawalOtpExpires   DateTime?
 
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt

@@ -363,6 +363,54 @@ export class EmailService {
   }
 
   /**
+   * Send 6-digit OTP code to confirm a wallet withdrawal
+   */
+  static async sendWithdrawalOtpEmail(data: {
+    to: string;
+    fullName: string;
+    storeName: string;
+    amount: number;
+    bankName: string;
+    accountNumber: string;
+    otp: string;
+  }) {
+    const maskedAcc = data.accountNumber.replace(/^(\d{2})\d{4}(\d{4})$/, "$1****$2");
+    const formattedAmount = `₦${Math.round(data.amount).toLocaleString("en-NG")}`;
+
+    const html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h1 style="color: #0f172a; margin: 0; font-size: 22px; font-weight: 800;">Confirm Wallet Withdrawal</h1>
+          <p style="color: #64748b; font-size: 14px; margin-top: 6px;">Security verification for ${data.storeName}</p>
+        </div>
+
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+          <p style="margin: 0 0 12px 0; font-size: 15px;">Hi <strong>${data.fullName}</strong>,</p>
+          <p style="margin: 0 0 14px 0; line-height: 1.6; color: #334155;">
+            Enter the 6-digit confirmation code below to authorize withdrawing <strong>${formattedAmount}</strong> to <strong>${data.bankName} (${maskedAcc})</strong>. This code expires in <strong>10 minutes</strong>.
+          </p>
+          <div style="background: #ffffff; border: 1px dashed #3b0764; border-radius: 8px; padding: 16px; text-align: center; margin: 20px 0;">
+            <span style="font-family: monospace; font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #2e1065;">${data.otp}</span>
+          </div>
+        </div>
+
+        <p style="font-size: 12px; color: #64748b; text-align: center;">
+          If you did not request this withdrawal, ignore this email and change your password immediately.
+        </p>
+      </div>
+    `;
+
+    const text = `Hi ${data.fullName},\n\nYour confirmation code to withdraw ${formattedAmount} from ${data.storeName} to ${data.bankName} (${maskedAcc}) is: ${data.otp}\n\nThis code expires in 10 minutes.`;
+
+    return this.send({
+      to: data.to,
+      subject: `${data.otp} is your Kredibly withdrawal confirmation code`,
+      html,
+      text,
+    });
+  }
+
+  /**
    * Send security alert when payout bank account is changed
    */
   static async sendBankChangedAlertEmail(data: {
