@@ -53,7 +53,7 @@ export class AuthService {
     if (existingStore) {
       // Auto-append short random suffix if slug collision
       const randomSuffix = Math.floor(100 + Math.random() * 900);
-      candidateSlug = `${candidateSlug}-${randomSuffix}`;
+      candidateSlug = `${candidateSlug}${randomSuffix}`;
     }
 
     // 3. Hash password & generate 6-digit email verification code

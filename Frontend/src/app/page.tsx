@@ -123,7 +123,7 @@ export default function HomePage() {
   const [openSwitchIndex, setOpenSwitchIndex] = useState<number>(0);
 
   useEffect(() => {
-    const raw = claimInput.toLowerCase().trim().replace(/[^a-z0-9-]/g, "");
+    const raw = claimInput.toLowerCase().trim().replace(/[^a-z0-9]/g, "");
     if (!raw) {
       setCheckResult({ status: "idle", slug: "", message: "", suggestions: [] });
       setIsChecking(false);
