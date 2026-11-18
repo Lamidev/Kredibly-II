@@ -299,14 +299,22 @@ export class NombaService {
       const secrets = [ENV.NOMBA_WEBHOOK_SECRET, ENV.NOMBA_PRIVATE_KEY].filter(Boolean);
 
       for (const secret of secrets) {
-        const hmac512 = crypto.createHmac("sha512", secret).update(payload);
-        if (signature === hmac512.digest("base64") || signature === hmac512.digest("hex")) {
-          return true;
-        }
+        const candidates = [
+          crypto.createHmac("sha512", secret).update(payload).digest("base64"),
+          crypto.createHmac("sha512", secret).update(payload).digest("hex"),
+          crypto.createHmac("sha256", secret).update(payload).digest("base64"),
+          crypto.createHmac("sha256", secret).update(payload).digest("hex"),
+        ];
 
-        const hmac256 = crypto.createHmac("sha256", secret).update(payload);
-        if (signature === hmac256.digest("base64") || signature === hmac256.digest("hex")) {
-          return true;
+        const sigBuf = Buffer.from(signature, "utf8");
+        for (const expected of candidates) {
+          const expectedBuf = Buffer.from(expected, "utf8");
+          if (
+            expectedBuf.length === sigBuf.length &&
+            crypto.timingSafeEqual(expectedBuf, sigBuf)
+          ) {
+            return true;
+          }
         }
       }
 

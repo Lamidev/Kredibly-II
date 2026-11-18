@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { ENV } from "../config/env";
 import { OrderService } from "../services/order.service";
 import { initializeCheckoutSchema } from "../validators/order.validator";
 
@@ -20,6 +21,10 @@ export class CheckoutController {
 
   static async simulatePayment(req: Request, res: Response, next: NextFunction) {
     try {
+      if (ENV.NODE_ENV === "production") {
+        return res.status(404).json({ success: false, message: "Not found" });
+      }
+
       const reference = (req.body.reference || req.query.ref) as string;
       if (!reference) {
         return res.status(400).json({ success: false, message: "Payment reference is required" });

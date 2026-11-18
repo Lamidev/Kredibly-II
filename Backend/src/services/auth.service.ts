@@ -87,6 +87,7 @@ export class AuthService {
           ownerId: newUser.id,
           name: data.storeName.trim(),
           slug: candidateSlug,
+          description: data.description?.trim() || null,
           whatsappNumber: data.phoneNumber.trim(),
           currency: "NGN",
           subscriptionTier: "STARTER",

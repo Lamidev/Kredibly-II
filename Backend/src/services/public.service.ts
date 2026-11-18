@@ -107,9 +107,14 @@ export class PublicStoreService {
   static async trackOrders(storeSlug: string, query: string) {
     const cleanSlug = storeSlug.toLowerCase().trim();
     const cleanQuery = query.trim();
+    const digitsOnly = cleanQuery.replace(/\D/g, "");
+    const isOrderNumber = /^krd-/i.test(cleanQuery);
 
-    if (!cleanQuery || cleanQuery.length < 4) {
-      throw new AppError("Please enter your phone number or order number (e.g. KRD-1234)", 400);
+    if (!cleanQuery || (!isOrderNumber && digitsOnly.length < 10)) {
+      throw new AppError(
+        "Enter your full phone number (10+ digits) or exact order number (e.g. KRD-1234)",
+        400
+      );
     }
 
     const store = await prisma.store.findUnique({
@@ -121,12 +126,29 @@ export class PublicStoreService {
       throw new AppError("Store not found", 404);
     }
 
+    // Match exact order number OR exact full phone number (normalized for 0xxx / +234xxx)
+    const last10 = digitsOnly.slice(-10);
+    const phoneVariants =
+      digitsOnly.length >= 10
+        ? Array.from(
+            new Set([
+              cleanQuery,
+              digitsOnly,
+              `0${last10}`,
+              `234${last10}`,
+              `+234${last10}`,
+            ])
+          )
+        : [];
+
     const orders = await prisma.order.findMany({
       where: {
         storeId: store.id,
         OR: [
           { orderNumber: { equals: cleanQuery, mode: "insensitive" } },
-          { customer: { phoneNumber: { contains: cleanQuery } } },
+          ...(phoneVariants.length > 0
+            ? [{ customer: { phoneNumber: { in: phoneVariants } } }]
+            : []),
         ],
       },
       select: {

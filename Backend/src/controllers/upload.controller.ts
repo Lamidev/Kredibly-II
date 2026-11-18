@@ -12,14 +12,21 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+const ALLOWED_MIME_TO_EXT: Record<string, string> = {
+  "image/jpeg": ".jpg",
+  "image/jpg": ".jpg",
+  "image/png": ".png",
+  "image/webp": ".webp",
+};
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname) || ".webp";
+    const safeExt = ALLOWED_MIME_TO_EXT[file.mimetype.toLowerCase()] || ".webp";
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `prod-${uniqueSuffix}${ext}`);
+    cb(null, `prod-${uniqueSuffix}${safeExt}`);
   },
 });
 
@@ -28,10 +35,10 @@ const fileFilter = (
   file: Express.Multer.File,
   cb: multer.FileFilterCallback
 ) => {
-  if (file.mimetype.startsWith("image/")) {
+  if (Object.prototype.hasOwnProperty.call(ALLOWED_MIME_TO_EXT, file.mimetype.toLowerCase())) {
     cb(null, true);
   } else {
-    cb(new AppError("Only image files are allowed", 400));
+    cb(new AppError("Only JPG, PNG, and WebP images are allowed", 400));
   }
 };
 

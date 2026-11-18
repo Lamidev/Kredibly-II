@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { StorefrontClient } from "./StorefrontClient";
+import { getImageUrl } from "@/lib/utils";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
@@ -36,6 +37,7 @@ export async function generateMetadata({
   const description =
     store.description ||
     `Browse authentic products from ${store.name}. Enjoy instant checkout and verified payments on Kredibly.`;
+  const ogImage = store.logoUrl ? getImageUrl(store.logoUrl) : "";
 
   return {
     title,
@@ -50,13 +52,13 @@ export async function generateMetadata({
       locale: "en_NG",
       type: "website",
       url: `https://kredibly.shop/${params.storeSlug}`,
-      images: store.logoUrl ? [{ url: store.logoUrl }] : [],
+      images: ogImage ? [{ url: ogImage }] : [],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: store.logoUrl ? [store.logoUrl] : [],
+      images: ogImage ? [ogImage] : [],
     },
   };
 }

@@ -275,13 +275,24 @@ export class WalletService {
 
     const reference = `WD-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
 
-    // 1. Decrement available balance & record transaction
+    // 1. Atomically decrement available balance only if sufficient funds remain
     const withdrawalTx = await prisma.$transaction(async (tx) => {
-      const updatedWallet = await tx.wallet.update({
-        where: { id: store.wallet!.id },
+      const debited = await tx.wallet.updateMany({
+        where: {
+          id: store.wallet!.id,
+          availableBalance: { gte: amount },
+        },
         data: {
           availableBalance: { decrement: amount },
         },
+      });
+
+      if (debited.count === 0) {
+        throw new AppError("Insufficient available balance for withdrawal.", 400);
+      }
+
+      const updatedWallet = await tx.wallet.findUniqueOrThrow({
+        where: { id: store.wallet!.id },
       });
 
       const transaction = await tx.transaction.create({
