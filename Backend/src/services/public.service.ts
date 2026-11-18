@@ -74,6 +74,7 @@ export class PublicStoreService {
         logoUrl: true,
         whatsappNumber: true,
         currency: true,
+        isActive: true,
         passFeeToCustomer: true,
       },
     });
