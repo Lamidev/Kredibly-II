@@ -99,6 +99,17 @@ router.put("/settings", async (req: Request, res: Response, next: NextFunction) 
     const storeId = req.storeId!;
     const validated = storeSettingsSchema.parse(req.body);
 
+    const existingStore = await prisma.store.findUnique({
+      where: { id: storeId },
+      select: { subscriptionTier: true },
+    });
+
+    if (!existingStore) {
+      throw new AppError("Store not found", 404);
+    }
+
+    const canPassFee = existingStore.subscriptionTier !== "STARTER";
+
     const updated = await prisma.store.update({
       where: { id: storeId },
       data: {
@@ -123,7 +134,9 @@ router.put("/settings", async (req: Request, res: Response, next: NextFunction) 
         ...(validated.logoUrl !== undefined ? { logoUrl: validated.logoUrl || null } : {}),
         ...(validated.bannerUrl !== undefined ? { bannerUrl: validated.bannerUrl || null } : {}),
         ...(validated.themeColor !== undefined ? { themeColor: validated.themeColor } : {}),
-        ...(validated.passFeeToCustomer !== undefined ? { passFeeToCustomer: validated.passFeeToCustomer } : {}),
+        ...(canPassFee && validated.passFeeToCustomer !== undefined
+          ? { passFeeToCustomer: validated.passFeeToCustomer }
+          : {}),
         ...(validated.shippingConfig !== undefined
           ? {
               shippingConfig: validated.shippingConfig

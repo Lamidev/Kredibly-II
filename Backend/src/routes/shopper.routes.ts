@@ -133,6 +133,18 @@ router.post(
         where: { storeId_email: { storeId: store.id, email: cleanEmail } },
       });
 
+      // Prevent guest account takeover: if phone matches an existing guest with a different email, reject
+      if (
+        guestByPhone &&
+        guestByPhone.email &&
+        guestByPhone.email.toLowerCase() !== cleanEmail
+      ) {
+        throw new AppError(
+          "This phone number is already linked to another email on this store. Please register with that email or use a different phone number.",
+          400
+        );
+      }
+
       const targetGuest = guestByPhone || guestByEmail;
 
       if (targetGuest) {
