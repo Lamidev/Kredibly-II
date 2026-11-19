@@ -15,7 +15,7 @@ export class AuthService {
    * Register a new merchant, auto-provision their store and wallet in one transaction
    */
   static async register(data: RegisterInput) {
-    if (isDisposableEmail(data.email)) {
+    if (await isDisposableEmail(data.email)) {
       throw new AppError(
         "Temporary or disposable email addresses are not allowed. Please use a permanent business or personal email.",
         400
