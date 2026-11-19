@@ -8,6 +8,7 @@ import { ENV } from "../config/env";
 import { AppError } from "../middleware/errorHandler";
 import { createRateLimiter } from "../middleware/rateLimit";
 import { EmailService } from "../services/email.service";
+import { isDisposableEmail } from "../utils/disposableEmail";
 
 const router = Router();
 
@@ -105,6 +106,12 @@ router.post(
         .parse(req.body);
 
       const cleanEmail = data.email.toLowerCase();
+      if (isDisposableEmail(cleanEmail)) {
+        throw new AppError(
+          "Temporary or disposable email addresses are not allowed. Please use a permanent email address.",
+          400
+        );
+      }
       const cleanPhone = data.phoneNumber;
 
       const existingRegistered = await prisma.customer.findFirst({
