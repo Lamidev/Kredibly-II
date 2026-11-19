@@ -8,7 +8,7 @@ import { useShopperStore } from "@/store/useShopperStore";
 import { api } from "@/lib/api";
 import { formatCurrency, getImageUrl, getStorePath } from "@/lib/utils";
 import { StoreData, extractStoreCategories } from "@/types/storefront";
-import { Menu, X, Search, ShoppingBag, Truck, Loader2, User, Package } from "lucide-react";
+import { Menu, X, Search, ShoppingBag, Truck, Loader2, User, Package, Home } from "lucide-react";
 
 interface StorefrontHeaderProps {
   store: StoreData;
@@ -261,6 +261,14 @@ export function StorefrontHeader({
         {mobileMenuOpen && (
           <div className="lg:hidden border-t border-[#daddd4] bg-[#fafaf8] py-3">
             <div className="mx-auto w-[min(1180px,calc(100%-32px))] space-y-1">
+              <Link
+                href={getStorePath(store.slug)}
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full text-left px-3 py-2 rounded-[6px] text-xs font-semibold text-[#20231e] hover:bg-[#f3f4ef] flex items-center gap-2 transition-colors"
+              >
+                <Home className="w-3.5 h-3.5 text-[#3b0764]" />
+                <span>Home</span>
+              </Link>
               <button
                 type="button"
                 onClick={() => handleCategoryClick("all")}
