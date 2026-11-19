@@ -1,17 +1,17 @@
 import { LegalLayout } from "@/components/LegalLayout";
 
 export const metadata = {
-  title: "Terms of Service | Kredibly II",
+  title: "Terms of Service | Kredibly",
   description:
-    "Official terms and conditions governing merchant storefronts, customer purchases, payments, and buyer protection on Kredibly.",
+    "Official terms and conditions governing merchant storefronts, customer purchases, payments, and settlements on Kredibly.",
 };
 
 export default function TermsPage() {
   return (
     <LegalLayout
       title="Terms of Service"
-      subtitle="The contractual agreement governing your use of Kredibly storefronts, buyer protection escrow, merchant dashboards, and checkout systems."
-      lastUpdated="November 17, 2026"
+      subtitle="The contractual agreement governing your use of Kredibly storefronts, verified checkout, merchant dashboards, and settlement tools."
+      lastUpdated="November 19, 2026"
     >
       <div className="space-y-8">
         <div>
@@ -19,7 +19,7 @@ export default function TermsPage() {
             1. Overview &amp; Acceptance of Terms
           </h2>
           <p className="text-sm leading-relaxed text-[#525B6C]">
-            These Terms of Service (&ldquo;Terms&rdquo;) constitute a legally binding agreement between you (&ldquo;User&rdquo;, &ldquo;Merchant&rdquo;, or &ldquo;Buyer&rdquo;) and <strong>Kredibly Technologies Inc.</strong> (&ldquo;Kredibly&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;), governing your access to and use of the Kredibly website, web applications, merchant dashboards, and hosted storefronts (including <code className="text-xs bg-[#F3F4EF] px-1.5 py-0.5 rounded text-[#2e1065]">usekredibly.com</code> and <code className="text-xs bg-[#F3F4EF] px-1.5 py-0.5 rounded text-[#2e1065]">kredibly.shop</code>).
+            These Terms of Service (&ldquo;Terms&rdquo;) constitute a legally binding agreement between you (&ldquo;User&rdquo;, &ldquo;Merchant&rdquo;, or &ldquo;Buyer&rdquo;) and <strong>Akinbyte Technologies Limited (RC: 9466327)</strong>, operator of <strong>Kredibly</strong> (&ldquo;Kredibly&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;), governing your access to and use of the Kredibly website, web applications, merchant dashboards, and hosted storefronts (including <code className="text-xs bg-[#F3F4EF] px-1.5 py-0.5 rounded text-[#2e1065]">usekredibly.com</code> and <code className="text-xs bg-[#F3F4EF] px-1.5 py-0.5 rounded text-[#2e1065]">kredibly.shop</code>).
           </p>
           <p className="mt-3 text-sm leading-relaxed text-[#525B6C]">
             By registering a store, placing an order, completing a checkout, or browsing any store hosted on Kredibly, you expressly agree to be bound by these Terms and our Privacy Policy. If you do not agree, you must immediately cease using the platform.
@@ -95,32 +95,32 @@ export default function TermsPage() {
 
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-[#090D16] mb-3">
-            5. Buyer Protection &amp; Escrow Settlement Mechanism
+            5. Verified Checkout, Payment Partners &amp; Order Tracking
           </h2>
           <p className="text-sm leading-relaxed text-[#525B6C]">
-            To eliminate the &ldquo;What I ordered vs. What I got&rdquo; epidemic and build consumer trust in Nigerian social commerce, all orders processed through Kredibly checkout are protected by the Kredibly Trust Shield:
+            Akinbyte Technologies Limited (RC: 9466327) operates Kredibly as a commerce technology platform, not a bank or licensed financial institution. Payment processing, virtual account generation, and bank settlement services are provided by our regulated financial partners.
           </p>
           <div className="my-4 p-4 rounded-xl bg-[#FAF9F5] border border-[#DADDD4] space-y-2">
             <h4 className="font-bold text-xs uppercase tracking-wider text-[#2e1065]">
-              How the Escrow Shield Protects Both Parties:
+              How Kredibly Checkout Works:
             </h4>
             <ol className="list-decimal pl-5 space-y-1.5 text-xs text-[#525B6C]">
               <li>
-                <strong>Payment Lock:</strong> When a buyer pays via card or instant bank transfer, funds are securely held in a dedicated settlement escrow account.
+                <strong>Automated Payment Verification:</strong> When a buyer pays via card or instant bank transfer, our licensed payment partners verify the transaction automatically and issue a digital receipt.
               </li>
               <li>
-                <strong>Fulfillment &amp; Dispatch:</strong> The merchant receives the verified order with a unique dispatch code and delivers the physical package.
+                <strong>Order Confirmation &amp; Fulfillment:</strong> The merchant receives the confirmed order immediately and updates fulfillment through Confirmed, Dispatched, and Delivered stages.
               </li>
               <li>
-                <strong>24-Hour Inspection Window:</strong> Upon delivery confirmation, the buyer has a 24-hour inspection window to confirm that the items match the order.
+                <strong>Live Order Tracking:</strong> Buyers can track their order status anytime using their order number or phone number and contact the merchant or support if an issue arises.
               </li>
               <li>
-                <strong>Auto-Release:</strong> If no dispute or damage claim is filed within 24 hours of documented delivery, the funds are automatically released to the merchant&apos;s available wallet for instant payout.
+                <strong>Merchant Settlement:</strong> Net order proceeds are credited to the merchant&apos;s available wallet balance for instant manual withdrawal or automated T+1 daily settlement.
               </li>
             </ol>
           </div>
           <p className="text-sm leading-relaxed text-[#525B6C]">
-            Merchants are protected from frivolous disputes: buyers must submit unboxing photo/video proof within the 24-hour window to initiate any dispute.
+            Buyers raising a return or dispute claim within the 24-hour delivery inspection window should provide clear photo/video evidence and their order reference.
           </p>
         </div>
 
@@ -131,7 +131,7 @@ export default function TermsPage() {
             6. Payouts &amp; Bank Transfers
           </h2>
           <p className="text-sm leading-relaxed text-[#525B6C]">
-            Settled funds from completed orders can be withdrawn directly into any valid Nigerian commercial or microfinance bank account (e.g., GTBank, Zenith, Access, Kuda, Moniepoint, OPay). Payouts are initiated within minutes of your withdrawal request.
+            Cleared funds from completed orders can be withdrawn directly into any valid Nigerian commercial or microfinance bank account (e.g., GTBank, Zenith, Access, Kuda, Moniepoint, OPay) via instant manual withdrawal (subject to the ₦1,000 minimum and transfer fee) or automated T+1 daily settlement.
           </p>
         </div>
 
@@ -142,7 +142,7 @@ export default function TermsPage() {
             7. Limitation of Liability
           </h2>
           <p className="text-sm leading-relaxed text-[#525B6C]">
-            Kredibly provides the storefront software and escrow infrastructure on an &ldquo;as is&rdquo; and &ldquo;as available&rdquo; basis. To the maximum extent permitted by Nigerian law, Kredibly Technologies Inc. shall not be liable for any indirect, punitive, or consequential damages resulting from merchant delivery delays, courier damages, internet service provider outages, or third-party bank downtime.
+            Kredibly provides the storefront software and commerce checkout infrastructure on an &ldquo;as is&rdquo; and &ldquo;as available&rdquo; basis. To the maximum extent permitted by Nigerian law, Akinbyte Technologies Limited shall not be liable for any indirect, punitive, or consequential damages resulting from merchant delivery delays, courier damages, internet service provider outages, or third-party bank downtime.
           </p>
         </div>
 
@@ -167,7 +167,7 @@ export default function TermsPage() {
             For legal inquiries, copyright notices, or questions regarding these Terms, contact our legal and compliance desk:
           </p>
           <div className="mt-3 p-4 rounded-xl bg-[#FAF9F5] border border-[#DADDD4] text-xs font-mono text-[#525B6C] space-y-1">
-            <p><strong>Entity:</strong> Kredibly Technologies Limited</p>
+            <p><strong>Entity:</strong> Akinbyte Technologies Limited (RC: 9466327)</p>
             <p><strong>Email:</strong> legal@usekredibly.com</p>
             <p><strong>Merchant Support:</strong> support@usekredibly.com</p>
             <p><strong>Jurisdiction:</strong> Lagos, Nigeria</p>
