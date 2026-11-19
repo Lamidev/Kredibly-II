@@ -17,10 +17,17 @@ const sensitiveWalletLimiter = createRateLimiter({
   message: "Too many withdrawal or bank update attempts. Please wait 15 minutes and try again.",
 });
 
+const kycLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: "Too many identity verification attempts. Please wait 15 minutes and try again.",
+});
+
 // All merchant wallet operations require authentication
 router.use(requireAuth);
 
 router.get("/", WalletController.getWallet);
+router.post("/kyc", kycLimiter, WalletController.submitKyc);
 router.post("/verify-bank", sensitiveWalletLimiter, WalletController.verifyBank);
 router.post("/request-bank-otp", otpRequestLimiter, WalletController.requestBankChangeOtp);
 router.put("/bank-details", sensitiveWalletLimiter, WalletController.updateBankDetails);

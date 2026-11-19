@@ -22,4 +22,7 @@ export const ENV = {
   VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY || "",
   VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY || "",
   VAPID_SUBJECT: process.env.VAPID_SUBJECT || "mailto:hello@usekredibly.com",
+  DOJAH_APP_ID: process.env.DOJAH_APP_ID || "",
+  DOJAH_PRIVATE_KEY: process.env.DOJAH_PRIVATE_KEY || "",
+  DOJAH_BASE_URL: process.env.DOJAH_BASE_URL || "https://api.dojah.io",
 };

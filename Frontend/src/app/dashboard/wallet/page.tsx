@@ -54,6 +54,13 @@ interface WalletData {
   availableBalance: number | string;
   escrowBalance: number | string;
   withdrawalLockedUntil?: string | null;
+  kyc?: {
+    status: "UNVERIFIED" | "PENDING" | "VERIFIED" | "REJECTED" | string;
+    idType?: string | null;
+    idLast4?: string | null;
+    verifiedName?: string | null;
+    verifiedAt?: string | null;
+  };
   bank: {
     bankName?: string | null;
     bankCode?: string | null;
@@ -108,6 +115,11 @@ export default function WalletPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [otpMessage, setOtpMessage] = useState("");
   const [sendingOtp, setSendingOtp] = useState(false);
+
+  // KYC verification state
+  const [kycIdType, setKycIdType] = useState<"NIN" | "BVN">("NIN");
+  const [kycIdNumber, setKycIdNumber] = useState("");
+  const [submittingKyc, setSubmittingKyc] = useState(false);
 
   const fetchWallet = async () => {
     try {
@@ -266,6 +278,27 @@ export default function WalletPage() {
     }
   };
 
+  const handleSubmitKyc = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (submittingKyc || !/^\d{11}$/.test(kycIdNumber.trim())) return;
+    setSubmittingKyc(true);
+    try {
+      const res = await api.post("/wallet/kyc", {
+        idType: kycIdType,
+        idNumber: kycIdNumber.trim(),
+      });
+      toast.success(res.data?.message || "Identity verification submitted!");
+      setKycIdNumber("");
+      await fetchWallet();
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.message || "Identity verification failed. Please check your details."
+      );
+    } finally {
+      setSubmittingKyc(false);
+    }
+  };
+
   const handleWithdraw = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!withdrawOtpSent) {
@@ -331,6 +364,8 @@ export default function WalletPage() {
   const isWithdrawalLocked = Boolean(
     lockedUntilDate && lockedUntilDate > new Date()
   );
+  const kycStatus = wallet?.kyc?.status || "UNVERIFIED";
+  const isKycVerified = kycStatus === "VERIFIED";
 
   return (
     <div className="space-y-6">
@@ -347,11 +382,20 @@ export default function WalletPage() {
 
         <Button
           onClick={() => setWithdrawModalOpen(true)}
-          disabled={available < 1000 || !hasBankDetails || isWithdrawalLocked}
+          disabled={
+            available < 1000 ||
+            !hasBankDetails ||
+            isWithdrawalLocked ||
+            !isKycVerified
+          }
         >
           <ArrowUpRight className="w-4 h-4" />
           <span>
-            {isWithdrawalLocked ? "Withdrawals Locked (24h)" : "Withdraw to Bank"}
+            {!isKycVerified
+              ? "Verify KYC to Withdraw"
+              : isWithdrawalLocked
+              ? "Withdrawals Locked (24h)"
+              : "Withdraw to Bank"}
           </span>
         </Button>
       </div>
@@ -444,6 +488,100 @@ export default function WalletPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Identity Verification (KYC) Card */}
+          <Card>
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                      Identity Verification (KYC)
+                    </span>
+                    <Badge
+                      variant={
+                        isKycVerified
+                          ? "success"
+                          : kycStatus === "PENDING"
+                          ? "warning"
+                          : "secondary"
+                      }
+                    >
+                      {isKycVerified
+                        ? "Verified"
+                        : kycStatus === "PENDING"
+                        ? "Pending Review"
+                        : kycStatus === "REJECTED"
+                        ? "Rejected — Retry"
+                        : "Unverified"}
+                    </Badge>
+                  </div>
+                  {isKycVerified ? (
+                    <p className="text-xs text-slate-600">
+                      Verified via{" "}
+                      <span className="font-semibold text-[#0f172a]">
+                        {wallet?.kyc?.idType} ••••{wallet?.kyc?.idLast4}
+                      </span>{" "}
+                      ({wallet?.kyc?.verifiedName}). Withdrawals and Auto T+1 settlements are enabled.
+                    </p>
+                  ) : kycStatus === "PENDING" ? (
+                    <p className="text-xs text-amber-800">
+                      Your{" "}
+                      <span className="font-semibold">
+                        {wallet?.kyc?.idType} ••••{wallet?.kyc?.idLast4}
+                      </span>{" "}
+                      was verified with Dojah and is awaiting quick compliance review against your payout account name.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-slate-500">
+                      Verify your 11-digit NIN or BVN once to unlock instant bank withdrawals and 8:00 AM Auto T+1 payouts.
+                    </p>
+                  )}
+                </div>
+
+                {!isKycVerified && kycStatus !== "PENDING" && (
+                  <form
+                    onSubmit={handleSubmitKyc}
+                    className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0"
+                  >
+                    <select
+                      value={kycIdType}
+                      onChange={(e) =>
+                        setKycIdType(e.target.value === "BVN" ? "BVN" : "NIN")
+                      }
+                      className="h-9 px-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-[#0f172a] focus:outline-none focus:border-[#2e1065]"
+                    >
+                      <option value="NIN">NIN</option>
+                      <option value="BVN">BVN</option>
+                    </select>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={11}
+                      required
+                      placeholder={`11-digit ${kycIdType}`}
+                      value={kycIdNumber}
+                      onChange={(e) =>
+                        setKycIdNumber(e.target.value.replace(/\D/g, "").slice(0, 11))
+                      }
+                      className="h-9 w-full sm:w-44 px-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono text-[#0f172a] focus:outline-none focus:border-[#2e1065]"
+                    />
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={submittingKyc || kycIdNumber.length !== 11}
+                    >
+                      {submittingKyc ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <span>Verify Identity</span>
+                      )}
+                    </Button>
+                  </form>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Transaction Ledger */}
           <Card>

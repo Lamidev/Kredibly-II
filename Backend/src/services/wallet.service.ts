@@ -4,6 +4,7 @@ import { ENV } from "../config/env";
 import { AppError } from "../middleware/errorHandler";
 import { NombaService } from "./nomba.service";
 import { EmailService } from "./email.service";
+import { DojahService } from "./dojah.service";
 
 export class WalletService {
   /**
@@ -20,6 +21,11 @@ export class WalletService {
         accountNumber: true,
         accountName: true,
         withdrawalLockedUntil: true,
+        kycStatus: true,
+        kycIdType: true,
+        kycIdLast4: true,
+        kycVerifiedName: true,
+        kycVerifiedAt: true,
         wallet: {
           include: {
             transactions: {
@@ -56,6 +62,13 @@ export class WalletService {
         accountName: store.accountName,
       },
       withdrawalLockedUntil: store.withdrawalLockedUntil,
+      kyc: {
+        status: store.kycStatus,
+        idType: store.kycIdType,
+        idLast4: store.kycIdLast4,
+        verifiedName: store.kycVerifiedName,
+        verifiedAt: store.kycVerifiedAt,
+      },
       availableBalance: store.wallet.availableBalance,
       escrowBalance: store.wallet.escrowBalance,
       transactions: store.wallet.transactions,
@@ -213,6 +226,11 @@ export class WalletService {
         accountNumber: true,
         accountName: true,
         withdrawalLockedUntil: true,
+        kycStatus: true,
+        kycIdType: true,
+        kycIdLast4: true,
+        kycVerifiedName: true,
+        kycVerifiedAt: true,
       },
     });
 
@@ -248,6 +266,13 @@ export class WalletService {
 
     if (!store || !store.wallet) {
       throw new AppError("Store wallet not found", 404);
+    }
+
+    if (store.kycStatus !== "VERIFIED") {
+      throw new AppError(
+        "Please complete Identity Verification (KYC) before requesting a withdrawal.",
+        403
+      );
     }
 
     if (!store.accountNumber || !store.bankName) {
@@ -314,6 +339,73 @@ export class WalletService {
   }
 
   /**
+   * Verify merchant identity via Dojah (NIN or BVN). Never stores the raw ID number.
+   */
+  static async submitKycVerification(
+    storeId: string,
+    idType: "NIN" | "BVN",
+    idNumber: string
+  ) {
+    const store = await prisma.store.findUnique({
+      where: { id: storeId },
+      include: { owner: { select: { fullName: true } } },
+    });
+
+    if (!store) {
+      throw new AppError("Store not found", 404);
+    }
+
+    if (store.kycStatus === "VERIFIED") {
+      return {
+        status: store.kycStatus,
+        idType: store.kycIdType,
+        idLast4: store.kycIdLast4,
+        verifiedName: store.kycVerifiedName,
+        verifiedAt: store.kycVerifiedAt,
+        message: "Your identity is already verified.",
+      };
+    }
+
+    const result = await DojahService.verifyIdentity(idType, idNumber);
+    const isAutoMatch = DojahService.namesMatch(result.fullName, [
+      store.owner?.fullName,
+      store.accountName,
+    ]);
+
+    const nextStatus = isAutoMatch ? "VERIFIED" : "PENDING";
+    const verifiedAt = isAutoMatch ? new Date() : null;
+
+    const updated = await prisma.store.update({
+      where: { id: storeId },
+      data: {
+        kycStatus: nextStatus,
+        kycIdType: idType,
+        kycIdLast4: idNumber.trim().slice(-4),
+        kycVerifiedName: result.fullName,
+        kycVerifiedAt: verifiedAt,
+      },
+      select: {
+        kycStatus: true,
+        kycIdType: true,
+        kycIdLast4: true,
+        kycVerifiedName: true,
+        kycVerifiedAt: true,
+      },
+    });
+
+    return {
+      status: updated.kycStatus,
+      idType: updated.kycIdType,
+      idLast4: updated.kycIdLast4,
+      verifiedName: updated.kycVerifiedName,
+      verifiedAt: updated.kycVerifiedAt,
+      message: isAutoMatch
+        ? "Identity verified! Withdrawals are now enabled."
+        : "ID verified with Dojah and queued for quick compliance review (name differs from business/account name).",
+    };
+  }
+
+  /**
    * Request withdrawal from Available Balance to registered Nigerian bank account via Nomba
    */
   static async withdrawFunds(storeId: string, amount: number, otp?: string) {
@@ -335,6 +427,20 @@ export class WalletService {
 
     if (!store || !store.wallet) {
       throw new AppError("Store wallet not found", 404);
+    }
+
+    if (store.kycStatus !== "VERIFIED") {
+      throw new AppError(
+        "Please complete Identity Verification (KYC) before withdrawing funds.",
+        403
+      );
+    }
+
+    if (store.kycStatus !== "VERIFIED") {
+      throw new AppError(
+        "Please complete Identity Verification (KYC) before requesting a withdrawal.",
+        403
+      );
     }
 
     if (!store.accountNumber || !store.bankName) {
@@ -500,6 +606,7 @@ export class WalletService {
         where: {
           availableBalance: { gte: 1000 },
           store: {
+            kycStatus: "VERIFIED",
             accountNumber: { not: null },
             bankName: { not: null },
             OR: [
