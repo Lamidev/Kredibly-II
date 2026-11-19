@@ -276,7 +276,7 @@ export function StorefrontHeader({
           </nav>
 
           {/* Right: Track Order (Desktop), Borderless Search & Shopping Bag */}
-          <div className="flex items-center gap-0.5 sm:gap-2.5 shrink-0">
+          <div className="flex items-center justify-end gap-0.5 sm:gap-2.5 shrink-0 lg:flex-1">
             <button
               type="button"
               onClick={openTrack}
