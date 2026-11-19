@@ -105,17 +105,20 @@ export class PublicStoreService {
   }
 
   /**
-   * Phone-First Order Lookup for Shoppers ("Track My Order" without passwords)
+   * Order-Number-Only Lookup for Shoppers ("Track My Order" for a specific order)
    */
   static async trackOrders(storeSlug: string, query: string) {
     const cleanSlug = storeSlug.toLowerCase().trim();
-    const cleanQuery = query.trim();
-    const digitsOnly = cleanQuery.replace(/\D/g, "");
-    const isOrderNumber = /^krd-/i.test(cleanQuery);
+    const raw = query.trim().replace(/^#/, "");
+    const normalizedOrderNum = /^krd-/i.test(raw)
+      ? raw.toUpperCase()
+      : /^\d{4,10}$/.test(raw)
+      ? `KRD-${raw}`
+      : "";
 
-    if (!cleanQuery || (!isOrderNumber && digitsOnly.length < 10)) {
+    if (!normalizedOrderNum) {
       throw new AppError(
-        "Enter your full phone number (10+ digits) or exact order number (e.g. KRD-1234)",
+        "Enter a valid order number (e.g. KRD-9384207)",
         400
       );
     }
@@ -129,31 +132,11 @@ export class PublicStoreService {
       throw new AppError("Store not found", 404);
     }
 
-    // Match exact order number OR exact full phone number (normalized for 0xxx / +234xxx)
-    const last10 = digitsOnly.slice(-10);
-    const phoneVariants =
-      digitsOnly.length >= 10
-        ? Array.from(
-            new Set([
-              cleanQuery,
-              digitsOnly,
-              `0${last10}`,
-              `234${last10}`,
-              `+234${last10}`,
-            ])
-          )
-        : [];
-
     const orders = await prisma.order.findMany({
       where: {
         storeId: store.id,
         paymentStatus: "PAID",
-        OR: [
-          { orderNumber: { equals: cleanQuery, mode: "insensitive" } },
-          ...(phoneVariants.length > 0
-            ? [{ customer: { phoneNumber: { in: phoneVariants } } }]
-            : []),
-        ],
+        orderNumber: { equals: normalizedOrderNum, mode: "insensitive" },
       },
       select: {
         id: true,
