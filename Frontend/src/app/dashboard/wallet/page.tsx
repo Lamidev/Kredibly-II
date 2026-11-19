@@ -530,7 +530,7 @@ export default function WalletPage() {
                       <span className="font-semibold">
                         {wallet?.kyc?.idType} ••••{wallet?.kyc?.idLast4}
                       </span>{" "}
-                      was verified with Dojah and is awaiting quick compliance review against your payout account name.
+                      was verified and is awaiting quick compliance review against your payout account name.
                     </p>
                   ) : (
                     <p className="text-xs text-slate-500">

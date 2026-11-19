@@ -401,7 +401,7 @@ export class WalletService {
       verifiedAt: updated.kycVerifiedAt,
       message: isAutoMatch
         ? "Identity verified! Withdrawals are now enabled."
-        : "ID verified with Dojah and queued for quick compliance review (name differs from business/account name).",
+        : "ID verified and queued for quick compliance review (name differs from business/account name).",
     };
   }
 

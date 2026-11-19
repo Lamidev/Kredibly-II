@@ -1,7 +1,7 @@
 import { ENV } from "../config/env";
 import { AppError } from "../middleware/errorHandler";
 
-export interface DojahIdentityResult {
+export interface IdentityResult {
   fullName: string;
   firstName: string;
   lastName: string;
@@ -11,26 +11,106 @@ export class DojahService {
   static async verifyIdentity(
     idType: "NIN" | "BVN",
     idNumber: string
-  ): Promise<DojahIdentityResult> {
+  ): Promise<IdentityResult> {
     const cleanNumber = idNumber.trim();
     if (!/^\d{11}$/.test(cleanNumber)) {
       throw new AppError(`Please enter a valid 11-digit ${idType}.`, 400);
     }
 
-    if (!ENV.DOJAH_APP_ID || !ENV.DOJAH_PRIVATE_KEY) {
-      if (ENV.NODE_ENV === "production") {
-        throw new AppError(
-          "Identity verification service is not configured. Please contact support.",
-          503
-        );
-      }
-      return {
-        fullName: "DEV VERIFIED MERCHANT",
-        firstName: "DEV",
-        lastName: "MERCHANT",
-      };
+    // Prefer Prembly (IdentityPass) when configured
+    if (ENV.PREMBLY_API_KEY) {
+      return this.verifyWithPrembly(idType, cleanNumber);
     }
 
+    if (ENV.DOJAH_APP_ID && ENV.DOJAH_PRIVATE_KEY) {
+      return this.verifyWithDojah(idType, cleanNumber);
+    }
+
+    if (ENV.NODE_ENV === "production") {
+      throw new AppError(
+        "Identity verification service is not configured yet. Please check back shortly.",
+        503
+      );
+    }
+
+    return {
+      fullName: "DEV VERIFIED MERCHANT",
+      firstName: "DEV",
+      lastName: "MERCHANT",
+    };
+  }
+
+  private static async verifyWithPrembly(
+    idType: "NIN" | "BVN",
+    cleanNumber: string
+  ): Promise<IdentityResult> {
+    const endpoint =
+      idType === "NIN"
+        ? `${ENV.PREMBLY_BASE_URL}/identitypass/verification/nin`
+        : `${ENV.PREMBLY_BASE_URL}/identitypass/verification/bvn`;
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12000);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "x-api-key": ENV.PREMBLY_API_KEY,
+          ...(ENV.PREMBLY_APP_ID ? { "app-id": ENV.PREMBLY_APP_ID } : {}),
+        },
+        body: JSON.stringify({ number: cleanNumber }),
+        signal: controller.signal,
+      });
+
+      const json = (await response.json().catch(() => ({}))) as any;
+      const entity = json?.nin_data || json?.bvn_data || json?.data || json?.entity;
+
+      if (!response.ok || json?.status === false || !entity) {
+        const errMsg =
+          json?.detail ||
+          json?.message ||
+          `Could not verify ${idType}. Please check the number and try again.`;
+        throw new AppError(errMsg, 400);
+      }
+
+      const firstName = String(
+        entity.firstname || entity.first_name || entity.firstName || ""
+      ).trim();
+      const middleName = String(
+        entity.middlename || entity.middle_name || entity.middleName || ""
+      ).trim();
+      const lastName = String(
+        entity.surname || entity.lastname || entity.last_name || entity.lastName || ""
+      ).trim();
+      const fullName = [firstName, middleName, lastName].filter(Boolean).join(" ").trim();
+
+      if (!fullName) {
+        throw new AppError(
+          `Verification succeeded but no name was returned for this ${idType}.`,
+          400
+        );
+      }
+
+      return { fullName, firstName, lastName };
+    } catch (err: any) {
+      if (err instanceof AppError) throw err;
+      if (err?.name === "AbortError") {
+        throw new AppError("Identity verification timed out. Please try again.", 504);
+      }
+      console.error("Prembly verification error:", err);
+      throw new AppError("Unable to reach identity verification service right now.", 502);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  private static async verifyWithDojah(
+    idType: "NIN" | "BVN",
+    cleanNumber: string
+  ): Promise<IdentityResult> {
     const endpoint =
       idType === "NIN"
         ? `${ENV.DOJAH_BASE_URL}/api/v1/kyc/nin?nin=${encodeURIComponent(cleanNumber)}`
@@ -73,11 +153,7 @@ export class DojahService {
         );
       }
 
-      return {
-        fullName,
-        firstName,
-        lastName,
-      };
+      return { fullName, firstName, lastName };
     } catch (err: any) {
       if (err instanceof AppError) throw err;
       if (err?.name === "AbortError") {
