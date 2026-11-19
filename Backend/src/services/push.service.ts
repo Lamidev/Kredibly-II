@@ -39,7 +39,11 @@ export class PushService {
               endpoint: sub.endpoint,
               keys: { p256dh: sub.p256dh, auth: sub.auth },
             },
-            message
+            message,
+            {
+              urgency: "high",
+              TTL: 86400,
+            }
           );
         } catch (err: any) {
           // Remove expired or unsubscribed endpoints cleanly
@@ -47,6 +51,11 @@ export class PushService {
             await prisma.pushSubscription
               .delete({ where: { id: sub.id } })
               .catch(() => {});
+          } else {
+            console.error(
+              `Push send failed (${err?.statusCode || "unknown"}):`,
+              err?.body || err?.message || err
+            );
           }
         }
       })
