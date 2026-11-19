@@ -46,6 +46,14 @@ export async function generateMetadata({
   return {
     title,
     description,
+    ...(store.logoUrl
+      ? {
+          icons: {
+            icon: ogImage,
+            apple: ogImage,
+          },
+        }
+      : {}),
     alternates: {
       canonical: `https://${params.storeSlug}.kredibly.shop`,
     },
