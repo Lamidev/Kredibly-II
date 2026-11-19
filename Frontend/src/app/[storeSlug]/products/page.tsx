@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AllProductsClient } from "./AllProductsClient";
+import { getImageUrl } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -28,10 +29,49 @@ export async function generateMetadata({
   if (!store) {
     return { title: "Products Not Found — Kredibly" };
   }
+  const title = `All Products — ${store.name}`;
+  const description =
+    store.description || `Browse all products from ${store.name} on Kredibly.`;
+  const ogImage = store.logoUrl
+    ? getImageUrl(store.logoUrl)
+    : "https://usekredibly.com/krediblyoriginal.jpeg";
+
   return {
-    title: `All Products — ${store.name}`,
-    description:
-      store.description || `Browse all products from ${store.name} on Kredibly.`,
+    title,
+    description,
+    ...(store.logoUrl
+      ? {
+          icons: {
+            icon: ogImage,
+            apple: ogImage,
+          },
+        }
+      : {}),
+    alternates: {
+      canonical: `https://${params.storeSlug}.kredibly.shop/products`,
+    },
+    openGraph: {
+      title,
+      description,
+      siteName: store.name,
+      locale: "en_NG",
+      type: "website",
+      url: `https://${params.storeSlug}.kredibly.shop/products`,
+      images: [
+        {
+          url: ogImage,
+          width: 600,
+          height: 600,
+          alt: `${store.name} logo`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImage],
+    },
   };
 }
 

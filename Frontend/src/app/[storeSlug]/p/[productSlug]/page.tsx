@@ -46,13 +46,19 @@ export async function generateMetadata({
   const title = `${product.title} (${formattedPrice}) — ${store.name}`;
   const description =
     product.description ||
-    `Order ${product.title} directly from ${store.name}. Fast delivery with 100% Kredibly Escrow Guarantee.`;
+    `Order ${product.title} directly from ${store.name}. Instant checkout and fast delivery.`;
+
+  const fallbackLogo = store.logoUrl
+    ? store.logoUrl.startsWith("http")
+      ? store.logoUrl
+      : `${API_URL.replace("/api", "")}${store.logoUrl}`
+    : undefined;
 
   const primaryImage = product.images?.[0]
     ? product.images[0].startsWith("http")
       ? product.images[0]
       : `${API_URL.replace("/api", "")}${product.images[0]}`
-    : undefined;
+    : fallbackLogo;
 
   return {
     title,
