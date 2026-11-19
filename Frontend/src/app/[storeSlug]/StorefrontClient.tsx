@@ -542,6 +542,8 @@ export function StorefrontClient({ store }: { store: StoreData }) {
       <CheckoutDrawer
         storeSlug={store.slug}
         shippingConfig={store.shippingConfig}
+        subscriptionTier={store.subscriptionTier}
+        passFeeToCustomer={store.passFeeToCustomer}
         isOpen={checkoutOpen}
         onClose={() => setCheckoutOpen(false)}
       />

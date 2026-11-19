@@ -189,12 +189,13 @@ export class OrderService {
 
     const discountedSubtotal = Math.max(0, subtotal - discountAmount);
 
-    // On Pro & Business with passFeeToCustomer enabled, buyer covers the 1.5% Escrow & Payment Protection fee (capped at ₦2,000) so the merchant receives 100% of subtotal.
+    // Nomba DVA fee: max(₦10, min(₦150, 1% of amount)). On Pro & Business with passFeeToCustomer, buyer covers this DVA fee so merchant gets 100%.
     let protectionFee = 0;
     if (store.subscriptionTier !== "STARTER" && store.passFeeToCustomer) {
-      protectionFee = Math.min(
-        2000,
-        Math.round((discountedSubtotal + shippingFee) * 0.015 * 100) / 100
+      const baseCharge = discountedSubtotal + shippingFee;
+      protectionFee = Math.max(
+        10,
+        Math.min(150, Math.round(baseCharge * 0.01 * 100) / 100)
       );
     }
     const totalAmount = discountedSubtotal + shippingFee + protectionFee;
@@ -471,25 +472,34 @@ export class OrderService {
         where: { id: order.id },
       });
 
-      // 4. Calculate net revenue and platform fee (Net Price Protection support)
+      // 4. Calculate net revenue and fee:
+      //    - Paid tiers (PRO / BUSINESS): 0% Kredibly commission; only Nomba DVA fee = max(₦10, min(₦150, 1%))
+      //    - Starter tier: 2.5% Kredibly commission (min ₦10 floor to cover Nomba DVA fee)
       const totalAmount = Number(order.totalAmount);
-      const subtotalAmount = Number(order.subtotal);
+      const orderBaseAmount =
+        Math.max(0, Number(order.subtotal) - Number(order.discountAmount || 0)) +
+        Number(order.shippingFee || 0);
       let platformFee = 0;
       let netAmount = 0;
 
-      if (totalAmount > subtotalAmount) {
-        // Buyer covered the Escrow & Payment Protection fee — Merchant gets 100% of subtotal!
-        platformFee = Math.round((totalAmount - subtotalAmount) * 100) / 100;
-        netAmount = subtotalAmount;
+      if (totalAmount > orderBaseAmount) {
+        // Buyer covered the Nomba DVA fee at checkout — Merchant gets 100% of product + shipping!
+        platformFee = Math.round((totalAmount - orderBaseAmount) * 100) / 100;
+        netAmount = orderBaseAmount;
+      } else if (order.store.subscriptionTier === "STARTER") {
+        platformFee = Math.min(
+          totalAmount,
+          Math.max(10, Math.round(totalAmount * 0.025 * 100) / 100)
+        );
+        netAmount = Math.round((totalAmount - platformFee) * 100) / 100;
       } else {
-        const feeRate =
-          order.store.subscriptionTier === "BUSINESS"
-            ? 0.01
-            : order.store.subscriptionTier === "PRO"
-            ? 0.015
-            : 0.025;
-        platformFee = Math.round(totalAmount * feeRate * 100) / 100;
-        netAmount = totalAmount - platformFee;
+        // Paid tier absorbing gateway fee: 0% Kredibly commission, only Nomba DVA fee
+        const nombaDvaFee = Math.max(
+          10,
+          Math.min(150, Math.round(totalAmount * 0.01 * 100) / 100)
+        );
+        platformFee = Math.min(totalAmount, nombaDvaFee);
+        netAmount = Math.round((totalAmount - platformFee) * 100) / 100;
       }
 
       // 5. Create Transaction audit record

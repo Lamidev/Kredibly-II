@@ -214,7 +214,36 @@ export default function WalletPage() {
     }
   };
 
-  const parsedWithdrawAmount = parseNumberInput(withdrawAmount);
+  const formatWithdrawInput = (val: string | number): string => {
+    if (val === "" || val === null || val === undefined) return "";
+    const cleaned = String(val).replace(/[^0-9.]/g, "");
+    const parts = cleaned.split(".");
+    const intPart = parts[0] || "";
+    const decPart = parts.length > 1 ? parts[1].slice(0, 2) : null;
+    if (!intPart && decPart === null) return "";
+    const formattedInt = intPart ? Number(intPart).toLocaleString("en-NG") : "0";
+    return decPart !== null ? `${formattedInt}.${decPart}` : formattedInt;
+  };
+
+  const parseWithdrawInput = (val: string): number => {
+    const cleaned = String(val).replace(/,/g, "").replace(/[^0-9.]/g, "");
+    const num = Number(cleaned);
+    return Number.isFinite(num) ? Math.round(num * 100) / 100 : 0;
+  };
+
+  const parsedWithdrawAmount = parseWithdrawInput(withdrawAmount);
+  const instantTransferFee =
+    parsedWithdrawAmount >= 1000
+      ? parsedWithdrawAmount < 5000
+        ? 20
+        : parsedWithdrawAmount <= 50000
+        ? 25
+        : 50
+      : 0;
+  const netWithdrawReceive = Math.max(
+    0,
+    Math.round((parsedWithdrawAmount - instantTransferFee) * 100) / 100
+  );
 
   const handleRequestWithdrawOtp = async () => {
     if (parsedWithdrawAmount < 1000 || parsedWithdrawAmount > available) return;
@@ -715,7 +744,11 @@ export default function WalletPage() {
                 <button
                   type="button"
                   disabled={withdrawOtpSent}
-                  onClick={() => setWithdrawAmount(formatNumberInput(available))}
+                  onClick={() =>
+                    setWithdrawAmount(
+                      formatWithdrawInput(Math.floor(available * 100) / 100)
+                    )
+                  }
                   className="text-[#2e1065] hover:underline font-bold text-[11px] cursor-pointer disabled:opacity-50"
                 >
                   Withdraw All ({formatCurrency(available)})
@@ -723,17 +756,44 @@ export default function WalletPage() {
               </div>
               <input
                 type="text"
-                inputMode="numeric"
+                inputMode="decimal"
                 required
                 disabled={withdrawOtpSent}
                 placeholder="Min ₦1,000"
                 value={withdrawAmount}
                 onChange={(e) =>
-                  setWithdrawAmount(formatNumberInput(e.target.value))
+                  setWithdrawAmount(formatWithdrawInput(e.target.value))
                 }
                 className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-[#0f172a] font-mono focus:outline-none focus:border-[#2e1065] disabled:opacity-70"
               />
             </div>
+
+            {/* Live Payout & Fee Breakdown before OTP Authorization */}
+            {parsedWithdrawAmount >= 1000 && parsedWithdrawAmount <= available && (
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
+                <div className="flex items-center justify-between text-slate-600">
+                  <span>Withdrawal Amount</span>
+                  <span className="font-mono font-semibold text-[#0f172a]">
+                    {formatCurrency(parsedWithdrawAmount)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-slate-600">
+                  <span>Instant Transfer Fee</span>
+                  <span className="font-mono font-semibold text-rose-600">
+                    -{formatCurrency(instantTransferFee)}
+                  </span>
+                </div>
+                <div className="pt-1.5 border-t border-slate-200 flex items-center justify-between">
+                  <span className="font-bold text-[#0f172a]">You Will Receive</span>
+                  <span className="font-display text-sm font-extrabold text-[#2e1065]">
+                    {formatCurrency(netWithdrawReceive)}
+                  </span>
+                </div>
+                <p className="text-[10.5px] text-slate-500 pt-0.5">
+                  Standard bank transfer fee applies to both instant withdrawals and 8:00 AM WAT Auto T+1 settlements.
+                </p>
+              </div>
+            )}
 
             {withdrawOtpSent && (
               <div className="p-3.5 rounded-xl bg-purple-50/70 border border-purple-200 space-y-2.5">

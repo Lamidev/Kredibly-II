@@ -61,6 +61,8 @@ export interface StoreData {
   socialLinks?: SocialLinks | null;
   shippingConfig?: ShippingConfig | null;
   currency: string;
+  subscriptionTier?: string;
+  passFeeToCustomer?: boolean;
   verifiedOrdersCount?: number;
   products?: StoreProduct[];
 }
