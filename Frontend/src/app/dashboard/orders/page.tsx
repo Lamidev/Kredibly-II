@@ -115,16 +115,28 @@ export default function OrdersPage() {
 
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     setActionLoadingId(orderId);
+    const labelMap: Record<string, string> = {
+      PAID: "Confirmed",
+      SHIPPED: "Dispatched",
+      DELIVERED: "Delivered",
+      CANCELLED: "Cancelled",
+    };
     try {
-      await api.patch(`/orders/${orderId}/status`, { status: newStatus });
+      const res = await api.patch(`/orders/${orderId}/status`, { status: newStatus });
+      const updatedOrder: Order | undefined = res.data?.data;
       setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, orderStatus: newStatus } : o))
+        prev.map((o) =>
+          o.id === orderId ? (updatedOrder ? { ...o, ...updatedOrder } : { ...o, orderStatus: newStatus }) : o
+        )
       );
       setSelectedOrder((prev) =>
-        prev && prev.id === orderId ? { ...prev, orderStatus: newStatus } : prev
+        prev && prev.id === orderId
+          ? updatedOrder
+            ? { ...prev, ...updatedOrder }
+            : { ...prev, orderStatus: newStatus }
+          : prev
       );
-      toast.success(`Order status updated to ${newStatus}.`);
-      await fetchOrders();
+      toast.success(`Order status updated to ${labelMap[newStatus] || newStatus}.`);
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to update order status.");
     } finally {
