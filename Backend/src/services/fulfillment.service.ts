@@ -70,25 +70,34 @@ export class FulfillmentService {
       throw new AppError("Cannot mark an unpaid order as delivered", 400);
     }
 
+    if (order.orderStatus === newStatus) {
+      return order;
+    }
+
     const updated = await prisma.$transaction(async (tx) => {
-      // Restore stock if cancelling a paid order that wasn't already cancelled
-      if (
-        newStatus === "CANCELLED" &&
-        order.orderStatus !== "CANCELLED" &&
-        order.paymentStatus === "PAID"
-      ) {
-        for (const item of order.items) {
-          await tx.product.update({
-            where: { id: item.productId },
-            data: { stockQuantity: { increment: item.quantity } },
-          });
-          if (item.variantId) {
-            await tx.productVariant.update({
-              where: { id: item.variantId },
+      if (newStatus === "CANCELLED") {
+        // Atomically claim cancellation so double-clicks cannot restore stock twice
+        const claimed = await tx.order.updateMany({
+          where: { id: order.id, orderStatus: { not: "CANCELLED" } },
+          data: { orderStatus: "CANCELLED" },
+        });
+
+        if (claimed.count > 0 && order.paymentStatus === "PAID") {
+          for (const item of order.items) {
+            await tx.product.update({
+              where: { id: item.productId },
               data: { stockQuantity: { increment: item.quantity } },
             });
+            if (item.variantId) {
+              await tx.productVariant.update({
+                where: { id: item.variantId },
+                data: { stockQuantity: { increment: item.quantity } },
+              });
+            }
           }
         }
+
+        return tx.order.findUniqueOrThrow({ where: { id: order.id } });
       }
 
       return tx.order.update({
