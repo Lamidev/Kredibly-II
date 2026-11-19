@@ -281,20 +281,31 @@ export default function StoreSettingsPage() {
                   <p className="text-[11px] text-slate-500">
                     Shown on your merchant dashboard, storefront header, and social share cards.
                   </p>
-                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-[#0f172a] cursor-pointer transition">
-                    {uploadingLogo ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <UploadCloud className="w-3.5 h-3.5" />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-[#0f172a] cursor-pointer transition">
+                      {uploadingLogo ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <UploadCloud className="w-3.5 h-3.5" />
+                      )}
+                      <span>{uploadingLogo ? "Uploading..." : "Upload Logo"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    {form.logoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, logoUrl: "" })}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 transition cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" /> Remove
+                      </button>
                     )}
-                    <span>{uploadingLogo ? "Uploading..." : "Upload Logo"}</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoUpload}
-                      className="hidden"
-                    />
-                  </label>
+                  </div>
                 </div>
               </div>
 

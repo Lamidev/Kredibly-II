@@ -510,4 +510,170 @@ export class EmailService {
       text,
     });
   }
+
+  private static escapeHtml(str: string): string {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  /**
+   * Notify merchant when their automated T+1 daily settlement is dispatched
+   */
+  static async sendAutoSettlementEmail(data: {
+    to: string;
+    fullName: string;
+    storeName: string;
+    amount: number;
+    bankName: string;
+    accountNumber: string;
+    reference: string;
+  }) {
+    const maskedAcc = `******${data.accountNumber.slice(-4)}`;
+    const html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 540px; margin: 0 auto; padding: 24px; color: #0f172a; border: 1px solid #e2e8f0; border-radius: 12px;">
+        <h2 style="color: #2e1065; margin-top: 0;">Daily T+1 Settlement Sent</h2>
+        <p style="font-size: 14px; line-height: 1.6;">Hi ${this.escapeHtml(data.fullName)},</p>
+        <p style="font-size: 14px; line-height: 1.6;">
+          Your automated T+1 payout for <strong>${this.escapeHtml(data.storeName)}</strong> has been dispatched to your linked bank account:
+        </p>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin: 16px 0;">
+          <p style="margin: 0 0 6px; font-size: 22px; font-weight: 800; color: #2e1065;">₦${data.amount.toLocaleString()}</p>
+          <p style="margin: 0; font-size: 13px; color: #475569;">${this.escapeHtml(data.bankName)} · ${maskedAcc}</p>
+          <p style="margin: 6px 0 0; font-size: 11px; color: #64748b; font-family: monospace;">Ref: ${this.escapeHtml(data.reference)}</p>
+        </div>
+        <p style="font-size: 12.5px; color: #64748b; line-height: 1.5;">
+          Need funds sooner next time? You can always trigger an instant withdrawal from your Kredibly Wallet whenever your balance is ₦1,000 or more.
+        </p>
+      </div>
+    `;
+
+    const text = `Hi ${data.fullName},\n\nYour automated T+1 payout of ₦${data.amount.toLocaleString()} for ${data.storeName} has been sent to ${data.bankName} (${maskedAcc}).\nReference: ${data.reference}`;
+
+    return this.send({
+      to: data.to,
+      subject: `₦${data.amount.toLocaleString()} T+1 Settlement Sent — ${data.storeName}`,
+      html,
+      text,
+    });
+  }
+
+  /**
+   * Forward Custom Website / E-commerce Inquiry to Akinyemioluwaseunjunior@gmail.com
+   * and send a creative confirmation email back to the requester.
+   */
+  static async sendCustomBuildInquiryEmail(data: {
+    name: string;
+    phone: string;
+    email: string;
+    projectType: string;
+    budget?: string;
+    timeline: string;
+    details?: string;
+  }) {
+    const adminHtml = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 580px; margin: 0 auto; padding: 24px; color: #0f172a; border: 1px solid #e2e8f0; border-radius: 12px;">
+        <p style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #2e1065; margin: 0 0 8px;">New Custom Build Inquiry</p>
+        <h2 style="margin: 0 0 16px; color: #0f172a;">${this.escapeHtml(data.projectType)} — ${this.escapeHtml(data.name)}</h2>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+          <tr><td style="padding: 6px 0; color: #64748b; width: 130px;"><strong>Name</strong></td><td style="padding: 6px 0;">${this.escapeHtml(data.name)}</td></tr>
+          <tr><td style="padding: 6px 0; color: #64748b;"><strong>Phone</strong></td><td style="padding: 6px 0;">${this.escapeHtml(data.phone)}</td></tr>
+          <tr><td style="padding: 6px 0; color: #64748b;"><strong>Email</strong></td><td style="padding: 6px 0;"><a href="mailto:${this.escapeHtml(data.email)}">${this.escapeHtml(data.email)}</a></td></tr>
+          <tr><td style="padding: 6px 0; color: #64748b;"><strong>Project Type</strong></td><td style="padding: 6px 0;">${this.escapeHtml(data.projectType)}</td></tr>
+          <tr><td style="padding: 6px 0; color: #64748b;"><strong>Budget</strong></td><td style="padding: 6px 0;">${this.escapeHtml(data.budget || "Not specified")}</td></tr>
+          <tr><td style="padding: 6px 0; color: #64748b;"><strong>Timeline</strong></td><td style="padding: 6px 0;">${this.escapeHtml(data.timeline)}</td></tr>
+        </table>
+        <div style="margin-top: 16px; padding: 14px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+          <p style="margin: 0 0 6px; font-size: 12px; font-weight: 700; color: #475569;">Project Details</p>
+          <p style="margin: 0; font-size: 13.5px; line-height: 1.6; white-space: pre-wrap;">${this.escapeHtml(data.details || "No additional details provided.")}</p>
+        </div>
+      </div>
+    `;
+
+    const clientHtml = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 28px; color: #0f172a; border: 1px solid #e2e8f0; border-radius: 14px;">
+        <p style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #2e1065; margin: 0 0 8px;">Akinbyte Technologies Limited</p>
+        <h2 style="margin: 0 0 12px; color: #0f172a; font-size: 22px;">We&apos;ve got your brief, ${this.escapeHtml(data.name)}!</h2>
+        <p style="font-size: 14px; line-height: 1.65; color: #334155;">
+          Thank you for reaching out about your <strong>${this.escapeHtml(data.projectType)}</strong>. Our engineering &amp; product team has received your project details and will review everything carefully.
+        </p>
+        <div style="background: #f7f4fc; border: 1px solid #e9d5ff; border-radius: 10px; padding: 16px; margin: 18px 0;">
+          <p style="margin: 0 0 6px; font-size: 12px; font-weight: 700; color: #2e1065;">What happens next</p>
+          <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #334155; line-height: 1.7;">
+            <li>We review your goals, timeline (${this.escapeHtml(data.timeline)}), and technical scope.</li>
+            <li>A lead builder from our team will reply directly to this email within <strong>24 hours</strong> to schedule a quick discovery chat or share a tailored roadmap.</li>
+          </ul>
+        </div>
+        <p style="font-size: 13px; color: #64748b; line-height: 1.6;">
+          Want to add reference links or extra notes? Just reply directly to this email.
+        </p>
+        <p style="font-size: 13px; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 0;">
+          — The Kredibly &amp; Akinbyte Build Team
+        </p>
+      </div>
+    `;
+
+    await Promise.allSettled([
+      this.send({
+        to: "Akinyemioluwaseunjunior@gmail.com",
+        subject: `Custom Build Request: ${data.projectType} (${data.name})`,
+        html: adminHtml,
+        text: `New Custom Build Inquiry\nName: ${data.name}\nPhone: ${data.phone}\nEmail: ${data.email}\nProject: ${data.projectType}\nBudget: ${data.budget || "Not specified"}\nTimeline: ${data.timeline}\nDetails: ${data.details || "None"}`,
+      }),
+      this.send({
+        to: data.email,
+        subject: `We received your ${data.projectType} brief — Kredibly & Akinbyte`,
+        html: clientHtml,
+        text: `Hi ${data.name},\n\nThank you for reaching out about your ${data.projectType}. Our team has received your project brief and someone will get back to you within 24 hours.\n\n— Kredibly & Akinbyte Technologies Limited`,
+      }),
+    ]);
+  }
+
+  /**
+   * Notify usekredibly@gmail.com of a new newsletter subscriber
+   * and send a creative welcome email to the subscriber.
+   */
+  static async sendNewsletterWelcomeEmail(subscriberEmail: string) {
+    const welcomeHtml = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 28px; color: #0f172a; border: 1px solid #e2e8f0; border-radius: 14px;">
+        <p style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #2e1065; margin: 0 0 8px;">Welcome to Kredibly</p>
+        <h2 style="margin: 0 0 12px; color: #0f172a; font-size: 22px;">You&apos;re officially in the loop!</h2>
+        <p style="font-size: 14px; line-height: 1.65; color: #334155;">
+          Thanks for subscribing to Kredibly updates. You&apos;ve joined independent brands and Nigerian social sellers building faster, cleaner online storefronts.
+        </p>
+        <div style="background: #f7f4fc; border: 1px solid #e9d5ff; border-radius: 10px; padding: 16px; margin: 18px 0;">
+          <p style="margin: 0 0 8px; font-size: 12px; font-weight: 700; color: #2e1065;">Here&apos;s what you can expect from us:</p>
+          <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #334155; line-height: 1.75;">
+            <li><strong>Merchant Growth Playbooks:</strong> Practical tips to convert Instagram &amp; WhatsApp browsers into paying orders.</li>
+            <li><strong>Product Drops &amp; New Tools:</strong> Early access to storefront upgrades, Kredibly AI features, and checkout improvements.</li>
+            <li><strong>Zero Fluff:</strong> Only actionable e-commerce insights — no spam, ever.</li>
+          </ul>
+        </div>
+        <p style="font-size: 13px; color: #64748b; line-height: 1.6;">
+          Ready to launch your storefront? Visit <a href="https://usekredibly.com/register" style="color: #2e1065; font-weight: 600;">usekredibly.com</a> anytime.
+        </p>
+        <p style="font-size: 13px; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 0;">
+          — Team Kredibly
+        </p>
+      </div>
+    `;
+
+    await Promise.allSettled([
+      this.send({
+        to: "usekredibly@gmail.com",
+        subject: `New Kredibly Newsletter Subscriber: ${subscriberEmail}`,
+        html: `<p style="font-family: sans-serif;">New subscriber joined <strong>Stay in the Loop</strong>: <strong>${this.escapeHtml(subscriberEmail)}</strong></p>`,
+        text: `New Stay in the Loop subscriber: ${subscriberEmail}`,
+      }),
+      this.send({
+        to: subscriberEmail,
+        subject: "You're in the loop! Welcome to Kredibly",
+        html: welcomeHtml,
+        text: "Thanks for subscribing to Kredibly! Expect merchant growth playbooks, new storefront feature drops, and practical e-commerce insights with zero spam. — Team Kredibly",
+      }),
+    ]);
+  }
 }

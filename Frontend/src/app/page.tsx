@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { CustomBuildSection } from "@/components/landing/CustomBuildSection";
 import {
   Accordion,
   AccordionContent,
@@ -29,7 +30,6 @@ import {
   CreditCard,
   Package,
   Loader2,
-  Sparkles,
   Plus,
 } from "lucide-react";
 
@@ -106,6 +106,9 @@ export default function HomePage() {
   const [claimInput, setClaimInput] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterLoading, setNewsletterLoading] = useState(false);
+  const [newsletterMsg, setNewsletterMsg] = useState("");
 
   // Real-time Brand Handle Availability Checking
   const [isChecking, setIsChecking] = useState(false);
@@ -1045,29 +1048,31 @@ export default function HomePage() {
             </p>
 
             {/* Billing Cycle Selector — Straight single line on desktop/tablet, smooth scroll on mobile */}
-            <div className="pt-4 inline-flex items-center justify-center p-1.5 rounded-xl bg-[#F3F4EF] border border-[#DADDD4] max-w-full overflow-x-auto scrollbar-none">
-              <div className="flex items-center gap-1.5 shrink-0">
-                {(
-                  [
-                    { id: "monthly", label: "Monthly" },
-                    { id: "quarterly", label: "Quarterly (3 Mos)" },
-                    { id: "biannual", label: "Biannually (6 Mos)" },
-                    { id: "annual", label: "Annually (1 Year · Save 15%)" },
-                  ] as const
-                ).map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setBillingCycle(tab.id)}
-                    className={`whitespace-nowrap px-4 py-2 rounded-[8px] text-xs font-display font-bold transition-all cursor-pointer ${
-                      billingCycle === tab.id
-                        ? "bg-[#2e1065] text-white shadow-xs"
-                        : "text-[#525B6C] hover:text-[#090D16]"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
+            <div className="pt-4 flex justify-center">
+              <div className="inline-flex items-center justify-center p-1.5 rounded-xl bg-white/80 backdrop-blur-sm border border-[#2e1065]/15 shadow-xs max-w-full overflow-x-auto scrollbar-none">
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {(
+                    [
+                      { id: "monthly", label: "Monthly" },
+                      { id: "quarterly", label: "Quarterly (3 Mos)" },
+                      { id: "biannual", label: "Biannually (6 Mos)" },
+                      { id: "annual", label: "Annually (1 Year · Save 15%)" },
+                    ] as const
+                  ).map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setBillingCycle(tab.id)}
+                      className={`whitespace-nowrap px-4 py-2 rounded-[8px] text-xs font-display font-bold transition-all cursor-pointer ${
+                        billingCycle === tab.id
+                          ? "bg-[#2e1065] text-white shadow-xs"
+                          : "text-[#525B6C] hover:text-[#090D16]"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -1105,7 +1110,7 @@ export default function HomePage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span>100% Escrow Buyer Protection</span>
+                    <span>Verified Storefront &amp; Order Tracking</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
@@ -1407,6 +1412,9 @@ export default function HomePage() {
         </section>
       </main>
 
+      {/* Custom Website / E-commerce Inquiry Section */}
+      <CustomBuildSection />
+
       {/* 9. Minimalist VOÐE-Style Footer */}
       <footer className="border-t border-[#DADDD4] bg-[#F3F4EF] pt-12 pb-10 text-xs text-[#525B6C]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -1421,7 +1429,7 @@ export default function HomePage() {
                 />
               </Link>
               <p className="text-xs text-[#525B6C] leading-relaxed">
-                The modern storefront builder and escrow trust platform for Nigerian social sellers and independent brands.
+                The modern storefront builder and instant checkout platform for Nigerian social sellers and independent brands.
               </p>
             </div>
 
@@ -1434,24 +1442,53 @@ export default function HomePage() {
                 Get merchant growth playbooks, product drops, and e-commerce insights.
               </p>
               <form
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault();
-                  alert("Thank you for subscribing to Kredibly updates!");
+                  if (!newsletterEmail.trim() || newsletterLoading) return;
+                  setNewsletterLoading(true);
+                  setNewsletterMsg("");
+                  try {
+                    const res = await api.post("/public/newsletter", {
+                      email: newsletterEmail.trim(),
+                    });
+                    setNewsletterMsg(
+                      res.data?.message ||
+                        "You're in the loop! Check your inbox for a welcome note."
+                    );
+                    setNewsletterEmail("");
+                  } catch (err: any) {
+                    setNewsletterMsg(
+                      err.response?.data?.message ||
+                        "Could not subscribe right now. Please try again."
+                    );
+                  } finally {
+                    setNewsletterLoading(false);
+                  }
                 }}
-                className="flex items-center gap-2 max-w-sm"
+                className="space-y-2 max-w-sm"
               >
-                <input
-                  type="email"
-                  required
-                  placeholder="Enter your email"
-                  className="bg-white border border-[#DADDD4] rounded-lg px-3.5 py-2 text-[16px] sm:text-xs text-[#090D16] placeholder-[#94A3B8] focus:outline-none focus:border-[#2e1065] flex-1"
-                />
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-[#2e1065] hover:bg-[#3b0764] text-white text-xs font-semibold rounded-[8px] transition-colors shrink-0 cursor-pointer"
-                >
-                  Subscribe
-                </button>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="email"
+                    required
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    className="bg-white border border-[#DADDD4] rounded-lg px-3.5 py-2 text-[16px] sm:text-xs text-[#090D16] placeholder-[#94A3B8] focus:outline-none focus:border-[#2e1065] flex-1"
+                  />
+                  <button
+                    type="submit"
+                    disabled={newsletterLoading}
+                    className="px-4 py-2 bg-[#2e1065] hover:bg-[#3b0764] disabled:opacity-60 text-white text-xs font-semibold rounded-[8px] transition-colors shrink-0 cursor-pointer"
+                  >
+                    {newsletterLoading ? "Joining..." : "Subscribe"}
+                  </button>
+                </div>
+                {newsletterMsg && (
+                  <p className="text-[11px] font-medium text-[#2e1065]">
+                    {newsletterMsg}
+                  </p>
+                )}
               </form>
             </div>
           </div>
@@ -1529,7 +1566,7 @@ export default function HomePage() {
                 </li>
                 <li>
                   <Link href="/refund-policy" className="hover:text-[#090D16] transition-colors">
-                    Refund &amp; Escrow Policy
+                    Refund &amp; Returns Policy
                   </Link>
                 </li>
               </ul>
@@ -1538,12 +1575,12 @@ export default function HomePage() {
             {/* Col 4: Trust & Support */}
             <div className="space-y-3">
               <h4 className="font-display font-bold text-[#090D16] uppercase tracking-wider text-[11px]">
-                Trust &amp; Security
+                Trust &amp; Support
               </h4>
               <ul className="space-y-2 text-xs">
                 <li className="flex items-center gap-1.5 text-[#3b0764] font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#3b0764] animate-pulse" />
-                  <span>Escrow Shield Active</span>
+                  <span>Verified Instant Checkout</span>
                 </li>
                 <li>
                   <a
@@ -1562,7 +1599,7 @@ export default function HomePage() {
 
           {/* Bottom Bar (VOÐE / Modern Minimalist) */}
           <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11.5px] text-[#525B6C]">
-            <p>© {new Date().getFullYear()} Kredibly Technologies Limited. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} Akinbyte Technologies Limited (RC: 9466327). All rights reserved.</p>
             <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-5">
               <Link href="/terms" className="hover:text-[#090D16] transition-colors">
                 Terms of Service
@@ -1578,6 +1615,18 @@ export default function HomePage() {
               <span>•</span>
               <span className="font-medium text-[#090D16]">Nigeria (NGN ₦)</span>
             </div>
+          </div>
+
+          {/* Regulatory & Payment Partner Disclaimer */}
+          <div className="mt-5 pt-4 border-t border-[#DADDD4]/70 text-[11px] text-[#525B6C] leading-relaxed text-center sm:text-left">
+            <p>
+              Payment processing services are provided by licensed financial institutions.{" "}
+              Kredibly is a commerce technology platform operated by{" "}
+              <span className="font-semibold text-[#090D16]">
+                Akinbyte Technologies Limited (RC: 9466327)
+              </span>
+              , not a bank. Virtual account collection and bank settlement services are powered by our regulated financial partners.
+            </p>
           </div>
         </div>
       </footer>

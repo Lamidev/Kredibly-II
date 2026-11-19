@@ -5,6 +5,7 @@ import path from "path";
 import { ENV } from "./config/env";
 import apiRoutes from "./routes";
 import { errorHandler } from "./middleware/errorHandler";
+import { WalletService } from "./services/wallet.service";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -52,6 +53,31 @@ app.use("/api", apiRoutes);
 // Centralized error handling
 app.use(errorHandler);
 
+// Schedule daily T+1 auto-settlement at 8:00 AM WAT (UTC+1 = 07:00 UTC)
+function scheduleDailyAutoT1() {
+  const scheduleNext = () => {
+    const now = new Date();
+    const nextRun = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 7, 0, 0, 0)
+    );
+    if (nextRun.getTime() <= now.getTime()) {
+      nextRun.setUTCDate(nextRun.getUTCDate() + 1);
+    }
+    const delayMs = nextRun.getTime() - now.getTime();
+    setTimeout(async () => {
+      try {
+        await WalletService.processAutoT1Settlements();
+      } catch (err) {
+        console.error("[Auto T+1] Scheduled run failed:", err);
+      } finally {
+        scheduleNext();
+      }
+    }, delayMs);
+  };
+
+  scheduleNext();
+}
+
 // Server listener
 const PORT = ENV.PORT;
 app.listen(PORT, () => {
@@ -60,6 +86,7 @@ app.listen(PORT, () => {
   console.log(`🌍 Environment: ${ENV.NODE_ENV}`);
   console.log(`🏥 Healthcheck: http://localhost:${PORT}/api/health`);
   console.log(`===============================================`);
+  scheduleDailyAutoT1();
 });
 
 export default app;
