@@ -7,6 +7,10 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
 import { useShopperStore } from "@/store/useShopperStore";
+import {
+  PasswordStrengthHint,
+  isStrongPassword,
+} from "@/components/auth/PasswordStrengthHint";
 import { StoreData } from "@/types/storefront";
 import { Eye, EyeOff, AlertCircle, Loader2, ArrowLeft } from "lucide-react";
 
@@ -357,10 +361,10 @@ export function ShopperAuthClient({
                 <input
                   type={showPassword ? "text" : "password"}
                   required
-                  minLength={6}
+                  minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 6 characters"
+                  placeholder="At least 8 characters"
                   className="w-full h-[45px] rounded-[6px] px-3.5 pr-10 bg-[#f4f5f7] focus:bg-white text-sm border border-[#e2e8f0] focus:border-[#2e1065] outline-none"
                 />
                 <button
@@ -375,11 +379,12 @@ export function ShopperAuthClient({
                   )}
                 </button>
               </div>
+              <PasswordStrengthHint password={password} />
             </div>
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (password.length > 0 && !isStrongPassword(password))}
               className="w-full h-[46px] rounded-[8px] bg-[#2e1065] hover:bg-[#3b0764] disabled:opacity-50 text-white font-display font-bold text-sm flex items-center justify-center gap-2 transition cursor-pointer"
             >
               {loading ? (
