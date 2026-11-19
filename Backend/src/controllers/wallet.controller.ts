@@ -101,4 +101,22 @@ export class WalletController {
       next(error);
     }
   }
+
+  static async submitKyc(req: Request, res: Response, next: NextFunction) {
+    try {
+      const storeId = req.storeId!;
+      const idType = req.body.idType === "BVN" ? "BVN" : "NIN";
+      const idNumber = String(req.body.idNumber || "").trim();
+
+      const data = await WalletService.submitKycVerification(storeId, idType, idNumber);
+
+      return res.status(200).json({
+        success: true,
+        message: data.message,
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
