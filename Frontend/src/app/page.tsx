@@ -392,7 +392,8 @@ export default function HomePage() {
 
             {/* Display Headline */}
             <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-[72px] font-display font-bold tracking-tight leading-[1.06] text-[#090D16]">
-              Put your products online.{" "}
+              Put your products online.
+              <br />
               <span className="text-[#3b0764]">Start taking orders.</span>
             </h1>
 
@@ -1448,24 +1449,10 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Bottom Bar (VOÐE / Modern Minimalist) */}
-          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11.5px] text-[#525B6C]">
+          {/* Bottom Bar */}
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11.5px] text-[#525B6C]">
             <p>© {new Date().getFullYear()} Akinbyte Technologies Limited (RC: 9466327). All rights reserved.</p>
-            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-5">
-              <Link href="/terms" className="hover:text-[#090D16] transition-colors">
-                Terms of Service
-              </Link>
-              <span>•</span>
-              <Link href="/privacy" className="hover:text-[#090D16] transition-colors">
-                Privacy Policy
-              </Link>
-              <span>•</span>
-              <Link href="/refund-policy" className="hover:text-[#090D16] transition-colors">
-                Refund Policy
-              </Link>
-              <span>•</span>
-              <span className="font-medium text-[#090D16]">Nigeria (NGN ₦)</span>
-            </div>
+            <span className="font-medium text-[#090D16]">Nigeria (NGN ₦)</span>
           </div>
 
           {/* Regulatory & Payment Partner Disclaimer */}
