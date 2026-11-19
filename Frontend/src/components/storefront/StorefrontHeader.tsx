@@ -8,7 +8,7 @@ import { useShopperStore } from "@/store/useShopperStore";
 import { api } from "@/lib/api";
 import { formatCurrency, getImageUrl, getStorePath } from "@/lib/utils";
 import { StoreData, extractStoreCategories } from "@/types/storefront";
-import { Menu, X, Search, ShoppingBag, Truck, Loader2, User } from "lucide-react";
+import { Menu, X, Search, ShoppingBag, Truck, Loader2, User, Package } from "lucide-react";
 
 interface StorefrontHeaderProps {
   store: StoreData;
@@ -138,14 +138,14 @@ export function StorefrontHeader({
           </div>
         )}
         <header className="bg-[#fafaf8]/95 backdrop-blur-md border-b border-[#daddd4]">
-        <div className="mx-auto w-[min(1180px,calc(100%-32px))] md:w-[min(1180px,calc(100%-48px))] py-3 flex items-center justify-between gap-3">
+        <div className="mx-auto w-[min(1180px,calc(100%-24px))] md:w-[min(1180px,calc(100%-48px))] py-2.5 sm:py-3 flex items-center justify-between gap-2">
           {/* Left: Borderless Hamburger (Mobile) + Brand Identity */}
-          <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 flex-1">
             <button
               type="button"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
               aria-label="Toggle store menu"
-              className="lg:hidden p-1.5 text-[#20231e] hover:text-[#2e1065] flex items-center justify-center transition-colors cursor-pointer shrink-0"
+              className="lg:hidden p-1 text-[#20231e] hover:text-[#2e1065] flex items-center justify-center transition-colors cursor-pointer shrink-0"
             >
               {mobileMenuOpen ? (
                 <X className="w-5 h-5" />
@@ -156,20 +156,20 @@ export function StorefrontHeader({
 
             <Link
               href={getStorePath(store.slug)}
-              className="flex items-center gap-2.5 min-w-0"
+              className="flex items-center gap-2 sm:gap-2.5 min-w-0"
             >
               {store.logoUrl ? (
                 <img
                   src={getImageUrl(store.logoUrl)}
                   alt={store.name}
-                  className="h-10 w-10 rounded-[6px] object-cover border border-[#daddd4] shrink-0"
+                  className="h-8 w-8 sm:h-10 sm:w-10 rounded-[6px] object-cover border border-[#daddd4] shrink-0"
                 />
               ) : (
-                <div className="h-10 w-10 rounded-[6px] bg-[#2e1065] flex items-center justify-center font-display font-extrabold text-white text-sm shrink-0">
+                <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-[6px] bg-[#2e1065] flex items-center justify-center font-display font-extrabold text-white text-xs sm:text-sm shrink-0">
                   {store.name.charAt(0).toUpperCase()}
                 </div>
               )}
-              <span className="font-display text-[15px] sm:text-[17px] leading-tight font-extrabold text-[#20231e] tracking-[-0.5px] uppercase truncate">
+              <span className="font-display text-[12.5px] sm:text-[17px] leading-[1.15] font-extrabold text-[#20231e] tracking-[-0.3px] sm:tracking-[-0.5px] uppercase line-clamp-2">
                 {store.name}
               </span>
             </Link>
@@ -207,7 +207,7 @@ export function StorefrontHeader({
           )}
 
           {/* Right: Track Order (Desktop), Borderless Search & Shopping Bag */}
-          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          <div className="flex items-center gap-0.5 sm:gap-2.5 shrink-0">
             <button
               type="button"
               onClick={openTrack}
@@ -221,7 +221,7 @@ export function StorefrontHeader({
               type="button"
               onClick={() => setHeaderSearchOpen((prev) => !prev)}
               aria-label="Search products"
-              className="p-2 text-[#20231e] hover:text-[#2e1065] flex items-center justify-center transition-colors cursor-pointer"
+              className="p-1.5 sm:p-2 text-[#20231e] hover:text-[#2e1065] flex items-center justify-center transition-colors cursor-pointer"
             >
               <Search className="w-5 h-5" />
             </button>
@@ -233,11 +233,11 @@ export function StorefrontHeader({
                   : getStorePath(store.slug, "/account/login")
               }
               aria-label={isShopperLoggedIn ? "My Account" : "Sign in"}
-              className="relative p-2 text-[#20231e] hover:text-[#2e1065] flex items-center justify-center transition-colors"
+              className="relative p-1.5 sm:p-2 text-[#20231e] hover:text-[#2e1065] flex items-center justify-center transition-colors"
             >
               <User className="w-5 h-5" />
               {isShopperLoggedIn && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 w-2 h-2 rounded-full bg-emerald-500" />
               )}
             </Link>
 
@@ -245,7 +245,7 @@ export function StorefrontHeader({
               type="button"
               onClick={openCart}
               aria-label="Open shopping bag"
-              className="relative p-2 text-[#20231e] hover:text-[#2e1065] flex items-center justify-center transition-colors cursor-pointer"
+              className="relative p-1.5 sm:p-2 text-[#20231e] hover:text-[#2e1065] flex items-center justify-center transition-colors cursor-pointer"
             >
               <ShoppingBag className="w-5 h-5" />
               {cartCount > 0 && (
@@ -397,34 +397,56 @@ export function StorefrontHeader({
                     {store.name}.
                   </p>
                 ) : (
-                  trackedOrders.map((ord) => (
-                    <Link
-                      key={ord.id}
-                      href={getStorePath(store.slug, `/orders/${ord.orderNumber}`)}
-                      onClick={closeTrack}
-                      className="block p-3.5 rounded-[6px] bg-[#fafaf8] hover:bg-[#f3f4ef] border border-[#daddd4] transition-colors space-y-1.5"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-xs font-bold text-[#2e1065]">
-                          #{ord.orderNumber}
-                        </span>
-                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#2e1065]/10 text-[#2e1065]">
-                          {ord.orderStatus}
-                        </span>
-                      </div>
-                      <p className="text-xs font-medium text-[#20231e] truncate">
-                        {ord.items
-                          ?.map((i: any) => `${i.productTitle} (x${i.quantity})`)
-                          .join(", ")}
-                      </p>
-                      <div className="flex items-center justify-between text-[11px] text-[#62665d]">
-                        <span>{formatCurrency(Number(ord.totalAmount))}</span>
-                        <span className="underline font-semibold text-[#2e1065]">
-                          View Full Receipt →
-                        </span>
-                      </div>
-                    </Link>
-                  ))
+                  trackedOrders.map((ord) => {
+                    const firstThumb = ord.items?.[0]?.product?.images?.[0];
+                    const extraCount = (ord.items?.length || 0) - 1;
+                    return (
+                      <Link
+                        key={ord.id}
+                        href={getStorePath(store.slug, `/orders/${ord.orderNumber}`)}
+                        onClick={closeTrack}
+                        className="flex items-center gap-3 p-3.5 rounded-[8px] bg-[#fafaf8] hover:bg-[#f3f4ef] border border-[#daddd4] transition-colors"
+                      >
+                        <div className="relative h-12 w-12 rounded-lg bg-white border border-[#daddd4] overflow-hidden shrink-0 flex items-center justify-center">
+                          {firstThumb ? (
+                            <img
+                              src={getImageUrl(firstThumb)}
+                              alt={ord.items?.[0]?.productTitle || ord.orderNumber}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <Package className="w-5 h-5 text-[#c5c8be]" />
+                          )}
+                          {extraCount > 0 && (
+                            <span className="absolute bottom-0 right-0 px-1 rounded-tl bg-[#2e1065] text-white text-[9px] font-bold">
+                              +{extraCount}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-mono text-xs font-bold text-[#2e1065]">
+                              #{ord.orderNumber}
+                            </span>
+                            <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#2e1065]/10 text-[#2e1065]">
+                              {ord.orderStatus}
+                            </span>
+                          </div>
+                          <p className="text-xs font-medium text-[#20231e] truncate">
+                            {ord.items
+                              ?.map((i: any) => `${i.productTitle} (x${i.quantity})`)
+                              .join(", ")}
+                          </p>
+                          <div className="flex items-center justify-between text-[11px] text-[#62665d]">
+                            <span>{formatCurrency(Number(ord.totalAmount))}</span>
+                            <span className="underline font-semibold text-[#2e1065]">
+                              View Full Receipt →
+                            </span>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })
                 )}
               </div>
             )}

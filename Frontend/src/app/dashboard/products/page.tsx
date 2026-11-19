@@ -29,6 +29,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Pagination } from "@/components/ui/pagination";
 
 interface Variant {
   name: string;
@@ -76,6 +77,8 @@ export default function ProductsPage() {
   const [sortBy, setSortBy] = useState<
     "newest" | "price-asc" | "price-desc" | "low-stock"
   >("newest");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 12;
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -118,7 +121,16 @@ export default function ProductsPage() {
     } else {
       document.body.style.overflow = "";
     }
-    return () => {
+    useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchQuery, sortBy]);
+
+  const paginatedProducts = displayedProducts.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
+  return () => {
       document.body.style.overflow = "";
     };
   }, [modalOpen]);
@@ -487,7 +499,16 @@ export default function ProductsPage() {
     .filter((p) => {
       const q = searchQuery.trim().toLowerCase();
       if (!q) return true;
-      return (
+      useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchQuery, sortBy]);
+
+  const paginatedProducts = displayedProducts.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
+  return (
         p.title.toLowerCase().includes(q) ||
         (p.category || "").toLowerCase().includes(q) ||
         (p.brand || "").toLowerCase().includes(q)
@@ -505,6 +526,15 @@ export default function ProductsPage() {
       }
       return 0;
     });
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchQuery, sortBy]);
+
+  const paginatedProducts = displayedProducts.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
 
   return (
     <div className="space-y-5">
@@ -666,7 +696,7 @@ export default function ProductsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {displayedProducts.map((product) => {
+                    {paginatedProducts.map((product) => {
                       const baseNum = Number(product.basePrice || 0);
                       const compareNum = Number(product.comparePrice || 0);
                       const hasDiscount = compareNum > baseNum && baseNum > 0;
@@ -682,7 +712,16 @@ export default function ProductsPage() {
                         .filter(Boolean)
                         .join(" · ");
 
-                      return (
+                      useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchQuery, sortBy]);
+
+  const paginatedProducts = displayedProducts.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
+  return (
                         <tr
                           key={product.id}
                           className="hover:bg-slate-50/70 transition"
@@ -837,7 +876,7 @@ export default function ProductsPage() {
 
             {/* Mobile 1-Column List Cards (Full title + inline stock controls) */}
             <div className="md:hidden space-y-3">
-              {displayedProducts.map((product) => {
+              {paginatedProducts.map((product) => {
                 const baseNum = Number(product.basePrice || 0);
                 const compareNum = Number(product.comparePrice || 0);
                 const hasDiscount = compareNum > baseNum && baseNum > 0;
@@ -845,7 +884,16 @@ export default function ProductsPage() {
                   ? Math.round(((compareNum - baseNum) / compareNum) * 100)
                   : 0;
 
-                return (
+                useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchQuery, sortBy]);
+
+  const paginatedProducts = displayedProducts.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
+  return (
                   <Card key={product.id} className="overflow-hidden">
                     <div className="p-3.5 flex items-start gap-3">
                       {/* Thumbnail */}
@@ -1001,6 +1049,12 @@ export default function ProductsPage() {
                 );
               })}
             </div>
+            <Pagination
+              currentPage={currentPage}
+              totalItems={displayedProducts.length}
+              pageSize={PAGE_SIZE}
+              onPageChange={setCurrentPage}
+            />
           </>
         )}
       </div>
@@ -1292,7 +1346,16 @@ export default function ProductsPage() {
                     const alreadyAdded = attributes.some(
                       (a) => a.label.trim().toLowerCase() === preset.toLowerCase()
                     );
-                    return (
+                    useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchQuery, sortBy]);
+
+  const paginatedProducts = displayedProducts.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
+  return (
                       <button
                         key={preset}
                         type="button"
@@ -1431,7 +1494,16 @@ export default function ProductsPage() {
                         const badName =
                           v.name.trim().length > 0 &&
                           !/[a-zA-Z]/.test(v.name.trim());
-                        return (
+                        useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchQuery, sortBy]);
+
+  const paginatedProducts = displayedProducts.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
+  return (
                           <div key={i} className="space-y-1">
                             <div className="grid grid-cols-[1fr_92px_58px_20px] items-center gap-2">
                               <input

@@ -287,14 +287,177 @@ export default function DeliveryAndPromosPage() {
     <div className="space-y-6 max-w-4xl">
       <div>
         <h1 className="text-xl sm:text-2xl font-bold text-[#0f172a] tracking-tight">
-          Delivery &amp; Promos
+          Delivery &amp; Offers
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-          Set state delivery fees, promote free delivery, and create checkout discount codes.
+          Announce exclusive store offers at the top of your storefront and set delivery rates.
         </p>
       </div>
 
-      {/* 1. Delivery Rates & Free Delivery */}
+      {/* 1. Exclusive Offer Banner (Separate Card Above Delivery Rates) */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-[#2e1065]/10 flex items-center justify-center text-[#2e1065]">
+              <Tag className="w-4 h-4" />
+            </div>
+            <div>
+              <CardTitle>Exclusive Offer Banner (Top of Storefront)</CardTitle>
+              <CardDescription>
+                Pin a custom announcement bar right above your storefront header so every visitor sees it first.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSaveShipping} className="space-y-4">
+            <div className="p-3.5 rounded-xl bg-[#fafaf8] border border-slate-200 text-xs text-slate-600 space-y-1.5">
+              <p className="font-bold text-[#0f172a]">How to use this effectively:</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>
+                  <strong>Turn on the toggle</strong> and write any offer in your own words (e.g. a weekend promo, free gift above a certain order amount, or same-day dispatch cutoff).
+                </li>
+                <li>
+                  <strong>Stays visible everywhere:</strong> It stays pinned above your store&apos;s header as shoppers browse.
+                </li>
+                <li>
+                  <strong>Optional end date:</strong> Set an expiry date if it&apos;s a limited-time promo — it will hide automatically once that date passes.
+                </li>
+              </ul>
+            </div>
+
+            <label className="flex items-center justify-between cursor-pointer gap-4 p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <div>
+                <p className="text-xs font-bold text-[#0f172a]">
+                  Show Exclusive Offer Banner on Storefront
+                </p>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Overrides the default free-delivery bar when turned on.
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                checked={Boolean(shipping.offerBannerEnabled)}
+                onChange={(e) =>
+                  setShipping({
+                    ...shipping,
+                    offerBannerEnabled: e.target.checked,
+                  })
+                }
+                className="w-4 h-4 accent-[#2e1065] cursor-pointer shrink-0"
+              />
+            </label>
+
+            {shipping.offerBannerEnabled && (
+              <div className="space-y-3.5 pt-1">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-[#0f172a]">
+                      Your Offer / Announcement Text
+                    </label>
+                    <span className="text-[11px] text-slate-400">
+                      {(shipping.offerBannerText || "").length}/120
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    maxLength={120}
+                    placeholder="e.g. Free gift on every order above ₦30,000 this weekend"
+                    value={shipping.offerBannerText || ""}
+                    onChange={(e) =>
+                      setShipping({
+                        ...shipping,
+                        offerBannerText: e.target.value,
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065]"
+                  />
+                </div>
+
+                {/* Optional Quick-Fill Starters */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[11px] text-slate-500">Quick ideas:</span>
+                  {[
+                    "Same-day Lagos dispatch for orders before 2 PM",
+                    "Free gift on all orders above ₦30,000",
+                    "Weekend Flash Sale — limited stock available!",
+                    "Buy 2 items & get a free surprise bonus",
+                  ].map((idea) => (
+                    <button
+                      key={idea}
+                      type="button"
+                      onClick={() =>
+                        setShipping({ ...shipping, offerBannerText: idea })
+                      }
+                      className="px-2.5 py-1 rounded-full bg-slate-50 border border-slate-200 hover:border-[#2e1065] text-[11px] text-slate-600 transition cursor-pointer"
+                    >
+                      {idea}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="max-w-xs">
+                  <label className="block text-xs font-semibold text-[#0f172a] mb-1.5">
+                    Auto-Hide After Date (Optional)
+                  </label>
+                  <input
+                    type="date"
+                    value={shipping.offerBannerExpiresAt || ""}
+                    onChange={(e) =>
+                      setShipping({
+                        ...shipping,
+                        offerBannerExpiresAt: e.target.value || null,
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-[#0f172a]"
+                  />
+                </div>
+
+                {shipping.offerBannerText?.trim() && (
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Storefront Preview
+                    </span>
+                    <div className="w-full rounded-lg bg-[#2e1065] text-white text-center py-2 px-3 text-[11px] sm:text-xs font-semibold tracking-wide">
+                      {shipping.offerBannerText.trim()}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {hasShippingChanges && (
+              <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
+                <p className="text-xs font-medium text-slate-600">
+                  You have unsaved changes.
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDiscardShipping}
+                    disabled={savingShipping}
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Discard</span>
+                  </Button>
+                  <Button type="submit" size="sm" disabled={savingShipping}>
+                    {savingShipping ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Save className="w-3.5 h-3.5" />
+                    )}
+                    <span>Save Changes</span>
+                  </Button>
+                </div>
+              </div>
+            )}
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* 2. Delivery Rates & Free Delivery */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2.5">
@@ -504,109 +667,6 @@ export default function DeliveryAndPromosPage() {
                       </button>
                     </span>
                   ))}
-                </div>
-              )}
-            </div>
-
-            {/* Exclusive Offer Banner (Storefront Top Bar) */}
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
-              <label className="flex items-center justify-between cursor-pointer gap-4">
-                <div>
-                  <p className="text-xs font-bold text-[#0f172a]">
-                    Exclusive Offer Banner (Top of Storefront)
-                  </p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Write any custom offer or announcement to stay pinned right above your storefront header.
-                  </p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={Boolean(shipping.offerBannerEnabled)}
-                  onChange={(e) =>
-                    setShipping({
-                      ...shipping,
-                      offerBannerEnabled: e.target.checked,
-                    })
-                  }
-                  className="w-4 h-4 accent-[#2e1065] cursor-pointer shrink-0"
-                />
-              </label>
-
-              {shipping.offerBannerEnabled && (
-                <div className="pt-3 border-t border-slate-200 space-y-3">
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-semibold text-[#0f172a]">
-                        Your Offer / Announcement Text
-                      </label>
-                      <span className="text-[11px] text-slate-400">
-                        {(shipping.offerBannerText || "").length}/120
-                      </span>
-                    </div>
-                    <input
-                      type="text"
-                      maxLength={120}
-                      placeholder="e.g. Free gift on every order above ₦30,000 this weekend"
-                      value={shipping.offerBannerText || ""}
-                      onChange={(e) =>
-                        setShipping({
-                          ...shipping,
-                          offerBannerText: e.target.value,
-                        })
-                      }
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065]"
-                    />
-                  </div>
-
-                  {/* Optional Quick-Fill Starters */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[11px] text-slate-500">Ideas:</span>
-                    {[
-                      "Same-day Lagos dispatch for orders before 2 PM",
-                      "Free gift on all orders above ₦30,000",
-                      "Weekend Flash Sale — limited stock available!",
-                      "Buy 2 items & get a free surprise bonus",
-                    ].map((idea) => (
-                      <button
-                        key={idea}
-                        type="button"
-                        onClick={() =>
-                          setShipping({ ...shipping, offerBannerText: idea })
-                        }
-                        className="px-2.5 py-1 rounded-full bg-white border border-slate-200 hover:border-[#2e1065] text-[11px] text-slate-600 transition cursor-pointer"
-                      >
-                        {idea}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="max-w-xs">
-                    <label className="block text-xs font-semibold text-[#0f172a] mb-1.5">
-                      Auto-Hide After Date (Optional)
-                    </label>
-                    <input
-                      type="date"
-                      value={shipping.offerBannerExpiresAt || ""}
-                      onChange={(e) =>
-                        setShipping({
-                          ...shipping,
-                          offerBannerExpiresAt: e.target.value || null,
-                        })
-                      }
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-[#0f172a]"
-                    />
-                  </div>
-
-                  {shipping.offerBannerText?.trim() && (
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        Storefront Preview
-                      </span>
-                      <div className="w-full rounded-lg bg-[#2e1065] text-white text-center py-2 px-3 text-[11px] sm:text-xs font-semibold tracking-wide">
-                        {shipping.offerBannerText.trim()}
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
             </div>

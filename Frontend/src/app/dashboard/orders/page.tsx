@@ -28,6 +28,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Pagination } from "@/components/ui/pagination";
 
 interface OrderItem {
   id: string;
@@ -67,6 +68,8 @@ export default function OrdersPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
@@ -76,9 +79,18 @@ export default function OrdersPage() {
       const res = await api.get("/orders");
       const list: Order[] = res.data.data || [];
       setOrders(list);
+      const orderParam =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("order")
+          : null;
       if (selectedOrder) {
         const updated = list.find((o) => o.id === selectedOrder.id) || null;
         setSelectedOrder(updated);
+      } else if (orderParam) {
+        const matched = list.find(
+          (o) => o.orderNumber.toLowerCase() === orderParam.toLowerCase()
+        );
+        if (matched) setSelectedOrder(matched);
       }
     } catch (err: any) {
       if (err.response?.status === 401) {
@@ -237,39 +249,145 @@ export default function OrdersPage() {
           </CardContent>
         </Card>
 
-        {/* Fulfillment Stage Updater */}
+        {/* Visual Fulfillment Stepper */}
         <Card>
-          <CardContent className="p-5 sm:p-6 space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Update Fulfillment Stage
-              </p>
+          <CardContent className="p-5 sm:p-6 space-y-5">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Fulfillment Progress
+                </p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Tap any stage below to update the buyer&apos;s live tracking status.
+                </p>
+              </div>
               {actionLoadingId === selectedOrder.id && (
                 <Loader2 className="w-4 h-4 animate-spin text-[#2e1065]" />
               )}
             </div>
-            <div className="flex flex-wrap gap-2">
-              {stages.map((st) => {
-                const isCurrent = selectedOrder.orderStatus === st.id;
-                return (
-                  <button
-                    key={st.id}
-                    type="button"
-                    disabled={actionLoadingId === selectedOrder.id || isCurrent}
-                    onClick={() => handleStatusUpdate(selectedOrder.id, st.id)}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition cursor-pointer disabled:cursor-default ${
-                      isCurrent
-                        ? st.id === "CANCELLED"
-                          ? "bg-red-600 border-red-600 text-white"
-                          : "bg-[#2e1065] border-[#2e1065] text-white"
-                        : "bg-white border-slate-200 text-slate-700 hover:border-[#2e1065] hover:text-[#2e1065]"
-                    }`}
-                  >
-                    {st.label}
-                  </button>
+
+            {selectedOrder.orderStatus === "CANCELLED" ? (
+              <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <p className="text-xs font-semibold text-red-700">
+                  This order is marked as Cancelled.
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={actionLoadingId === selectedOrder.id}
+                  onClick={() => handleStatusUpdate(selectedOrder.id, "PAID")}
+                >
+                  Restore to Confirmed
+                </Button>
+              </div>
+            ) : (
+              (() => {
+                const flow = [
+                  { id: "PAID", label: "Confirmed", sub: "Payment received" },
+                  { id: "PROCESSING", label: "Packing", sub: "Preparing order" },
+                  { id: "SHIPPED", label: "Dispatched", sub: "On the way" },
+                  { id: "DELIVERED", label: "Delivered", sub: "Completed" },
+                ] as const;
+                const currentIdx = Math.max(
+                  0,
+                  flow.findIndex((s) => s.id === selectedOrder.orderStatus)
                 );
-              })}
-            </div>
+                const nextStage =
+                  currentIdx < flow.length - 1 ? flow[currentIdx + 1] : null;
+
+                return (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      {flow.map((st, idx) => {
+                        const isDone = idx < currentIdx;
+                        const isCurrent = idx === currentIdx;
+                        return (
+                          <button
+                            key={st.id}
+                            type="button"
+                            disabled={
+                              actionLoadingId === selectedOrder.id || isCurrent
+                            }
+                            onClick={() =>
+                              handleStatusUpdate(selectedOrder.id, st.id)
+                            }
+                            className={`text-left p-3 rounded-xl border transition cursor-pointer disabled:cursor-default ${
+                              isCurrent
+                                ? "bg-[#2e1065] border-[#2e1065] text-white shadow-sm"
+                                : isDone
+                                ? "bg-emerald-50/70 border-emerald-200 text-emerald-900 hover:border-emerald-400"
+                                : "bg-slate-50 border-slate-200 text-slate-600 hover:border-[#2e1065] hover:bg-white"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-1 mb-1">
+                              <span
+                                className={`text-[10px] font-mono font-bold uppercase ${
+                                  isCurrent
+                                    ? "text-purple-200"
+                                    : isDone
+                                    ? "text-emerald-700"
+                                    : "text-slate-400"
+                                }`}
+                              >
+                                Step {idx + 1}
+                              </span>
+                              {isDone && (
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                              )}
+                            </div>
+                            <p className="text-xs font-bold">{st.label}</p>
+                            <p
+                              className={`text-[10.5px] mt-0.5 ${
+                                isCurrent
+                                  ? "text-purple-100"
+                                  : isDone
+                                  ? "text-emerald-700"
+                                  : "text-slate-400"
+                              }`}
+                            >
+                              {st.sub}
+                            </p>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                      {nextStage ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={actionLoadingId === selectedOrder.id}
+                          onClick={() =>
+                            handleStatusUpdate(selectedOrder.id, nextStage.id)
+                          }
+                        >
+                          <Truck className="w-3.5 h-3.5" />
+                          <span>Move to {nextStage.label}</span>
+                        </Button>
+                      ) : (
+                        <span className="text-xs font-semibold text-emerald-700 inline-flex items-center gap-1.5">
+                          <CheckCircle2 className="w-4 h-4" />
+                          Order fulfilled &amp; delivered
+                        </span>
+                      )}
+
+                      <button
+                        type="button"
+                        disabled={actionLoadingId === selectedOrder.id}
+                        onClick={() =>
+                          handleStatusUpdate(selectedOrder.id, "CANCELLED")
+                        }
+                        className="text-xs font-semibold text-red-600 hover:underline cursor-pointer"
+                      >
+                        Cancel Order
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()
+            )}
           </CardContent>
         </Card>
 
@@ -529,7 +647,9 @@ export default function OrdersPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredOrders.map((order) => {
+                  {filteredOrders
+                    .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+                    .map((order) => {
                     const firstThumb = order.items?.[0]?.product?.images?.[0];
                     const extraCount = (order.items?.length || 0) - 1;
                     return (
@@ -587,6 +707,12 @@ export default function OrdersPage() {
               </table>
             </div>
           )}
+          <Pagination
+            currentPage={currentPage}
+            totalItems={filteredOrders.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setCurrentPage}
+          />
         </CardContent>
       </Card>
     </div>
