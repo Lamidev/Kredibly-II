@@ -49,6 +49,15 @@ export function getStoreUrl(slug: string): string {
   return `https://${slug}.kredibly.shop`;
 }
 
+/** Normalize a Nigerian phone number to international digits (234XXXXXXXXXX) without duplicate 234 prefixes. */
+export function formatWhatsAppNumber(phone?: string | null): string {
+  const digits = (phone || "").replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("234") && digits.length >= 13) return digits;
+  if (digits.startsWith("0")) return `234${digits.slice(1)}`;
+  return `234${digits}`;
+}
+
 export function getStorePath(slug: string, subPath = ""): string {
   const normalizedSub = subPath
     ? subPath.startsWith("/")

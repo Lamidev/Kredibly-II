@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatWhatsAppNumber } from "@/lib/utils";
 import {
   Users,
   ShoppingBag,
@@ -13,9 +13,9 @@ import {
   Search,
   RefreshCw,
   MapPin,
-  Eye,
   MessageCircle,
   Loader2,
+  ArrowLeft,
 } from "lucide-react";
 import {
   Card,
@@ -26,13 +26,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 
 interface CustomerOrder {
   id: string;
@@ -106,10 +99,143 @@ export default function CustomersPage() {
   const repeatBuyers = customers.filter((c) => c.paidOrdersCount >= 2).length;
 
   const getWhatsAppLink = (phone: string) => {
-    const clean = phone.replace(/\D/g, "");
-    const intl = clean.startsWith("0") ? `234${clean.slice(1)}` : clean;
-    return `https://wa.me/${intl}`;
+    return `https://wa.me/${formatWhatsAppNumber(phone)}`;
   };
+
+  if (selectedCustomer) {
+    const initial = selectedCustomer.fullName?.charAt(0)?.toUpperCase() || "C";
+    return (
+      <div className="space-y-6 max-w-4xl">
+        <button
+          type="button"
+          onClick={() => setSelectedCustomer(null)}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-[#2e1065] cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Customers</span>
+        </button>
+
+        <Card>
+          <CardContent className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-full bg-[#2e1065] text-white font-display font-bold text-base flex items-center justify-center shrink-0">
+                {initial}
+              </div>
+              <div>
+                <h1 className="text-lg sm:text-xl font-bold text-[#0f172a]">
+                  {selectedCustomer.fullName}
+                </h1>
+                <p className="text-xs text-slate-500 font-mono mt-0.5">
+                  {selectedCustomer.phoneNumber}
+                  {selectedCustomer.email ? ` • ${selectedCustomer.email}` : ""}
+                </p>
+              </div>
+            </div>
+
+            <a
+              href={getWhatsAppLink(selectedCustomer.phoneNumber)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button type="button" size="sm" className="w-full sm:w-auto">
+                <MessageCircle className="w-4 h-4" />
+                <span>Message on WhatsApp</span>
+              </Button>
+            </a>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Card>
+            <CardContent className="p-5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Lifetime Spend
+              </p>
+              <p className="font-display text-2xl font-extrabold text-[#2e1065] mt-1">
+                {formatCurrency(selectedCustomer.totalSpent)}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Paid Orders
+              </p>
+              <p className="font-display text-2xl font-extrabold text-[#0f172a] mt-1">
+                {selectedCustomer.paidOrdersCount}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {(selectedCustomer.address || selectedCustomer.state) && (
+          <Card>
+            <CardContent className="p-5 space-y-1.5 text-xs">
+              <p className="font-bold uppercase tracking-wider text-slate-400 text-[10.5px]">
+                Delivery Address
+              </p>
+              <p className="text-sm font-medium text-[#0f172a]">
+                {[
+                  selectedCustomer.address,
+                  selectedCustomer.city,
+                  selectedCustomer.state,
+                ]
+                  .filter(Boolean)
+                  .join(", ")}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Order History</CardTitle>
+            <CardDescription>
+              All verified paid orders from {selectedCustomer.fullName}.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {selectedCustomer.recentOrders.length === 0 ? (
+              <p className="text-xs text-slate-500 py-6 text-center">
+                No paid orders yet.
+              </p>
+            ) : (
+              <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden text-xs">
+                {selectedCustomer.recentOrders.map((ord) => (
+                  <div
+                    key={ord.id}
+                    className="px-4 py-3 flex items-center justify-between bg-white"
+                  >
+                    <div>
+                      <p className="font-mono font-bold text-[#0f172a]">
+                        #{ord.orderNumber}
+                      </p>
+                      <p className="text-[11px] text-slate-500">
+                        {new Date(ord.createdAt).toLocaleDateString("en-NG", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </p>
+                    </div>
+                    <div className="text-right space-y-1">
+                      <p className="font-mono font-bold text-[#0f172a]">
+                        {formatCurrency(ord.totalAmount)}
+                      </p>
+                      <Badge variant="outline" className="text-[10px]">
+                        {ord.orderStatus}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -328,106 +454,6 @@ export default function CustomersPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Customer Details Modal */}
-      <Dialog
-        open={Boolean(selectedCustomer)}
-        onOpenChange={(open) => !open && setSelectedCustomer(null)}
-      >
-        <DialogContent className="max-w-md">
-          {selectedCustomer && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{selectedCustomer.fullName}</DialogTitle>
-                <DialogDescription>
-                  {selectedCustomer.phoneNumber}
-                  {selectedCustomer.email ? ` • ${selectedCustomer.email}` : ""}
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-4 text-xs">
-                <div className="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                  <div>
-                    <p className="text-slate-500">Lifetime Spend</p>
-                    <p className="font-display text-base font-bold text-[#2e1065]">
-                      {formatCurrency(selectedCustomer.totalSpent)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-slate-500">Orders</p>
-                    <p className="font-display text-base font-bold text-[#0f172a]">
-                      {selectedCustomer.paidOrdersCount} paid /{" "}
-                      {selectedCustomer.totalOrders} total
-                    </p>
-                  </div>
-                </div>
-
-                {(selectedCustomer.address || selectedCustomer.state) && (
-                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                    <p className="font-semibold text-[#0f172a]">Delivery Address</p>
-                    <p className="text-slate-600">
-                      {[
-                        selectedCustomer.address,
-                        selectedCustomer.city,
-                        selectedCustomer.state,
-                      ]
-                        .filter(Boolean)
-                        .join(", ")}
-                    </p>
-                  </div>
-                )}
-
-                {selectedCustomer.recentOrders.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="font-semibold text-[#0f172a]">Recent Orders</p>
-                    <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
-                      {selectedCustomer.recentOrders.map((ord) => (
-                        <div
-                          key={ord.id}
-                          className="px-3.5 py-2.5 flex items-center justify-between bg-white"
-                        >
-                          <div>
-                            <p className="font-mono font-bold text-[#0f172a]">
-                              #{ord.orderNumber}
-                            </p>
-                            <p className="text-[11px] text-slate-500">
-                              {new Date(ord.createdAt).toLocaleDateString("en-NG", {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                              })}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-mono font-bold text-[#0f172a]">
-                              {formatCurrency(ord.totalAmount)}
-                            </p>
-                            <Badge variant="outline" className="text-[10px]">
-                              {ord.orderStatus}
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <a
-                  href={getWhatsAppLink(selectedCustomer.phoneNumber)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block"
-                >
-                  <Button type="button" className="w-full">
-                    <MessageCircle className="w-4 h-4" />
-                    <span>Message on WhatsApp</span>
-                  </Button>
-                </a>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

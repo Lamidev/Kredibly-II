@@ -558,7 +558,13 @@ export class OrderService {
     let order = await prisma.order.findUnique({
       where: { orderNumber },
       include: {
-        items: true,
+        items: {
+          include: {
+            product: {
+              select: { images: true, slug: true },
+            },
+          },
+        },
         customer: {
           select: {
             fullName: true,
@@ -597,7 +603,13 @@ export class OrderService {
         const refreshed = await prisma.order.findUnique({
           where: { orderNumber },
           include: {
-            items: true,
+            items: {
+              include: {
+                product: {
+                  select: { images: true, slug: true },
+                },
+              },
+            },
             customer: {
               select: {
                 fullName: true,

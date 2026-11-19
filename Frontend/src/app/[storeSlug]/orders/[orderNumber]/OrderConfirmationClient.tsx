@@ -4,7 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
-import { formatCurrency, getStorePath } from "@/lib/utils";
+import {
+  formatCurrency,
+  formatWhatsAppNumber,
+  getImageUrl,
+  getStorePath,
+} from "@/lib/utils";
 import { useShopperStore } from "@/store/useShopperStore";
 import { StorefrontHeader } from "@/components/storefront/StorefrontHeader";
 import { StorefrontFooter } from "@/components/storefront/StorefrontFooter";
@@ -20,6 +25,7 @@ import {
   ArrowRight,
   Clock,
   Loader2,
+  Package,
 } from "lucide-react";
 
 interface OrderData {
@@ -51,6 +57,10 @@ interface OrderData {
     unitPrice: number | string;
     quantity: number;
     subtotal: number | string;
+    product?: {
+      images?: string[];
+      slug?: string;
+    } | null;
   }>;
 }
 
@@ -126,22 +136,21 @@ export function OrderConfirmationClient({
     return () => clearInterval(timer);
   }, [order.orderNumber, order.paymentStatus]);
 
-  const cleanPhone = order.store.whatsappNumber.replace(/\D/g, "");
+  const whatsappNumber = formatWhatsAppNumber(order.store.whatsappNumber);
   const formattedItems = order.items
     .map((i) => `${i.quantity}x ${i.productTitle}${i.variantName ? ` (${i.variantName})` : ""}`)
     .join(", ");
+  const orderReceiptUrl = `https://${order.store.slug}.kredibly.shop/orders/${order.orderNumber}`;
 
   const whatsappMessage = encodeURIComponent(
     `Hi ${order.store.name}! I placed Order #${order.orderNumber} (${formatCurrency(
       order.totalAmount
     )}).\n\nItems: ${formattedItems}\nDelivery to: ${
       order.customer.address
-    }, ${order.customer.state}\nName: ${order.customer.fullName}`
+    }, ${order.customer.state}\nName: ${order.customer.fullName}\nReceipt: ${orderReceiptUrl}`
   );
 
-  const whatsappUrl = `https://wa.me/234${
-    cleanPhone.startsWith("0") ? cleanPhone.slice(1) : cleanPhone
-  }?text=${whatsappMessage}`;
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
 
   const isPaid = order.paymentStatus === "PAID";
 
@@ -265,27 +274,43 @@ export function OrderConfirmationClient({
           </h3>
 
           <div className="space-y-3 divide-y divide-[#e6e8e1]">
-            {order.items.map((item) => (
-              <div
-                key={item.id}
-                className="pt-3 first:pt-0 flex items-center justify-between text-xs gap-3"
-              >
-                <div className="min-w-0">
-                  <p className="font-bold text-[#20231e] text-sm truncate">
-                    {item.productTitle}
-                  </p>
-                  {item.variantName && (
-                    <p className="text-[#62665d]">{item.variantName}</p>
-                  )}
-                  <p className="text-[#62665d] mt-0.5">
-                    Qty: {item.quantity} × {formatCurrency(item.unitPrice)}
-                  </p>
+            {order.items.map((item) => {
+              const thumb = item.product?.images?.[0];
+              return (
+                <div
+                  key={item.id}
+                  className="pt-3 first:pt-0 flex items-center justify-between text-xs gap-3"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-12 w-12 rounded-lg bg-[#fafaf8] border border-[#e6e8e1] overflow-hidden shrink-0 flex items-center justify-center">
+                      {thumb ? (
+                        <img
+                          src={getImageUrl(thumb)}
+                          alt={item.productTitle}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <Package className="w-5 h-5 text-[#c5c8be]" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-bold text-[#20231e] text-sm truncate">
+                        {item.productTitle}
+                      </p>
+                      {item.variantName && (
+                        <p className="text-[#62665d]">{item.variantName}</p>
+                      )}
+                      <p className="text-[#62665d] mt-0.5">
+                        Qty: {item.quantity} × {formatCurrency(item.unitPrice)}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="font-extrabold text-[#20231e] text-sm shrink-0">
+                    {formatCurrency(item.subtotal)}
+                  </span>
                 </div>
-                <span className="font-extrabold text-[#20231e] text-sm shrink-0">
-                  {formatCurrency(item.subtotal)}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="pt-4 border-t border-[#e6e8e1] flex items-center justify-between">

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, getImageUrl, getStorePath } from "@/lib/utils";
 import { useShopperStore } from "@/store/useShopperStore";
 import { useWishlistStore } from "@/store/useWishlistStore";
 import { useCartStore } from "@/store/useCartStore";
@@ -507,8 +507,8 @@ export function AccountClient({ store }: { store: StoreData }) {
                 {orders.map((ord) => (
                   <Link
                     key={ord.id}
-                    href={`/${store.slug}/orders/${ord.orderNumber}`}
-                    className="block bg-white border border-[#e6e8e1] hover:border-[#2e1065] rounded-2xl p-4 sm:p-5 transition space-y-2"
+                    href={getStorePath(store.slug, `/orders/${ord.orderNumber}`)}
+                    className="block bg-white border border-[#e6e8e1] hover:border-[#2e1065] rounded-2xl p-4 sm:p-5 transition space-y-3"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-mono text-xs font-bold text-[#2e1065]">
@@ -518,12 +518,41 @@ export function AccountClient({ store }: { store: StoreData }) {
                         {ord.orderStatus}
                       </span>
                     </div>
-                    <p className="text-xs text-[#64748b]">
-                      {ord.items
-                        ?.map((i: any) => `${i.productTitle} (x${i.quantity})`)
-                        .join(", ")}
-                    </p>
-                    <div className="flex items-center justify-between text-xs pt-1">
+
+                    <div className="space-y-2 divide-y divide-[#f3f4ef]">
+                      {ord.items?.map((i: any, idx: number) => {
+                        const thumb = i.product?.images?.[0];
+                        return (
+                          <div
+                            key={i.id || idx}
+                            className="pt-2 first:pt-0 flex items-center gap-3 text-xs"
+                          >
+                            <div className="h-11 w-11 rounded-lg bg-[#fafaf8] border border-[#e6e8e1] overflow-hidden shrink-0 flex items-center justify-center">
+                              {thumb ? (
+                                <img
+                                  src={getImageUrl(thumb)}
+                                  alt={i.productTitle}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <ShoppingBag className="w-4 h-4 text-[#c5c8be]" />
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-[#0f172a] truncate">
+                                {i.productTitle}
+                              </p>
+                              <p className="text-[11px] text-[#64748b]">
+                                Qty: {i.quantity}
+                                {i.variantName ? ` • ${i.variantName}` : ""}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs pt-2 border-t border-[#f3f4ef]">
                       <span className="font-bold text-[#0f172a]">
                         {formatCurrency(ord.totalAmount)}
                       </span>
