@@ -6,6 +6,7 @@ import { ENV } from "../config/env";
 import { AppError } from "../middleware/errorHandler";
 import { RegisterInput, LoginInput, BankDetailsInput } from "../validators/auth.validator";
 import { sanitizeSlug, isValidSlug, RESERVED_SLUGS } from "../utils/slug";
+import { isDisposableEmail } from "../utils/disposableEmail";
 import { EmailService } from "./email.service";
 import { WalletService } from "./wallet.service";
 
@@ -14,6 +15,13 @@ export class AuthService {
    * Register a new merchant, auto-provision their store and wallet in one transaction
    */
   static async register(data: RegisterInput) {
+    if (isDisposableEmail(data.email)) {
+      throw new AppError(
+        "Temporary or disposable email addresses are not allowed. Please use a permanent business or personal email.",
+        400
+      );
+    }
+
     // 1. Check if user already exists
     const existingUser = await prisma.user.findFirst({
       where: {
