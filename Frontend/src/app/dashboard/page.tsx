@@ -61,6 +61,7 @@ export default function DashboardPage() {
   const [totalCustomers, setTotalCustomers] = useState(0);
   const [orders, setOrders] = useState<Order[]>([]);
   const [hasBankAccount, setHasBankAccount] = useState(false);
+  const [isKycVerified, setIsKycVerified] = useState(false);
   const [storeDetails, setStoreDetails] = useState<any>(null);
   const [checklistDismissed, setChecklistDismissed] = useState(false);
 
@@ -92,6 +93,7 @@ export default function DashboardPage() {
         if (walletRes.status === "fulfilled") {
           const bank = walletRes.value.data?.data?.bank;
           setHasBankAccount(Boolean(bank?.bankName && bank?.accountNumber));
+          setIsKycVerified(walletRes.value.data?.data?.kyc?.status === "VERIFIED");
         }
       } finally {
         setLoading(false);
@@ -182,8 +184,15 @@ export default function DashboardPage() {
     {
       id: "bank",
       label: "Link Payout Bank Account",
-      desc: "Verify your Nigerian bank account so you can withdraw earnings.",
+      desc: "Verify your Nigerian bank account so you can receive payouts.",
       done: hasBankAccount,
+      href: "/dashboard/wallet",
+    },
+    {
+      id: "kyc",
+      label: "Verify Identity (NIN or BVN)",
+      desc: "Required to unlock instant withdrawals and 8:00 AM Auto T+1 payouts.",
+      done: isKycVerified,
       href: "/dashboard/wallet",
     },
   ];
