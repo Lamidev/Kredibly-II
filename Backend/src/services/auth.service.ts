@@ -184,6 +184,14 @@ export class AuthService {
         storeName: primaryStore.name,
         storeSlug: primaryStore.slug,
       }).catch((err) => console.error("Welcome email dispatch failed:", err));
+
+      EmailService.sendNewStoreAlertToAdmin({
+        storeName: primaryStore.name,
+        storeSlug: primaryStore.slug,
+        ownerName: user.fullName,
+        ownerEmail: user.email,
+        ownerPhone: user.phoneNumber,
+      }).catch((err) => console.error("Admin new store alert failed:", err));
     }
 
     const token = jwt.sign(

@@ -9,6 +9,7 @@ export interface SendEmailOptions {
   html: string;
   text?: string;
   replyTo?: string;
+  fromName?: string;
 }
 
 export class EmailService {
@@ -25,8 +26,9 @@ export class EmailService {
     }
 
     try {
+      const safeFromName = (options.fromName || "Kredibly").replace(/[<>"]/g, "").trim() || "Kredibly";
       const response = await resend.emails.send({
-        from: `Kredibly <${ENV.SENDER_EMAIL}>`,
+        from: `${safeFromName} <${ENV.SENDER_EMAIL}>`,
         to: options.to,
         subject: options.subject,
         html: options.html,
@@ -202,47 +204,126 @@ export class EmailService {
   }
 
   /**
-   * Send order confirmation receipt to the customer
+   * Send store-branded order confirmation receipt to the customer
    */
   static async sendOrderReceiptToCustomer(data: {
     to: string;
     customerName: string;
     orderNumber: string;
     storeName: string;
+    storeSlug?: string;
+    storeEmail?: string | null;
     totalAmount: string | number;
+    subtotal?: number;
+    shippingFee?: number;
+    discountAmount?: number;
+    deliveryAddress?: string;
+    customerPhone?: string;
+    items?: Array<{
+      productTitle: string;
+      variantName?: string | null;
+      quantity: number;
+      subtotal: number | string;
+    }>;
     itemsSummary: string;
   }) {
+    const orderUrl = data.storeSlug
+      ? `https://${data.storeSlug}.kredibly.shop/orders/${data.orderNumber}`
+      : "";
+
+    const itemsRowsHtml =
+      data.items && data.items.length > 0
+        ? data.items
+            .map(
+              (item) => `
+                <tr>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #0f172a;">
+                    <strong>${this.escapeHtml(item.productTitle)}</strong>${
+                      item.variantName ? ` <span style="color:#64748b;">(${this.escapeHtml(item.variantName)})</span>` : ""
+                    }<br/>
+                    <span style="font-size: 12px; color: #64748b;">Qty: ${item.quantity}</span>
+                  </td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; color: #0f172a; text-align: right;">
+                    ₦${Number(item.subtotal).toLocaleString()}
+                  </td>
+                </tr>
+              `
+            )
+            .join("")
+        : `<tr><td colspan="2" style="padding: 8px 0; font-size: 13px; color: #0f172a;">${this.escapeHtml(data.itemsSummary)}</td></tr>`;
+
     const html = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; color: #0f172a; background-color: #ffffff;">
-        <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #2e1065;">Kredibly Order Receipt</p>
-        <h2 style="color: #0f172a; margin: 0 0 16px 0; font-size: 22px; font-weight: 700;">Order Confirmed</h2>
-        <p style="font-size: 14px; color: #334155;">Hi <strong>${data.customerName}</strong>,</p>
-        <p style="font-size: 14px; color: #334155; line-height: 1.6;">Your payment for order <strong>#${data.orderNumber}</strong> from <strong>${data.storeName}</strong> has been received.</p>
-        
-        <div style="background-color: #faf9f5; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 20px 0; font-size: 14px;">
-          <p style="margin: 0 0 8px 0;"><strong>Order Number:</strong> #${data.orderNumber}</p>
-          <p style="margin: 0 0 8px 0;"><strong>Total Paid:</strong> ₦${Number(data.totalAmount).toLocaleString()}</p>
-          <p style="margin: 0;"><strong>Items:</strong> ${data.itemsSummary}</p>
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 28px 20px; color: #0f172a; background-color: #ffffff;">
+        <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 14px; margin-bottom: 20px;">
+          <p style="margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #2e1065;">${this.escapeHtml(data.storeName)}</p>
+          <h1 style="margin: 6px 0 0 0; font-size: 22px; font-weight: 800; color: #0f172a;">Order Confirmed</h1>
         </div>
 
-        <p style="font-size: 13px; color: #64748b; line-height: 1.5;">
-          This transaction is backed by the Kredibly Escrow Guarantee. The seller has been notified to prepare your delivery.
+        <p style="font-size: 14px; color: #334155; margin: 0 0 8px 0;">Hi <strong>${this.escapeHtml(data.customerName)}</strong>,</p>
+        <p style="font-size: 14px; color: #334155; line-height: 1.6; margin: 0 0 18px 0;">
+          Thank you for shopping with <strong>${this.escapeHtml(data.storeName)}</strong>! Your payment for order <strong>#${this.escapeHtml(data.orderNumber)}</strong> has been confirmed and the store is preparing your order.
+        </p>
+
+        <div style="background-color: #faf9f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 18px;">
+          <p style="margin: 0 0 10px 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b;">Order Summary · #${this.escapeHtml(data.orderNumber)}</p>
+          <table style="width: 100%; border-collapse: collapse;">
+            ${itemsRowsHtml}
+            ${
+              data.shippingFee !== undefined
+                ? `<tr><td style="padding: 8px 0 4px; font-size: 12.5px; color: #64748b;">Delivery Fee</td><td style="padding: 8px 0 4px; font-size: 12.5px; color: #0f172a; text-align: right;">${data.shippingFee === 0 ? "FREE" : `₦${Number(data.shippingFee).toLocaleString()}`}</td></tr>`
+                : ""
+            }
+            ${
+              data.discountAmount && data.discountAmount > 0
+                ? `<tr><td style="padding: 4px 0; font-size: 12.5px; color: #059669;">Discount</td><td style="padding: 4px 0; font-size: 12.5px; color: #059669; text-align: right;">-₦${Number(data.discountAmount).toLocaleString()}</td></tr>`
+                : ""
+            }
+            <tr>
+              <td style="padding: 10px 0 0; font-size: 14px; font-weight: 700; color: #0f172a;">Total Paid</td>
+              <td style="padding: 10px 0 0; font-size: 16px; font-weight: 800; color: #2e1065; text-align: right;">₦${Number(data.totalAmount).toLocaleString()}</td>
+            </tr>
+          </table>
+        </div>
+
+        ${
+          data.deliveryAddress
+            ? `<div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; margin-bottom: 18px; font-size: 13px; color: #334155;">
+                <p style="margin: 0 0 4px 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b;">Delivery Destination</p>
+                <p style="margin: 0;">${this.escapeHtml(data.deliveryAddress)}${data.customerPhone ? ` · ${this.escapeHtml(data.customerPhone)}` : ""}</p>
+              </div>`
+            : ""
+        }
+
+        ${
+          orderUrl
+            ? `<div style="margin: 20px 0;">
+                <a href="${orderUrl}" style="display: inline-block; background-color: #2e1065; color: #ffffff; text-decoration: none; padding: 11px 20px; border-radius: 8px; font-size: 13px; font-weight: 600;">
+                  View Order #${this.escapeHtml(data.orderNumber)}
+                </a>
+              </div>`
+            : ""
+        }
+
+        <p style="margin-top: 28px; padding-top: 14px; border-top: 1px solid #f1f5f9; font-size: 11px; color: #94a3b8; text-align: center;">
+          Powered by Kredibly
         </p>
       </div>
     `;
 
-    const text = `Hi ${data.customerName},\n\nYour payment for order #${data.orderNumber} from ${data.storeName} has been received.\n\nOrder: #${data.orderNumber}\nTotal Paid: NGN ${Number(data.totalAmount).toLocaleString()}\nItems: ${data.itemsSummary}\n\nThe seller has been notified to prepare your delivery.`;
+    const text = `Hi ${data.customerName},\n\nThank you for shopping with ${data.storeName}! Your payment for order #${data.orderNumber} has been confirmed.\n\nItems: ${data.itemsSummary}\nTotal Paid: NGN ${Number(data.totalAmount).toLocaleString()}${data.deliveryAddress ? `\nDelivery To: ${data.deliveryAddress}` : ""}${orderUrl ? `\nView Order: ${orderUrl}` : ""}\n\nPowered by Kredibly`;
 
     return this.send({
       to: data.to,
-      subject: `Order confirmation #${data.orderNumber} - ${data.storeName}`,
+      fromName: data.storeName,
+      replyTo: data.storeEmail || undefined,
+      subject: `Order Confirmed #${data.orderNumber} — ${data.storeName}`,
       html,
       text,
     });
   }
 
   /**
-   * Send order status update email to buyer (Dispatched, Delivered, Cancelled)
+   * Send store-branded order status update email to buyer (Dispatched, Delivered, Cancelled)
    */
   static async sendOrderStatusUpdateEmail(data: {
     to: string;
@@ -256,36 +337,44 @@ export class EmailService {
     const copy = {
       SHIPPED: {
         title: "Your Order Has Been Dispatched",
-        body: `Great news! <strong>${data.storeName}</strong> has dispatched your order <strong>#${data.orderNumber}</strong> and it is on the way to you.`,
+        body: `Great news! <strong>${this.escapeHtml(data.storeName)}</strong> has dispatched your order <strong>#${this.escapeHtml(data.orderNumber)}</strong> and it is on its way to you.`,
+        note: "You can track your order details anytime using the button below.",
       },
       DELIVERED: {
         title: "Your Order Has Been Delivered",
-        body: `Your order <strong>#${data.orderNumber}</strong> from <strong>${data.storeName}</strong> has been marked as delivered. Thank you for shopping with us!`,
+        body: `Your order <strong>#${this.escapeHtml(data.orderNumber)}</strong> from <strong>${this.escapeHtml(data.storeName)}</strong> has been marked as delivered. Thank you for shopping with us!`,
+        note: "If anything is missing or damaged, please contact the store within 24 hours with your order number.",
       },
       CANCELLED: {
         title: "Order Cancelled",
-        body: `Your order <strong>#${data.orderNumber}</strong> from <strong>${data.storeName}</strong> has been cancelled. Please reach out to the store if you have any questions regarding your order or refund.`,
+        body: `Your order <strong>#${this.escapeHtml(data.orderNumber)}</strong> from <strong>${this.escapeHtml(data.storeName)}</strong> has been cancelled. Please reach out to the store if you have any questions regarding your order or refund.`,
+        note: "If you already paid, please contact the store directly with your order number to coordinate your refund.",
       },
     }[data.status];
 
     const html = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #0f172a; background-color: #ffffff;">
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 28px 20px; color: #0f172a; background-color: #ffffff;">
         <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 14px; margin-bottom: 20px;">
-          <p style="margin: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #2e1065;">${data.storeName}</p>
-          <h1 style="margin: 6px 0 0 0; font-size: 20px; font-weight: 700; color: #0f172a;">${copy.title}</h1>
+          <p style="margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #2e1065;">${this.escapeHtml(data.storeName)}</p>
+          <h1 style="margin: 6px 0 0 0; font-size: 20px; font-weight: 800; color: #0f172a;">${copy.title}</h1>
         </div>
-        <div style="background-color: #faf9f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 20px;">
-          <p style="margin: 0 0 10px 0; font-size: 14px;">Hi <strong>${data.customerName}</strong>,</p>
-          <p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.6; color: #334155;">${copy.body}</p>
+        <div style="background-color: #faf9f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 18px;">
+          <p style="margin: 0 0 10px 0; font-size: 14px;">Hi <strong>${this.escapeHtml(data.customerName)}</strong>,</p>
+          <p style="margin: 0 0 12px 0; font-size: 14px; line-height: 1.6; color: #334155;">${copy.body}</p>
+          <p style="margin: 0 0 16px 0; font-size: 13px; line-height: 1.5; color: #64748b;">${copy.note}</p>
           <a href="${orderUrl}" style="display: inline-block; background-color: #2e1065; color: #ffffff; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600;">
-            View Order #${data.orderNumber}
+            View Order #${this.escapeHtml(data.orderNumber)}
           </a>
         </div>
+        <p style="margin-top: 24px; padding-top: 12px; border-top: 1px solid #f1f5f9; font-size: 11px; color: #94a3b8; text-align: center;">
+          Powered by Kredibly
+        </p>
       </div>
     `;
 
     return this.send({
       to: data.to,
+      fromName: data.storeName,
       subject: `${copy.title} — Order #${data.orderNumber} (${data.storeName})`,
       html,
     });
@@ -300,32 +389,77 @@ export class EmailService {
     storeName: string;
     orderNumber: string;
     customerName: string;
+    customerPhone?: string;
+    deliveryAddress?: string;
+    itemsSummary?: string;
     totalAmount: string | number;
+    netAmount?: number;
   }) {
+    const ordersUrl = `${ENV.FRONTEND_URL}/dashboard/orders`;
     const html = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; color: #0f172a; background-color: #ffffff;">
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 28px 20px; color: #0f172a; background-color: #ffffff;">
         <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #2e1065;">New Sale Notification</p>
-        <h2 style="color: #0f172a; margin: 0 0 16px 0; font-size: 22px; font-weight: 700;">New Paid Order Received</h2>
-        <p style="font-size: 14px; color: #334155;">Hi <strong>${data.merchantName}</strong>,</p>
-        <p style="font-size: 14px; color: #334155; line-height: 1.6;">A customer has just placed and paid for an order on <strong>${data.storeName}</strong>.</p>
+        <h2 style="color: #0f172a; margin: 0 0 16px 0; font-size: 22px; font-weight: 800;">New Paid Order #${this.escapeHtml(data.orderNumber)}</h2>
+        <p style="font-size: 14px; color: #334155;">Hi <strong>${this.escapeHtml(data.merchantName)}</strong>,</p>
+        <p style="font-size: 14px; color: #334155; line-height: 1.6;">A customer has just placed and paid for an order on <strong>${this.escapeHtml(data.storeName)}</strong>.</p>
         
-        <div style="background-color: #faf9f5; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 20px 0; font-size: 14px;">
-          <p style="margin: 0 0 8px 0;"><strong>Order Number:</strong> #${data.orderNumber}</p>
-          <p style="margin: 0 0 8px 0;"><strong>Customer:</strong> ${data.customerName}</p>
-          <p style="margin: 0;"><strong>Amount:</strong> ₦${Number(data.totalAmount).toLocaleString()}</p>
+        <div style="background-color: #faf9f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin: 20px 0; font-size: 13.5px; line-height: 1.7;">
+          <p style="margin: 0;"><strong>Order Number:</strong> #${this.escapeHtml(data.orderNumber)}</p>
+          <p style="margin: 0;"><strong>Customer:</strong> ${this.escapeHtml(data.customerName)}${data.customerPhone ? ` (${this.escapeHtml(data.customerPhone)})` : ""}</p>
+          ${data.itemsSummary ? `<p style="margin: 0;"><strong>Items:</strong> ${this.escapeHtml(data.itemsSummary)}</p>` : ""}
+          ${data.deliveryAddress ? `<p style="margin: 0;"><strong>Delivery To:</strong> ${this.escapeHtml(data.deliveryAddress)}</p>` : ""}
+          <p style="margin: 6px 0 0;"><strong>Total Paid:</strong> ₦${Number(data.totalAmount).toLocaleString()}</p>
+          ${data.netAmount !== undefined ? `<p style="margin: 0; color: #059669;"><strong>Net Credited to Wallet:</strong> ₦${Number(data.netAmount).toLocaleString()}</p>` : ""}
         </div>
 
-        <p style="font-size: 14px; color: #334155;">Log in to your Kredibly dashboard to view delivery details and fulfill the order.</p>
+        <a href="${ordersUrl}" style="display: inline-block; background-color: #2e1065; color: #ffffff; text-decoration: none; padding: 11px 20px; border-radius: 8px; font-size: 13px; font-weight: 600;">
+          View &amp; Fulfill Order →
+        </a>
       </div>
     `;
 
-    const text = `Hi ${data.merchantName},\n\nYou just received a new paid order on ${data.storeName}.\n\nOrder Number: #${data.orderNumber}\nCustomer: ${data.customerName}\nAmount: NGN ${Number(data.totalAmount).toLocaleString()}\n\nLog in to your Kredibly dashboard (${ENV.FRONTEND_URL}/dashboard/orders) to fulfill the order.`;
+    const text = `Hi ${data.merchantName},\n\nYou just received a new paid order on ${data.storeName}.\n\nOrder Number: #${data.orderNumber}\nCustomer: ${data.customerName}${data.customerPhone ? ` (${data.customerPhone})` : ""}${data.itemsSummary ? `\nItems: ${data.itemsSummary}` : ""}${data.deliveryAddress ? `\nDelivery: ${data.deliveryAddress}` : ""}\nTotal Paid: NGN ${Number(data.totalAmount).toLocaleString()}${data.netAmount !== undefined ? `\nNet Wallet Credit: NGN ${Number(data.netAmount).toLocaleString()}` : ""}\n\nFulfill Order: ${ordersUrl}`;
 
     return this.send({
       to: data.to,
-      subject: `New order #${data.orderNumber} for ${data.storeName}`,
+      subject: `New Paid Order #${data.orderNumber} — ${data.storeName}`,
       html,
       text,
+    });
+  }
+
+  /**
+   * Notify Kredibly internal team when a new store is created & verified
+   */
+  static async sendNewStoreAlertToAdmin(data: {
+    storeName: string;
+    storeSlug: string;
+    ownerName: string;
+    ownerEmail: string;
+    ownerPhone?: string | null;
+  }) {
+    const storeUrl = `https://${data.storeSlug}.kredibly.shop`;
+    const recipients = Array.from(new Set([ENV.ADMIN_EMAIL, "usekredibly@gmail.com"].filter(Boolean)));
+
+    const html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #0f172a; border: 1px solid #e2e8f0; border-radius: 12px;">
+        <p style="margin: 0 0 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #2e1065;">New Store Alert</p>
+        <h2 style="margin: 0 0 14px; font-size: 20px;">${this.escapeHtml(data.storeName)} just launched!</h2>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; font-size: 13.5px; line-height: 1.7;">
+          <p style="margin: 0;"><strong>Store Name:</strong> ${this.escapeHtml(data.storeName)}</p>
+          <p style="margin: 0;"><strong>Store URL:</strong> <a href="${storeUrl}">${storeUrl}</a></p>
+          <p style="margin: 0;"><strong>Owner:</strong> ${this.escapeHtml(data.ownerName)}</p>
+          <p style="margin: 0;"><strong>Email:</strong> ${this.escapeHtml(data.ownerEmail)}</p>
+          ${data.ownerPhone ? `<p style="margin: 0;"><strong>Phone:</strong> ${this.escapeHtml(data.ownerPhone)}</p>` : ""}
+        </div>
+      </div>
+    `;
+
+    return this.send({
+      to: recipients,
+      subject: `New Kredibly Store Created: ${data.storeName} (${data.storeSlug}.kredibly.shop)`,
+      html,
+      text: `New store created on Kredibly:\nStore: ${data.storeName} (${storeUrl})\nOwner: ${data.ownerName}\nEmail: ${data.ownerEmail}${data.ownerPhone ? `\nPhone: ${data.ownerPhone}` : ""}`,
     });
   }
 

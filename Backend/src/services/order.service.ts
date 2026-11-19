@@ -535,23 +535,43 @@ export class OrderService {
         customer: order.customer,
         owner: order.store.owner,
         storeName: order.store.name,
+        storeSlug: order.store.slug,
+        storeEmail: order.store.contactEmail,
+        netAmount,
         alreadyPaid: false,
       };
     });
 
     // 7. Asynchronously dispatch confirmation emails on fresh payment (non-blocking)
     if (!result.alreadyPaid) {
-      if (result.customer?.email) {
-        const itemsSummary = result.items
-          ? result.items.map((i: any) => `${i.productTitle} (x${i.quantity})`).join(", ")
-          : `Order #${result.order.orderNumber}`;
+      const itemsSummary = result.items
+        ? result.items.map((i: any) => `${i.productTitle} (x${i.quantity})`).join(", ")
+        : `Order #${result.order.orderNumber}`;
+      const deliveryAddress = result.customer
+        ? [result.customer.address, result.customer.city, result.customer.state]
+            .filter(Boolean)
+            .join(", ")
+        : undefined;
 
+      if (result.customer?.email) {
         EmailService.sendOrderReceiptToCustomer({
           to: result.customer.email,
           customerName: result.customer.fullName,
           orderNumber: result.order.orderNumber,
           storeName: result.storeName,
+          storeSlug: result.storeSlug,
+          storeEmail: result.storeEmail,
           totalAmount: Number(result.order.totalAmount),
+          shippingFee: Number(result.order.shippingFee || 0),
+          discountAmount: Number(result.order.discountAmount || 0),
+          deliveryAddress,
+          customerPhone: result.customer.phoneNumber,
+          items: result.items?.map((i: any) => ({
+            productTitle: i.productTitle,
+            variantName: i.variantName,
+            quantity: i.quantity,
+            subtotal: Number(i.subtotal),
+          })),
           itemsSummary,
         }).catch((err) => console.error("Customer email dispatch failed:", err));
       }
@@ -563,7 +583,11 @@ export class OrderService {
           storeName: result.storeName,
           orderNumber: result.order.orderNumber,
           customerName: result.customer.fullName,
+          customerPhone: result.customer.phoneNumber,
+          deliveryAddress,
+          itemsSummary,
           totalAmount: Number(result.order.totalAmount),
+          netAmount: result.netAmount,
         }).catch((err) => console.error("Merchant alert dispatch failed:", err));
       }
 
