@@ -6,10 +6,16 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://usekredibly.com"),
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Kredibly",
+  },
   title: "Kredibly — Build Your Official Online Store in 2 Minutes",
   description:
     "The simple online store builder for social media sellers in Nigeria. Add your goods, share your link on WhatsApp, Instagram, or TikTok, and let customers place orders and pay online.",
