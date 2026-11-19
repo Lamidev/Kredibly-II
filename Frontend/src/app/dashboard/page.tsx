@@ -7,6 +7,12 @@ import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { formatCurrency, getImageUrl } from "@/lib/utils";
 import {
+  playSaleChime,
+  setSaleAlertsEnabled,
+  subscribeMerchantPush,
+} from "@/lib/notifications";
+import { toast } from "sonner";
+import {
   Package,
   TrendingUp,
   BadgeCheck,
@@ -18,6 +24,7 @@ import {
   CheckCircle2,
   Loader2,
   X,
+  Bell,
 } from "lucide-react";
 import {
   Card,
@@ -64,6 +71,47 @@ export default function DashboardPage() {
   const [isKycVerified, setIsKycVerified] = useState(false);
   const [storeDetails, setStoreDetails] = useState<any>(null);
   const [checklistDismissed, setChecklistDismissed] = useState(false);
+  const [pushPromptMode, setPushPromptMode] = useState<
+    "hidden" | "enable" | "ios_pwa"
+  >("hidden");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (localStorage.getItem("kredibly_push_banner_dismissed") === "1") return;
+    const ua = window.navigator.userAgent || "";
+    const isIos = /iPad|iPhone|iPod/.test(ua);
+    const isStandalone =
+      window.matchMedia?.("(display-mode: standalone)").matches ||
+      (window.navigator as any).standalone === true;
+
+    if (isIos && !isStandalone) {
+      setPushPromptMode("ios_pwa");
+      return;
+    }
+
+    if ("Notification" in window && Notification.permission === "default") {
+      setPushPromptMode("enable");
+    }
+  }, []);
+
+  const handleEnablePushBanner = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm === "granted") {
+        setSaleAlertsEnabled(true);
+        playSaleChime();
+        await subscribeMerchantPush();
+        toast.success("Phone push alerts & sale sound enabled!");
+        setPushPromptMode("hidden");
+      } else if (perm === "denied") {
+        toast.error("Notifications blocked in browser settings.");
+        setPushPromptMode("hidden");
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   useEffect(() => {
     const loadOverview = async () => {
@@ -204,6 +252,62 @@ export default function DashboardPage() {
           Track your store performance, inventory, and incoming orders.
         </p>
       </div>
+
+      {/* Push Notification Activation Banner (shown only until granted or dismissed) */}
+      {pushPromptMode !== "hidden" && (
+        <div className="p-3.5 sm:p-4 rounded-xl bg-white border border-[#2e1065]/20 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-start sm:items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-[#2e1065]/10 text-[#2e1065] flex items-center justify-center shrink-0">
+              <Bell className="w-4 h-4" />
+            </div>
+            <div className="text-xs">
+              {pushPromptMode === "ios_pwa" ? (
+                <>
+                  <p className="font-bold text-[#0f172a]">
+                    Get instant order alerts on iPhone
+                  </p>
+                  <p className="text-slate-500">
+                    Tap <strong>Share → Add to Home Screen</strong>, open Kredibly from your home screen, then tap the Bell icon above.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-bold text-[#0f172a]">
+                    Turn on instant order alerts on your phone
+                  </p>
+                  <p className="text-slate-500">
+                    Get notified the second a buyer pays—even when the dashboard is closed.
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+            {pushPromptMode === "enable" && (
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleEnablePushBanner}
+                className="text-xs"
+              >
+                Enable Alerts
+              </Button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                localStorage.setItem("kredibly_push_banner_dismissed", "1");
+                setPushPromptMode("hidden");
+              }}
+              aria-label="Dismiss notification prompt"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-[#0f172a] hover:bg-slate-100 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Guided Store Setup Checklist */}
       {showSetupChecklist && (
