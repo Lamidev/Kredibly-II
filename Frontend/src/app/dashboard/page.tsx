@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { formatCurrency } from "@/lib/utils";
@@ -11,6 +12,7 @@ import {
   BadgeCheck,
   Users,
   ArrowRight,
+  ChevronRight,
   Clock,
   Truck,
   CheckCircle2,
@@ -48,6 +50,7 @@ interface Order {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { user } = useAuthStore();
 
   const [loading, setLoading] = useState(true);
@@ -266,10 +269,15 @@ export default function DashboardPage() {
                   {orders.slice(0, 8).map((order) => (
                     <tr
                       key={order.id}
-                      className="hover:bg-slate-50/60 transition"
+                      onClick={() =>
+                        router.push(`/dashboard/orders?order=${order.orderNumber}`)
+                      }
+                      className="hover:bg-slate-50/90 transition cursor-pointer group"
                     >
                       <td className="py-3.5 px-4 font-mono font-bold text-[#0f172a] whitespace-nowrap">
-                        #{order.orderNumber}
+                        <span className="group-hover:text-[#2e1065] group-hover:underline">
+                          #{order.orderNumber}
+                        </span>
                       </td>
                       <td className="py-3.5 px-4">
                         <p className="font-semibold text-[#0f172a]">
@@ -288,7 +296,10 @@ export default function DashboardPage() {
                         {formatCurrency(order.totalAmount)}
                       </td>
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        {getStatusBadge(order.orderStatus)}
+                        <div className="flex items-center justify-between gap-2">
+                          {getStatusBadge(order.orderStatus)}
+                          <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#2e1065] shrink-0" />
+                        </div>
                       </td>
                     </tr>
                   ))}

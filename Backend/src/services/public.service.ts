@@ -152,6 +152,12 @@ export class PublicStoreService {
             variantName: true,
             quantity: true,
             unitPrice: true,
+            product: {
+              select: {
+                images: true,
+                slug: true,
+              },
+            },
           },
         },
         customer: {

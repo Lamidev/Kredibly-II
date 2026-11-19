@@ -55,7 +55,7 @@ export function StorefrontFooter({
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-xs">
             {(store.contactPhone || store.whatsappNumber || store.contactEmail) && (
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
                 {(store.contactPhone || store.whatsappNumber) && (
                   <a
                     href={`tel:${store.contactPhone || store.whatsappNumber}`}

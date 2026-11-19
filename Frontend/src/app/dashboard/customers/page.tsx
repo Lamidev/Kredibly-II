@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Pagination } from "@/components/ui/pagination";
 
 interface CustomerOrder {
   id: string;
@@ -81,6 +82,9 @@ export default function CustomersPage() {
     fetchCustomers();
   }, []);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
+
   const filteredCustomers = customers.filter((c) => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return true;
@@ -97,6 +101,10 @@ export default function CustomersPage() {
   const activeBuyers = customers.filter((c) => c.paidOrdersCount >= 1).length;
   const totalLtv = customers.reduce((sum, c) => sum + Number(c.totalSpent || 0), 0);
   const repeatBuyers = customers.filter((c) => c.paidOrdersCount >= 2).length;
+  const paginatedCustomers = filteredCustomers.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
 
   const getWhatsAppLink = (phone: string) => {
     return `https://wa.me/${formatWhatsAppNumber(phone)}`;
@@ -372,85 +380,145 @@ export default function CustomersPage() {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wider text-slate-500 bg-slate-50/70">
-                    <th className="py-3 px-4 font-semibold">Customer</th>
-                    <th className="py-3 px-4 font-semibold">Contact</th>
-                    <th className="py-3 px-4 font-semibold hidden md:table-cell">
-                      Location
-                    </th>
-                    <th className="py-3 px-4 font-semibold">Orders</th>
-                    <th className="py-3 px-4 font-semibold">Lifetime Value</th>
-                    <th className="py-3 px-4 font-semibold hidden lg:table-cell">
-                      Joined Date
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredCustomers.map((c) => {
-                    const initial = c.fullName?.charAt(0)?.toUpperCase() || "C";
-                    const shortCode = `CUST-${c.id.slice(-6).toUpperCase()}`;
-                    const locationText =
-                      [c.city, c.state].filter(Boolean).join(", ") || "Nigeria";
-                    return (
-                      <tr
-                        key={c.id}
-                        onClick={() => setSelectedCustomer(c)}
-                        className="hover:bg-slate-50/80 transition cursor-pointer"
-                      >
-                        <td className="py-3.5 px-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-[#2e1065] text-white font-display font-bold text-xs flex items-center justify-center shrink-0">
-                              {initial}
+            <>
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wider text-slate-500 bg-slate-50/70">
+                      <th className="py-3 px-4 font-semibold">Customer</th>
+                      <th className="py-3 px-4 font-semibold">Contact</th>
+                      <th className="py-3 px-4 font-semibold">Location</th>
+                      <th className="py-3 px-4 font-semibold">Orders</th>
+                      <th className="py-3 px-4 font-semibold">Lifetime Value</th>
+                      <th className="py-3 px-4 font-semibold hidden lg:table-cell">
+                        Joined Date
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {paginatedCustomers.map((c) => {
+                      const initial = c.fullName?.charAt(0)?.toUpperCase() || "C";
+                      const shortCode = `CUST-${c.id.slice(-6).toUpperCase()}`;
+                      const locationText =
+                        [c.city, c.state].filter(Boolean).join(", ") || "Nigeria";
+                      return (
+                        <tr
+                          key={c.id}
+                          onClick={() => setSelectedCustomer(c)}
+                          className="hover:bg-slate-50/80 transition cursor-pointer"
+                        >
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-[#2e1065] text-white font-display font-bold text-xs flex items-center justify-center shrink-0">
+                                {initial}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-semibold text-[#0f172a] truncate">
+                                  {c.fullName}
+                                </p>
+                                <p className="text-[10.5px] font-mono text-slate-400">
+                                  {shortCode}
+                                </p>
+                              </div>
                             </div>
-                            <div className="min-w-0">
-                              <p className="font-semibold text-[#0f172a] truncate">
-                                {c.fullName}
-                              </p>
-                              <p className="text-[10.5px] font-mono text-slate-400">
-                                {shortCode}
-                              </p>
-                            </div>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <p className="text-[#0f172a] font-medium truncate max-w-[180px]">
+                              {c.email || "—"}
+                            </p>
+                            <p className="text-[11px] text-slate-500 font-mono">
+                              {c.phoneNumber}
+                            </p>
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-600">
+                            <span className="inline-flex items-center gap-1">
+                              <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                              {locationText}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <Badge variant="outline" className="font-mono">
+                              {c.totalOrders}
+                            </Badge>
+                          </td>
+                          <td className="py-3.5 px-4 font-mono font-bold text-[#0f172a]">
+                            {formatCurrency(c.totalSpent)}
+                          </td>
+                          <td className="py-3.5 px-4 hidden lg:table-cell text-slate-500 whitespace-nowrap">
+                            {c.createdAt
+                              ? `Since ${new Date(c.createdAt).toLocaleDateString("en-NG", {
+                                  month: "short",
+                                  year: "numeric",
+                                })}`
+                              : "—"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Responsive Cards */}
+              <div className="md:hidden divide-y divide-slate-100">
+                {paginatedCustomers.map((c) => {
+                  const initial = c.fullName?.charAt(0)?.toUpperCase() || "C";
+                  const shortCode = `CUST-${c.id.slice(-6).toUpperCase()}`;
+                  const locationText =
+                    [c.city, c.state].filter(Boolean).join(", ") || "Nigeria";
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setSelectedCustomer(c)}
+                      className="w-full text-left p-4 hover:bg-slate-50 transition space-y-2.5 cursor-pointer"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-full bg-[#2e1065] text-white font-display font-bold text-xs flex items-center justify-center shrink-0">
+                            {initial}
                           </div>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <p className="text-[#0f172a] font-medium truncate max-w-[180px]">
-                            {c.email || "—"}
+                          <div className="min-w-0">
+                            <p className="font-bold text-sm text-[#0f172a] truncate">
+                              {c.fullName}
+                            </p>
+                            <p className="text-[10.5px] font-mono text-slate-400">
+                              {shortCode}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="font-mono text-sm font-extrabold text-[#2e1065]">
+                            {formatCurrency(c.totalSpent)}
                           </p>
-                          <p className="text-[11px] text-slate-500 font-mono">
-                            {c.phoneNumber}
+                          <p className="text-[10.5px] text-slate-500">
+                            {c.totalOrders} {c.totalOrders === 1 ? "order" : "orders"}
                           </p>
-                        </td>
-                        <td className="py-3.5 px-4 hidden md:table-cell text-slate-600">
-                          <span className="inline-flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                            {locationText}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <Badge variant="outline" className="font-mono">
-                            {c.totalOrders}
-                          </Badge>
-                        </td>
-                        <td className="py-3.5 px-4 font-mono font-bold text-[#0f172a]">
-                          {formatCurrency(c.totalSpent)}
-                        </td>
-                        <td className="py-3.5 px-4 hidden lg:table-cell text-slate-500 whitespace-nowrap">
-                          {c.createdAt
-                            ? `Since ${new Date(c.createdAt).toLocaleDateString("en-NG", {
-                                month: "short",
-                                year: "numeric",
-                              })}`
-                            : "—"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 pt-1">
+                        <span className="font-mono truncate">{c.phoneNumber}</span>
+                        <span className="inline-flex items-center gap-1 truncate">
+                          <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                          {locationText}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="px-4 pb-4">
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={filteredCustomers.length}
+                  pageSize={PAGE_SIZE}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

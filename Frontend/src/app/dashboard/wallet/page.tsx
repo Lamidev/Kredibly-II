@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Pagination } from "@/components/ui/pagination";
 import {
   Dialog,
   DialogContent,
@@ -83,6 +84,8 @@ export default function WalletPage() {
 
   const [wallet, setWallet] = useState<WalletData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [txPage, setTxPage] = useState(1);
+  const TX_PAGE_SIZE = 10;
 
   // Withdrawal Modal
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
@@ -290,7 +293,6 @@ export default function WalletPage() {
   };
 
   const available = Number(wallet?.availableBalance || 0);
-  const escrow = Number(wallet?.escrowBalance || 0);
   const hasBankDetails = Boolean(
     wallet?.bank?.bankName && wallet?.bank?.accountNumber
   );
@@ -310,7 +312,7 @@ export default function WalletPage() {
             Wallet &amp; Payouts
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            Track your available balance, escrow funds, and withdraw to your Nigerian bank.
+            Track your available balance, payouts, and withdraw to your Nigerian bank.
           </p>
         </div>
 
@@ -352,44 +354,29 @@ export default function WalletPage() {
             </div>
           )}
 
-          {/* Metric Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Metric Cards (2 in a row on mobile & desktop) */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <Card>
-              <CardContent className="p-5 sm:p-6 space-y-2">
-                <div className="flex items-center justify-between text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
-                  <span>Available Balance</span>
-                  <span className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200/70 flex items-center justify-center text-[#2e1065]">
-                    <TrendingUp className="w-3.5 h-3.5" />
-                  </span>
+              <CardContent className="p-4 sm:p-6 space-y-2 h-full flex flex-col justify-between">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-[10px] sm:text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
+                    <span>Available Balance</span>
+                    <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-100 border border-slate-200/70 flex items-center justify-center text-[#2e1065] shrink-0">
+                      <TrendingUp className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                  <p className="font-display text-xl sm:text-3xl font-bold text-[#0f172a] truncate">
+                    {formatCurrency(available)}
+                  </p>
                 </div>
-                <p className="font-display text-3xl font-bold text-[#0f172a]">
-                  {formatCurrency(available)}
-                </p>
-                <p className="text-[11px] text-slate-500">
-                  Min. withdrawal ₦1,000 via Nomba instant transfer.
+                <p className="text-[10.5px] sm:text-[11px] text-slate-500">
+                  Min. withdrawal ₦1,000 via Nomba transfer.
                 </p>
               </CardContent>
             </Card>
 
             <Card>
-              <CardContent className="p-5 sm:p-6 space-y-2">
-                <div className="flex items-center justify-between text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
-                  <span>In Escrow Hold</span>
-                  <span className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200/70 flex items-center justify-center text-[#0f172a]">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                  </span>
-                </div>
-                <p className="font-display text-3xl font-bold text-[#0f172a]">
-                  {formatCurrency(escrow)}
-                </p>
-                <p className="text-[11px] text-slate-500">
-                  Automatically clears when orders are marked Delivered.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-5 sm:p-6 flex flex-col justify-between gap-3 h-full">
+              <CardContent className="p-4 sm:p-6 flex flex-col justify-between gap-2.5 h-full">
                 <div className="flex items-center justify-between text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
                   <span>Payout Bank Account</span>
                   <span className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200/70 flex items-center justify-center text-[#0f172a]">
@@ -435,7 +422,7 @@ export default function WalletPage() {
               <div>
                 <CardTitle>Transaction Ledger</CardTitle>
                 <CardDescription>
-                  Complete record of sales, escrow releases, and bank payouts.
+                  Complete record of sales and bank payouts.
                 </CardDescription>
               </div>
               <Badge variant="outline">
@@ -467,7 +454,9 @@ export default function WalletPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {wallet.transactions.map((tx) => (
+                      {wallet.transactions
+                        .slice((txPage - 1) * TX_PAGE_SIZE, txPage * TX_PAGE_SIZE)
+                        .map((tx) => (
                         <tr key={tx.id} className="hover:bg-slate-50/60 transition">
                           <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
                             {new Date(tx.createdAt).toLocaleDateString("en-NG", {
@@ -517,6 +506,16 @@ export default function WalletPage() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+              {wallet?.transactions && wallet.transactions.length > TX_PAGE_SIZE && (
+                <div className="px-4 pb-4">
+                  <Pagination
+                    currentPage={txPage}
+                    totalItems={wallet.transactions.length}
+                    pageSize={TX_PAGE_SIZE}
+                    onPageChange={setTxPage}
+                  />
                 </div>
               )}
             </CardContent>
