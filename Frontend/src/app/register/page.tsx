@@ -7,6 +7,10 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
+  PasswordStrengthHint,
+  isStrongPassword,
+} from "@/components/auth/PasswordStrengthHint";
+import {
   Eye,
   EyeOff,
   X,
@@ -492,13 +496,13 @@ function RegisterFormContent() {
               id="register-password"
               type={showPassword ? "text" : "password"}
               required
-              minLength={6}
+              minLength={8}
               autoComplete="new-password"
               value={formData.password}
               onChange={(e) =>
                 setFormData({ ...formData, password: e.target.value })
               }
-              placeholder="••••••••••••"
+              placeholder="At least 8 characters"
               className="w-full min-w-0 max-w-full box-border h-[45px] sm:h-[46px] rounded-[6px] pl-3 sm:pl-4 pr-10 bg-[#f4f5f7] focus:bg-white text-[13.5px] text-[#0f172a] placeholder:text-[13px] placeholder:text-[#94a3b8] border border-[#e2e8f0] focus:border-[#3b0764] focus:ring-2 focus:ring-[#3b0764]/10 outline-none transition-all"
             />
             <button
@@ -514,13 +518,18 @@ function RegisterFormContent() {
               )}
             </button>
           </div>
+          <PasswordStrengthHint password={formData.password} />
         </div>
 
         {/* Submit Button */}
         <div className="pt-2">
           <button
             type="submit"
-            disabled={loading || slugStatus.available === false}
+            disabled={
+              loading ||
+              slugStatus.available === false ||
+              (formData.password.length > 0 && !isStrongPassword(formData.password))
+            }
             className="w-full h-[46px] rounded-[6px] bg-[#2e1065] hover:bg-[#3b0764] disabled:opacity-60 text-white font-semibold text-[13.5px] flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
           >
             {loading ? (

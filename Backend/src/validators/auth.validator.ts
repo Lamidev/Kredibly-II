@@ -7,7 +7,12 @@ export const registerSchema = z.object({
     .string()
     .min(10, "Phone number must be at least 10 digits")
     .max(15, "Phone number is too long"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Password must include an uppercase letter")
+    .regex(/[a-z]/, "Password must include a lowercase letter")
+    .regex(/\d/, "Password must include a number"),
   storeName: z.string().min(2, "Store name must be at least 2 characters"),
   slug: z.string().optional(),
   description: z.string().max(300, "Keep description under 300 characters").optional(),
