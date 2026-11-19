@@ -15,6 +15,7 @@ export interface StoreProduct {
   title: string;
   slug: string;
   description?: string | null;
+  aboutText?: string | null;
   category?: string | null;
   brand?: string | null;
   attributes?: ProductAttribute[] | null;
@@ -51,6 +52,7 @@ export interface StoreData {
   name: string;
   slug: string;
   description?: string | null;
+  aboutText?: string | null;
   logoUrl?: string | null;
   bannerUrl?: string | null;
   themeColor?: string;

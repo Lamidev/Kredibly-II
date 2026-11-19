@@ -36,6 +36,7 @@ const shippingConfigSchema = z
 const storeSettingsSchema = z.object({
   name: z.string().min(2, "Store name must be at least 2 characters").optional(),
   description: z.string().max(500, "Description must be under 500 characters").optional().nullable(),
+  aboutText: z.string().max(3000, "About section must be under 3000 characters").optional().nullable(),
   whatsappNumber: z.string().min(10, "Enter a valid WhatsApp number").max(16).optional(),
   contactPhone: z.string().max(20).optional().nullable(),
   contactEmail: z.string().email("Enter a valid support email").or(z.literal("")).optional().nullable(),
@@ -53,6 +54,7 @@ const settingsSelect = {
   name: true,
   slug: true,
   description: true,
+  aboutText: true,
   whatsappNumber: true,
   contactPhone: true,
   contactEmail: true,
@@ -115,6 +117,7 @@ router.put("/settings", async (req: Request, res: Response, next: NextFunction) 
       data: {
         ...(validated.name !== undefined ? { name: validated.name.trim() } : {}),
         ...(validated.description !== undefined ? { description: validated.description?.trim() || null } : {}),
+        ...(validated.aboutText !== undefined ? { aboutText: validated.aboutText?.trim() || null } : {}),
         ...(validated.whatsappNumber !== undefined ? { whatsappNumber: validated.whatsappNumber.trim() } : {}),
         ...(validated.contactPhone !== undefined ? { contactPhone: validated.contactPhone?.trim() || null } : {}),
         ...(validated.contactEmail !== undefined ? { contactEmail: validated.contactEmail?.trim() || null } : {}),

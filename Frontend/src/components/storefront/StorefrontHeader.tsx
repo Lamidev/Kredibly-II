@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useCartStore } from "@/store/useCartStore";
 import { useShopperStore } from "@/store/useShopperStore";
 import { api } from "@/lib/api";
 import { formatCurrency, getImageUrl, getStorePath } from "@/lib/utils";
 import { StoreData, extractStoreCategories } from "@/types/storefront";
-import { Menu, X, Search, ShoppingBag, Truck, Loader2, User, Package, Home } from "lucide-react";
+import { Menu, X, Search, ShoppingBag, Truck, Loader2, User, Package, Home, ChevronDown, Info } from "lucide-react";
 
 interface StorefrontHeaderProps {
   store: StoreData;
@@ -34,6 +34,7 @@ export function StorefrontHeader({
   onCloseTrackModal,
 }: StorefrontHeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { openCart, getTotalCount } = useCartStore();
   const { token: shopperToken, storeSlug: loadedSlug, loadShopper } =
     useShopperStore();
@@ -49,6 +50,9 @@ export function StorefrontHeader({
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [headerSearchOpen, setHeaderSearchOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [showAllMobileCats, setShowAllMobileCats] = useState(false);
+  const moreMenuRef = useRef<HTMLDivElement | null>(null);
   const [localSearch, setLocalSearch] = useState(searchQuery || "");
 
   // Track Order modal (supports controlled or internal state)
@@ -70,12 +74,28 @@ export function StorefrontHeader({
   const [trackError, setTrackError] = useState("");
 
   const categories = extractStoreCategories(store.products || []);
-  const headerCategories = [...categories]
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
+  const sortedCategories = [...categories].sort((a, b) => b.count - a.count);
+  const inlineCategories = sortedCategories.slice(0, 4);
+  const overflowCategories = sortedCategories.slice(4);
+
+  const homePath = getStorePath(store.slug);
+  const aboutPath = getStorePath(store.slug, "/about");
+  const isHomeActive = pathname === homePath && !selectedCategory;
+  const isAboutActive = pathname === aboutPath;
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) {
+        setMoreMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
 
   const handleCategoryClick = (catKey: string) => {
     setMobileMenuOpen(false);
+    setMoreMenuOpen(false);
     if (onSelectCategory) {
       onSelectCategory(catKey);
       const el = document.getElementById("catalogue");
@@ -175,36 +195,85 @@ export function StorefrontHeader({
             </Link>
           </div>
 
-          {/* Center: Top 5 Category Links (Desktop) */}
-          {headerCategories.length > 0 && (
-            <nav className="hidden lg:flex items-center gap-1">
+          {/* Center: Constant Home + Categories (with More dropdown if > 4) + Constant About (Desktop) */}
+          <nav className="hidden lg:flex items-center gap-1">
+            <Link
+              href={homePath}
+              className={`px-3 py-1.5 rounded-[6px] text-xs transition-colors whitespace-nowrap ${
+                isHomeActive
+                  ? "text-[#20231e] font-bold underline underline-offset-4"
+                  : "font-semibold text-[#62665d] hover:text-[#20231e] hover:bg-[#f3f4ef]"
+              }`}
+            >
+              Home
+            </Link>
+
+            {inlineCategories.map((cat) => (
               <button
+                key={cat.key}
                 type="button"
-                onClick={() => handleCategoryClick("all")}
-                className={`px-3 py-1.5 rounded-[6px] text-xs transition-colors cursor-pointer ${
-                  selectedCategory === "all"
+                onClick={() => handleCategoryClick(cat.key)}
+                className={`px-3 py-1.5 rounded-[6px] text-xs transition-colors cursor-pointer whitespace-nowrap ${
+                  selectedCategory === cat.key
                     ? "text-[#20231e] font-bold underline underline-offset-4"
                     : "font-semibold text-[#62665d] hover:text-[#20231e] hover:bg-[#f3f4ef]"
                 }`}
               >
-                All
+                {cat.label}
               </button>
-              {headerCategories.map((cat) => (
+            ))}
+
+            {overflowCategories.length > 0 && (
+              <div className="relative" ref={moreMenuRef}>
                 <button
-                  key={cat.key}
                   type="button"
-                  onClick={() => handleCategoryClick(cat.key)}
-                  className={`px-3 py-1.5 rounded-[6px] text-xs transition-colors cursor-pointer whitespace-nowrap ${
-                    selectedCategory === cat.key
-                      ? "text-[#20231e] font-bold underline underline-offset-4"
-                      : "font-semibold text-[#62665d] hover:text-[#20231e] hover:bg-[#f3f4ef]"
-                  }`}
+                  onClick={() => setMoreMenuOpen((prev) => !prev)}
+                  className="px-3 py-1.5 rounded-[6px] text-xs font-semibold text-[#62665d] hover:text-[#20231e] hover:bg-[#f3f4ef] inline-flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
                 >
-                  {cat.label}
+                  <span>More</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${moreMenuOpen ? "rotate-180" : ""}`} />
                 </button>
-              ))}
-            </nav>
-          )}
+                {moreMenuOpen && (
+                  <div className="absolute left-0 top-full mt-1.5 w-52 max-h-72 overflow-y-auto rounded-xl bg-white border border-[#daddd4] shadow-lg py-1.5 z-50">
+                    <button
+                      type="button"
+                      onClick={() => handleCategoryClick("all")}
+                      className="w-full text-left px-3.5 py-2 text-xs font-semibold text-[#20231e] hover:bg-[#f3f4ef] transition-colors cursor-pointer"
+                    >
+                      All Products
+                    </button>
+                    <div className="my-1 border-t border-[#e6e8e1]" />
+                    {overflowCategories.map((cat) => (
+                      <button
+                        key={cat.key}
+                        type="button"
+                        onClick={() => handleCategoryClick(cat.key)}
+                        className={`w-full text-left px-3.5 py-2 text-xs transition-colors cursor-pointer flex items-center justify-between gap-2 ${
+                          selectedCategory === cat.key
+                            ? "font-bold text-[#2e1065] bg-[#f3f4ef]"
+                            : "font-medium text-[#20231e] hover:bg-[#f3f4ef]"
+                        }`}
+                      >
+                        <span className="truncate">{cat.label}</span>
+                        <span className="text-[10px] font-mono text-[#62665d]">{cat.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <Link
+              href={aboutPath}
+              className={`px-3 py-1.5 rounded-[6px] text-xs transition-colors whitespace-nowrap ${
+                isAboutActive
+                  ? "text-[#20231e] font-bold underline underline-offset-4"
+                  : "font-semibold text-[#62665d] hover:text-[#20231e] hover:bg-[#f3f4ef]"
+              }`}
+            >
+              About
+            </Link>
+          </nav>
 
           {/* Right: Track Order (Desktop), Borderless Search & Shopping Bag */}
           <div className="flex items-center gap-0.5 sm:gap-2.5 shrink-0">
@@ -262,9 +331,13 @@ export function StorefrontHeader({
           <div className="lg:hidden border-t border-[#daddd4] bg-[#fafaf8] py-3">
             <div className="mx-auto w-[min(1180px,calc(100%-32px))] space-y-1">
               <Link
-                href={getStorePath(store.slug)}
+                href={homePath}
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-left px-3 py-2 rounded-[6px] text-xs font-semibold text-[#20231e] hover:bg-[#f3f4ef] flex items-center gap-2 transition-colors"
+                className={`w-full text-left px-3 py-2 rounded-[6px] text-xs flex items-center gap-2 transition-colors ${
+                  isHomeActive
+                    ? "font-bold text-[#20231e] bg-[#f3f4ef]"
+                    : "font-semibold text-[#20231e] hover:bg-[#f3f4ef]"
+                }`}
               >
                 <Home className="w-3.5 h-3.5 text-[#3b0764]" />
                 <span>Home</span>
@@ -280,20 +353,48 @@ export function StorefrontHeader({
               >
                 All Products
               </button>
-              {headerCategories.map((cat) => (
+              {sortedCategories.length > 0 && (
+                <div className={showAllMobileCats ? "max-h-56 overflow-y-auto space-y-1 pr-1" : "space-y-1"}>
+                  {(showAllMobileCats ? sortedCategories : sortedCategories.slice(0, 5)).map((cat) => (
+                    <button
+                      key={cat.key}
+                      type="button"
+                      onClick={() => handleCategoryClick(cat.key)}
+                      className={`w-full text-left px-3 py-2 rounded-[6px] text-xs transition-colors cursor-pointer flex items-center justify-between ${
+                        selectedCategory === cat.key
+                          ? "text-[#20231e] font-bold bg-[#f3f4ef]"
+                          : "font-semibold text-[#20231e] hover:bg-[#f3f4ef]"
+                      }`}
+                    >
+                      <span className="truncate">{cat.label}</span>
+                      <span className="text-[10px] font-mono text-[#62665d]">{cat.count}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {sortedCategories.length > 5 && (
                 <button
-                  key={cat.key}
                   type="button"
-                  onClick={() => handleCategoryClick(cat.key)}
-                  className={`w-full text-left px-3 py-2 rounded-[6px] text-xs transition-colors cursor-pointer ${
-                    selectedCategory === cat.key
-                      ? "text-[#20231e] font-bold bg-[#f3f4ef]"
-                      : "font-semibold text-[#20231e] hover:bg-[#f3f4ef]"
-                  }`}
+                  onClick={() => setShowAllMobileCats((prev) => !prev)}
+                  className="w-full text-left px-3 py-1.5 text-[11px] font-semibold text-[#2e1065] hover:underline cursor-pointer"
                 >
-                  {cat.label}
+                  {showAllMobileCats
+                    ? "Show fewer categories"
+                    : `Show all ${sortedCategories.length} categories`}
                 </button>
-              ))}
+              )}
+              <Link
+                href={aboutPath}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`w-full text-left px-3 py-2 rounded-[6px] text-xs flex items-center gap-2 transition-colors ${
+                  isAboutActive
+                    ? "font-bold text-[#20231e] bg-[#f3f4ef]"
+                    : "font-semibold text-[#20231e] hover:bg-[#f3f4ef]"
+                }`}
+              >
+                <Info className="w-3.5 h-3.5 text-[#3b0764]" />
+                <span>About</span>
+              </Link>
               <div className="pt-1.5 mt-1.5 border-t border-[#e6e8e1]">
                 <button
                   type="button"
