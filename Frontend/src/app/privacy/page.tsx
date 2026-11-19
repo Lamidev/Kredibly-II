@@ -1,7 +1,7 @@
 import { LegalLayout } from "@/components/LegalLayout";
 
 export const metadata = {
-  title: "Privacy Policy | Kredibly II",
+  title: "Privacy Policy | Kredibly",
   description:
     "How Kredibly collects, protects, processes, and respects merchant and buyer personal data in compliance with the Nigeria Data Protection Act (NDPA).",
 };
@@ -11,7 +11,7 @@ export default function PrivacyPage() {
     <LegalLayout
       title="Privacy Policy"
       subtitle="How Kredibly collects, processes, and protects the personal and transaction data of merchants and customers under the Nigeria Data Protection Act (NDPA)."
-      lastUpdated="November 17, 2026"
+      lastUpdated="November 19, 2026"
     >
       <div className="space-y-8">
         <div>
@@ -19,7 +19,7 @@ export default function PrivacyPage() {
             1. Commitment to Data Privacy
           </h2>
           <p className="text-sm leading-relaxed text-[#525B6C]">
-            Kredibly Technologies Limited (&ldquo;Kredibly&rdquo;, &ldquo;we&rdquo;, &ldquo;our&rdquo;) is committed to protecting the privacy, dignity, and rights of all merchants, customers, and visitors who interact with our platform.
+            Akinbyte Technologies Limited (RC: 9466327), operator of Kredibly (&ldquo;Kredibly&rdquo;, &ldquo;we&rdquo;, &ldquo;our&rdquo;), is committed to protecting the privacy, dignity, and rights of all merchants, customers, and visitors who interact with our platform.
           </p>
           <p className="mt-3 text-sm leading-relaxed text-[#525B6C]">
             This Privacy Policy explains how we collect, store, utilize, and safeguard personal data when you visit <code className="text-xs bg-[#F3F4EF] px-1.5 py-0.5 rounded text-[#2e1065]">usekredibly.com</code>, <code className="text-xs bg-[#F3F4EF] px-1.5 py-0.5 rounded text-[#2e1065]">kredibly.shop</code>, or any independent merchant storefront powered by Kredibly. We operate in strict compliance with the <strong>Nigeria Data Protection Act (NDPA 2023)</strong> and the guidelines of the Nigeria Data Protection Commission (NDPC).
@@ -90,7 +90,7 @@ export default function PrivacyPage() {
               <strong>Automated Instant Receipts:</strong> Generating tamper-proof WhatsApp, SMS, or email digital invoices for buyers and sellers immediately after payment confirmation.
             </li>
             <li>
-              <strong>Escrow Protection:</strong> Managing fund holds, delivery tracking, and dispute verification to prevent social commerce scams.
+              <strong>Verified Checkout &amp; Fraud Prevention:</strong> Verifying payments through licensed financial partners, tracking order fulfillment, and preventing social commerce fraud.
             </li>
             <li>
               <strong>Platform Performance:</strong> Optimizing storefront loading speeds and image caching for 3G/4G Nigerian mobile connections.
@@ -136,7 +136,7 @@ export default function PrivacyPage() {
             If you have questions, complaints, or wish to exercise your data subject rights under the Nigeria Data Protection Act, please contact our designated Data Protection Officer:
           </p>
           <div className="mt-3 p-4 rounded-xl bg-[#FAF9F5] border border-[#DADDD4] text-xs font-mono text-[#525B6C] space-y-1">
-            <p><strong>DPO Office:</strong> Kredibly Technologies Limited</p>
+            <p><strong>DPO Office:</strong> Akinbyte Technologies Limited (RC: 9466327)</p>
             <p><strong>Email:</strong> privacy@usekredibly.com</p>
             <p><strong>Physical Address:</strong> Lagos, Nigeria</p>
             <p><strong>Regulatory Oversight:</strong> Nigeria Data Protection Commission (NDPC)</p>
