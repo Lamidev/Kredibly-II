@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, getImageUrl } from "@/lib/utils";
 import {
   Package,
   TrendingUp,
@@ -17,7 +17,7 @@ import {
   Truck,
   CheckCircle2,
   Loader2,
-  ShieldCheck,
+  X,
 } from "lucide-react";
 import {
   Card,
@@ -33,6 +33,9 @@ interface OrderItem {
   id: string;
   productTitle: string;
   quantity: number;
+  product?: {
+    images?: string[];
+  } | null;
 }
 
 interface Order {
@@ -51,30 +54,44 @@ interface Order {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, store } = useAuthStore();
 
   const [loading, setLoading] = useState(true);
   const [totalProducts, setTotalProducts] = useState(0);
   const [totalCustomers, setTotalCustomers] = useState(0);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [hasBankAccount, setHasBankAccount] = useState(false);
+  const [storeDetails, setStoreDetails] = useState<any>(null);
+  const [checklistDismissed, setChecklistDismissed] = useState(false);
 
   useEffect(() => {
     const loadOverview = async () => {
       try {
-        const [prodRes, ordRes, custRes] = await Promise.allSettled([
-          api.get("/products"),
-          api.get("/orders"),
-          api.get("/customers"),
-        ]);
+        const [prodRes, ordRes, custRes, settingsRes, walletRes] =
+          await Promise.allSettled([
+            api.get("/products"),
+            api.get("/orders"),
+            api.get("/customers"),
+            api.get("/store/settings"),
+            api.get("/wallet"),
+          ]);
 
         if (prodRes.status === "fulfilled") {
           setTotalProducts(prodRes.value.data?.data?.length || 0);
         }
         if (ordRes.status === "fulfilled") {
-          setOrders(ordRes.value.data?.data || []);
+          const allOrders: Order[] = ordRes.value.data?.data || [];
+          setOrders(allOrders.filter((o) => o.paymentStatus === "PAID"));
         }
         if (custRes.status === "fulfilled") {
           setTotalCustomers(custRes.value.data?.data?.length || 0);
+        }
+        if (settingsRes.status === "fulfilled") {
+          setStoreDetails(settingsRes.value.data?.data || null);
+        }
+        if (walletRes.status === "fulfilled") {
+          const bank = walletRes.value.data?.data?.bank;
+          setHasBankAccount(Boolean(bank?.bankName && bank?.accountNumber));
         }
       } finally {
         setLoading(false);
@@ -119,23 +136,135 @@ export default function DashboardPage() {
     }
   };
 
+  const activeStore = storeDetails || store;
+  const setupSteps = [
+    {
+      id: "brand",
+      label: "Brand & Hero Banner",
+      desc: "Add your store logo, hero cover photo, and store bio.",
+      done: Boolean(
+        activeStore?.logoUrl &&
+          activeStore?.bannerUrl &&
+          activeStore?.description
+      ),
+      href: "/dashboard/settings",
+    },
+    {
+      id: "footer",
+      label: "Footer & Social Contact",
+      desc: "Add support email, store address, and Instagram/TikTok links.",
+      done: Boolean(
+        activeStore?.contactEmail ||
+          activeStore?.address ||
+          activeStore?.socialLinks?.instagram ||
+          activeStore?.socialLinks?.tiktok
+      ),
+      href: "/dashboard/settings",
+    },
+    {
+      id: "offer",
+      label: "Exclusive Offer & Delivery",
+      desc: "Set your top storefront offer banner and state delivery fees.",
+      done: Boolean(
+        activeStore?.shippingConfig?.offerBannerEnabled ||
+          Number(activeStore?.shippingConfig?.defaultFee || 0) > 0 ||
+          activeStore?.shippingConfig?.freeDeliveryEnabled
+      ),
+      href: "/dashboard/delivery",
+    },
+    {
+      id: "product",
+      label: "Add Your First Product",
+      desc: "Upload product photos, set prices, and publish to your store.",
+      done: totalProducts > 0,
+      href: "/dashboard/products",
+    },
+    {
+      id: "bank",
+      label: "Link Payout Bank Account",
+      desc: "Verify your Nigerian bank account so you can withdraw earnings.",
+      done: hasBankAccount,
+      href: "/dashboard/wallet",
+    },
+  ];
+  const completedSetupCount = setupSteps.filter((s) => s.done).length;
+  const showSetupChecklist =
+    !loading && !checklistDismissed && completedSetupCount < setupSteps.length;
+
   return (
     <div className="space-y-6">
       {/* Greeting */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-[#0f172a] tracking-tight">
-            Welcome back, {user?.fullName?.split(" ")[0] || "Merchant"}
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            Track your store performance, inventory, and incoming orders.
-          </p>
-        </div>
-        <Badge variant="success" className="w-fit">
-          <ShieldCheck className="w-3.5 h-3.5" />
-          Storefront Live
-        </Badge>
+      <div>
+        <h1 className="text-xl sm:text-2xl font-extrabold text-[#0f172a] tracking-tight">
+          Welcome back, {user?.fullName?.split(" ")[0] || "Merchant"}
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+          Track your store performance, inventory, and incoming orders.
+        </p>
       </div>
+
+      {/* Guided Store Setup Checklist */}
+      {showSetupChecklist && (
+        <Card className="border-[#2e1065]/15 bg-gradient-to-r from-white via-white to-[#2e1065]/[0.03]">
+          <CardHeader className="p-4 sm:p-5 pb-3 flex flex-row items-start justify-between gap-3 space-y-0">
+            <div>
+              <CardTitle className="text-sm sm:text-base">
+                Complete Your Store Setup ({completedSetupCount} of{" "}
+                {setupSteps.length})
+              </CardTitle>
+              <CardDescription className="text-xs mt-0.5">
+                Finish these steps so your storefront looks complete from hero to footer.
+              </CardDescription>
+            </div>
+            <button
+              type="button"
+              onClick={() => setChecklistDismissed(true)}
+              aria-label="Dismiss setup checklist"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-[#0f172a] hover:bg-slate-100 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-5 pt-0 space-y-2">
+            {setupSteps.map((step) => (
+              <Link
+                key={step.id}
+                href={step.href}
+                className={`flex items-center justify-between gap-3 p-3 rounded-xl border transition ${
+                  step.done
+                    ? "bg-emerald-50/60 border-emerald-200/80 text-emerald-900"
+                    : "bg-white border-slate-200 hover:border-[#2e1065]"
+                }`}
+              >
+                <div className="flex items-start gap-2.5 min-w-0">
+                  <CheckCircle2
+                    className={`w-4 h-4 mt-0.5 shrink-0 ${
+                      step.done ? "text-emerald-600" : "text-slate-300"
+                    }`}
+                  />
+                  <div className="min-w-0">
+                    <p
+                      className={`text-xs font-bold ${
+                        step.done ? "line-through text-emerald-800" : "text-[#0f172a]"
+                      }`}
+                    >
+                      {step.label}
+                    </p>
+                    <p className="text-[11px] text-slate-500 truncate">
+                      {step.desc}
+                    </p>
+                  </div>
+                </div>
+                {!step.done && (
+                  <span className="text-[11px] font-bold text-[#2e1065] shrink-0 inline-flex items-center gap-0.5">
+                    Set up <ChevronRight className="w-3.5 h-3.5" />
+                  </span>
+                )}
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {/* 4 Overview Metric Cards (4 in a row desktop, 2 in a row mobile) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -266,7 +395,10 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {orders.slice(0, 8).map((order) => (
+                  {orders.slice(0, 8).map((order) => {
+                    const firstThumb = order.items?.[0]?.product?.images?.[0];
+                    const extraCount = (order.items?.length || 0) - 1;
+                    return (
                     <tr
                       key={order.id}
                       onClick={() =>
@@ -275,16 +407,31 @@ export default function DashboardPage() {
                       className="hover:bg-slate-50/90 transition cursor-pointer group"
                     >
                       <td className="py-3.5 px-4 font-mono font-bold text-[#0f172a] whitespace-nowrap">
-                        <span className="group-hover:text-[#2e1065] group-hover:underline">
-                          #{order.orderNumber}
-                        </span>
+                        <div className="flex items-center gap-2.5">
+                          <div className="relative h-8 w-8 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                            {firstThumb ? (
+                              <img
+                                src={getImageUrl(firstThumb)}
+                                alt={order.orderNumber}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <Package className="w-3.5 h-3.5 text-slate-400" />
+                            )}
+                            {extraCount > 0 && (
+                              <span className="absolute bottom-0 right-0 px-1 rounded-tl bg-[#2e1065] text-white text-[8.5px] font-bold">
+                                +{extraCount}
+                              </span>
+                            )}
+                          </div>
+                          <span className="group-hover:text-[#2e1065] group-hover:underline">
+                            #{order.orderNumber}
+                          </span>
+                        </div>
                       </td>
                       <td className="py-3.5 px-4">
                         <p className="font-semibold text-[#0f172a]">
                           {order.customer.fullName}
-                        </p>
-                        <p className="text-[11px] text-slate-500 font-mono">
-                          {order.customer.phoneNumber}
                         </p>
                       </td>
                       <td className="py-3.5 px-4 text-slate-600 hidden sm:table-cell max-w-[220px] truncate">
@@ -302,7 +449,8 @@ export default function DashboardPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

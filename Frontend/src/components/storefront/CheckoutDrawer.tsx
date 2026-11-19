@@ -197,7 +197,7 @@ export function CheckoutDrawer({
           setTimeout(() => {
             onClose();
             router.push(
-              getStorePath(storeSlug, `/orders/${transferDetails.orderNumber}`)
+              getStorePath(storeSlug, `/orders/${transferDetails.orderNumber}?confirmed=1`)
             );
           }, 1200);
         }
@@ -338,7 +338,9 @@ export function CheckoutDrawer({
         setPaymentConfirmed(true);
         setTimeout(() => {
           onClose();
-          router.push(`/${storeSlug}/orders/${transferDetails.orderNumber}`);
+          router.push(
+            getStorePath(storeSlug, `/orders/${transferDetails.orderNumber}?confirmed=1`)
+          );
         }, 1200);
       } else {
         setCheckStatusMsg(

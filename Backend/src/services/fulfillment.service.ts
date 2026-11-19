@@ -1,6 +1,7 @@
 import { prisma } from "../config/db";
 import { AppError } from "../middleware/errorHandler";
 import { OrderStatus } from "@prisma/client";
+import { EmailService } from "./email.service";
 
 export class FulfillmentService {
   /**
@@ -44,7 +45,8 @@ export class FulfillmentService {
   }
 
   /**
-   * Update order fulfillment status (PAID -> PROCESSING -> SHIPPED -> DELIVERED / CANCELLED)
+   * Update order fulfillment status (PAID -> SHIPPED -> DELIVERED / CANCELLED)
+   * Restores stock on CANCELLED and notifies buyer via email on status updates.
    */
   static async updateOrderStatus(
     storeId: string,
@@ -53,6 +55,11 @@ export class FulfillmentService {
   ) {
     const order = await prisma.order.findFirst({
       where: { id: orderId, storeId },
+      include: {
+        items: true,
+        customer: true,
+        store: { select: { name: true, slug: true } },
+      },
     });
 
     if (!order) {
@@ -63,20 +70,59 @@ export class FulfillmentService {
       throw new AppError("Cannot mark an unpaid order as delivered", 400);
     }
 
-    const updated = await prisma.order.update({
-      where: { id: order.id },
-      data: { orderStatus: newStatus },
-      include: {
-        customer: true,
-        items: {
-          include: {
-            product: {
-              select: { images: true, slug: true },
+    const updated = await prisma.$transaction(async (tx) => {
+      // Restore stock if cancelling a paid order that wasn't already cancelled
+      if (
+        newStatus === "CANCELLED" &&
+        order.orderStatus !== "CANCELLED" &&
+        order.paymentStatus === "PAID"
+      ) {
+        for (const item of order.items) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { stockQuantity: { increment: item.quantity } },
+          });
+          if (item.variantId) {
+            await tx.productVariant.update({
+              where: { id: item.variantId },
+              data: { stockQuantity: { increment: item.quantity } },
+            });
+          }
+        }
+      }
+
+      return tx.order.update({
+        where: { id: order.id },
+        data: { orderStatus: newStatus },
+        include: {
+          customer: true,
+          items: {
+            include: {
+              product: {
+                select: { images: true, slug: true },
+              },
             },
           },
         },
-      },
+      });
     });
+
+    if (
+      order.orderStatus !== newStatus &&
+      order.customer?.email &&
+      (newStatus === "SHIPPED" ||
+        newStatus === "DELIVERED" ||
+        newStatus === "CANCELLED")
+    ) {
+      EmailService.sendOrderStatusUpdateEmail({
+        to: order.customer.email,
+        customerName: order.customer.fullName,
+        orderNumber: order.orderNumber,
+        storeName: order.store.name,
+        storeSlug: order.store.slug,
+        status: newStatus,
+      }).catch((err) => console.error("Buyer status update email failed:", err));
+    }
 
     return updated;
   }

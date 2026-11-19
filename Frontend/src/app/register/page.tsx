@@ -463,7 +463,7 @@ function RegisterFormContent() {
             htmlFor="register-phone"
             className="block text-[12px] font-medium text-[#1e293b] mb-1.5"
           >
-            WhatsApp Phone number <span className="text-red-500">*</span>
+            Phone Number (Preferably WhatsApp) <span className="text-red-500">*</span>
           </label>
           <input
             id="register-phone"

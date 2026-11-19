@@ -145,7 +145,7 @@ export class EmailService {
     storeName: string;
     storeSlug: string;
   }) {
-    const storeUrl = `${ENV.FRONTEND_URL}/${data.storeSlug}`;
+    const storeUrl = `https://${data.storeSlug}.kredibly.shop`;
     const dashboardUrl = `${ENV.FRONTEND_URL}/dashboard`;
 
     const html = `
@@ -167,6 +167,17 @@ export class EmailService {
           </div>
         </div>
 
+        <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 24px;">
+          <p style="margin: 0 0 12px 0; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #2e1065;">Quick 5-Step Store Setup</p>
+          <ol style="margin: 0; padding-left: 18px; color: #334155; font-size: 13.5px; line-height: 1.75;">
+            <li><strong>Brand &amp; Hero:</strong> Upload your store logo, hero cover photo, and store bio in <em>Store Settings</em>.</li>
+            <li><strong>Footer &amp; Contact:</strong> Add your support email, address, and social links (Instagram, TikTok) in <em>Store Settings</em>.</li>
+            <li><strong>Exclusive Offer &amp; Delivery:</strong> Pin a custom offer banner at the top of your store and set delivery fees in <em>Delivery &amp; Offers</em>.</li>
+            <li><strong>Add Your Products:</strong> Upload photos and publish your first product in <em>Products</em>.</li>
+            <li><strong>Link Payout Bank:</strong> Verify your Nigerian bank account in <em>Wallet &amp; Payouts</em>.</li>
+          </ol>
+        </div>
+
         <div style="margin: 24px 0;">
           <a href="${dashboardUrl}" style="background-color: #2e1065; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; display: inline-block;">
             Open Merchant Dashboard
@@ -180,7 +191,7 @@ export class EmailService {
       </div>
     `;
 
-    const text = `Hi ${data.fullName},\n\nCongratulations on creating ${data.storeName} on Kredibly! Your storefront is live and ready to accept orders.\n\nYour Store Link: ${storeUrl}\nMerchant Dashboard: ${dashboardUrl}\n\n— The Kredibly Team`;
+    const text = `Hi ${data.fullName},\n\nCongratulations on creating ${data.storeName} on Kredibly! Your storefront is live at ${storeUrl}.\n\nQuick 5-Step Setup:\n1. Upload logo, hero cover & bio (Store Settings)\n2. Add support email, address & social links (Store Settings)\n3. Set your Exclusive Offer banner & delivery fees (Delivery & Offers)\n4. Add your first product (Products)\n5. Link your payout bank account (Wallet & Payouts)\n\nMerchant Dashboard: ${dashboardUrl}\n\n— The Kredibly Team`;
 
     return this.send({
       to: data.to,
@@ -227,6 +238,56 @@ export class EmailService {
       subject: `Order confirmation #${data.orderNumber} - ${data.storeName}`,
       html,
       text,
+    });
+  }
+
+  /**
+   * Send order status update email to buyer (Dispatched, Delivered, Cancelled)
+   */
+  static async sendOrderStatusUpdateEmail(data: {
+    to: string;
+    customerName: string;
+    orderNumber: string;
+    storeName: string;
+    storeSlug: string;
+    status: "SHIPPED" | "DELIVERED" | "CANCELLED";
+  }) {
+    const orderUrl = `https://${data.storeSlug}.kredibly.shop/orders/${data.orderNumber}`;
+    const copy = {
+      SHIPPED: {
+        title: "Your Order Has Been Dispatched",
+        body: `Great news! <strong>${data.storeName}</strong> has dispatched your order <strong>#${data.orderNumber}</strong> and it is on the way to you.`,
+      },
+      DELIVERED: {
+        title: "Your Order Has Been Delivered",
+        body: `Your order <strong>#${data.orderNumber}</strong> from <strong>${data.storeName}</strong> has been marked as delivered. Thank you for shopping with us!`,
+      },
+      CANCELLED: {
+        title: "Order Cancelled",
+        body: `Your order <strong>#${data.orderNumber}</strong> from <strong>${data.storeName}</strong> has been cancelled. Please reach out to the store if you have any questions regarding your order or refund.`,
+      },
+    }[data.status];
+
+    const html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #0f172a; background-color: #ffffff;">
+        <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 14px; margin-bottom: 20px;">
+          <p style="margin: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #2e1065;">${data.storeName}</p>
+          <h1 style="margin: 6px 0 0 0; font-size: 20px; font-weight: 700; color: #0f172a;">${copy.title}</h1>
+        </div>
+        <div style="background-color: #faf9f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 20px;">
+          <p style="margin: 0 0 10px 0; font-size: 14px;">Hi <strong>${data.customerName}</strong>,</p>
+          <p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.6; color: #334155;">${copy.body}</p>
+          <a href="${orderUrl}" style="display: inline-block; background-color: #2e1065; color: #ffffff; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600;">
+            View Order #${data.orderNumber}
+          </a>
+        </div>
+      </div>
+    `;
+
+    return this.send({
+      to: data.to,
+      subject: `${copy.title} — Order #${data.orderNumber} (${data.storeName})`,
+      html,
     });
   }
 
