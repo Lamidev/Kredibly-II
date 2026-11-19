@@ -28,6 +28,7 @@ interface SettingsFormState {
   name: string;
   slug: string;
   description: string;
+  aboutText: string;
   whatsappNumber: string;
   contactPhone: string;
   contactEmail: string;
@@ -50,6 +51,7 @@ const EMPTY_FORM: SettingsFormState = {
   name: "",
   slug: "",
   description: "",
+  aboutText: "",
   whatsappNumber: "",
   contactPhone: "",
   contactEmail: "",
@@ -84,6 +86,7 @@ export default function StoreSettingsPage() {
           name: s.name || "",
           slug: s.slug || "",
           description: s.description || "",
+          aboutText: s.aboutText || "",
           whatsappNumber: s.whatsappNumber || "",
           contactPhone: s.contactPhone || "",
           contactEmail: s.contactEmail || "",
@@ -119,6 +122,7 @@ export default function StoreSettingsPage() {
   const hasChanges =
     form.name.trim() !== initialForm.name.trim() ||
     form.description.trim() !== initialForm.description.trim() ||
+    form.aboutText.trim() !== initialForm.aboutText.trim() ||
     form.whatsappNumber.trim() !== initialForm.whatsappNumber.trim() ||
     form.contactPhone.trim() !== initialForm.contactPhone.trim() ||
     form.contactEmail.trim() !== initialForm.contactEmail.trim() ||
@@ -194,6 +198,7 @@ export default function StoreSettingsPage() {
       const res = await api.put("/store/settings", {
         name: form.name,
         description: form.description,
+        aboutText: form.aboutText,
         whatsappNumber: form.whatsappNumber,
         contactPhone: form.contactPhone || null,
         contactEmail: form.contactEmail || null,
@@ -213,6 +218,7 @@ export default function StoreSettingsPage() {
         ...form,
         name: res.data.data.name || form.name,
         description: res.data.data.description || "",
+        aboutText: res.data.data.aboutText || "",
         whatsappNumber: res.data.data.whatsappNumber || form.whatsappNumber,
         contactPhone: res.data.data.contactPhone || "",
         contactEmail: res.data.data.contactEmail || "",
@@ -354,6 +360,25 @@ export default function StoreSettingsPage() {
                   placeholder="Tell buyers what you sell, delivery timelines, and pickup info..."
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 focus:bg-white border border-slate-200 text-sm text-[#0f172a] focus:outline-none focus:border-[#2e1065]"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#0f172a] mb-1.5">
+                  About Your Store (Shown on your storefront About page)
+                </label>
+                <textarea
+                  rows={4}
+                  maxLength={3000}
+                  value={form.aboutText}
+                  onChange={(e) =>
+                    setForm({ ...form, aboutText: e.target.value })
+                  }
+                  placeholder="Share your brand story, what makes your products special, store hours, or return/delivery promises..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 focus:bg-white border border-slate-200 text-sm text-[#0f172a] focus:outline-none focus:border-[#2e1065]"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  If left blank, your About page will automatically display your store bio and contact info.
+                </p>
               </div>
 
               {/* Optional Cover Banner */}

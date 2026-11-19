@@ -67,6 +67,7 @@ model Store {
   name             String
   slug             String           @unique // e.g. "becaria"
   description      String?
+  aboutText        String?          @db.Text
   logoUrl          String?
   bannerUrl        String?
   themeColor       String           @default("#0f172a")

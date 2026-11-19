@@ -15,6 +15,7 @@ export class PublicStoreService {
         name: true,
         slug: true,
         description: true,
+        aboutText: true,
         logoUrl: true,
         bannerUrl: true,
         themeColor: true,
