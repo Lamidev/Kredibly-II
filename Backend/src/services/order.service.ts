@@ -418,6 +418,31 @@ export class OrderService {
         };
       }
 
+      // Atomically claim the order so concurrent webhook + polling calls cannot double-credit
+      const claimed = await tx.order.updateMany({
+        where: {
+          id: order.id,
+          paymentStatus: { not: "PAID" },
+        },
+        data: {
+          orderStatus: "PAID",
+          paymentStatus: "PAID",
+        },
+      });
+
+      if (claimed.count === 0) {
+        return {
+          success: true,
+          message: "Order is already paid",
+          order: { ...order, orderStatus: "PAID", paymentStatus: "PAID" },
+          items: order.items,
+          customer: order.customer,
+          owner: order.store.owner,
+          storeName: order.store.name,
+          alreadyPaid: true,
+        };
+      }
+
       // 2. Atomically decrement stock for all products and variants
       for (const item of order.items) {
         await tx.product.update({
@@ -441,13 +466,9 @@ export class OrderService {
         }
       }
 
-      // 3. Mark Order as PAID
-      const updatedOrder = await tx.order.update({
+      // 3. Load updated order record
+      const updatedOrder = await tx.order.findUniqueOrThrow({
         where: { id: order.id },
-        data: {
-          orderStatus: "PAID",
-          paymentStatus: "PAID",
-        },
       });
 
       // 4. Calculate net revenue and platform fee (Net Price Protection support)

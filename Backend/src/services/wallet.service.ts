@@ -356,25 +356,24 @@ export class WalletService {
       .update(otp.trim())
       .digest("hex");
 
-    if (
-      !store.withdrawalOtpHash ||
-      store.withdrawalOtpHash !== providedHash ||
-      !store.withdrawalOtpExpires ||
-      store.withdrawalOtpExpires < new Date()
-    ) {
-      throw new AppError(
-        "Invalid or expired confirmation code. Please request a new code.",
-        400
-      );
-    }
-
-    await prisma.store.update({
-      where: { id: storeId },
+    const otpClaim = await prisma.store.updateMany({
+      where: {
+        id: storeId,
+        withdrawalOtpHash: providedHash,
+        withdrawalOtpExpires: { gt: new Date() },
+      },
       data: {
         withdrawalOtpHash: null,
         withdrawalOtpExpires: null,
       },
     });
+
+    if (otpClaim.count === 0) {
+      throw new AppError(
+        "Invalid or expired confirmation code. Please request a new code.",
+        400
+      );
+    }
 
     const available = Number(store.wallet.availableBalance);
     if (available < amount) {
