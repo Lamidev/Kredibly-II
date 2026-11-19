@@ -516,32 +516,13 @@ export function CheckoutDrawer({
                         </button>
                       </div>
 
-                      <div className="flex items-center justify-between pt-2 border-t border-[#e2e8f0]">
-                        <div>
-                          <p className="text-[11px] text-[#64748b]">
-                            Exact Amount
-                          </p>
-                          <p className="font-display text-lg font-extrabold text-[#2e1065]">
-                            {formatCurrency(transferDetails.totalAmount)}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleCopy(
-                              String(transferDetails.totalAmount),
-                              "amount"
-                            )
-                          }
-                          className="px-3 py-1.5 rounded-lg bg-white border border-[#e2e8f0] text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
-                        >
-                          {copiedAmount ? (
-                            <Check className="w-3.5 h-3.5 text-emerald-600" />
-                          ) : (
-                            <Copy className="w-3.5 h-3.5" />
-                          )}
-                          <span>{copiedAmount ? "Copied" : "Copy"}</span>
-                        </button>
+                      <div className="pt-2 border-t border-[#e2e8f0]">
+                        <p className="text-[11px] text-[#64748b]">
+                          Exact Amount
+                        </p>
+                        <p className="font-display text-lg font-extrabold text-[#2e1065]">
+                          {formatCurrency(transferDetails.totalAmount)}
+                        </p>
                       </div>
                     </div>
 

@@ -552,9 +552,10 @@ export class OrderService {
 
   /**
    * Get public order receipt and status by order number
+   * Automatically reconciles pending Nomba DVA transfers so auto-detect & "I Have Transferred" work even if webhook delivery was delayed
    */
   static async getOrderDetails(orderNumber: string) {
-    const order = await prisma.order.findUnique({
+    let order = await prisma.order.findUnique({
       where: { orderNumber },
       include: {
         items: true,
@@ -580,6 +581,46 @@ export class OrderService {
 
     if (!order) {
       throw new AppError("Order not found", 404);
+    }
+
+    if (
+      order.paymentStatus !== "PAID" &&
+      order.paymentRef &&
+      order.paymentRef.startsWith("KRD-")
+    ) {
+      const isPaidOnNomba = await NombaService.verifyVirtualAccountPayment(
+        order.paymentRef,
+        Number(order.totalAmount)
+      );
+      if (isPaidOnNomba) {
+        await OrderService.completePayment(order.paymentRef);
+        const refreshed = await prisma.order.findUnique({
+          where: { orderNumber },
+          include: {
+            items: true,
+            customer: {
+              select: {
+                fullName: true,
+                phoneNumber: true,
+                address: true,
+                city: true,
+                state: true,
+              },
+            },
+            store: {
+              select: {
+                name: true,
+                slug: true,
+                whatsappNumber: true,
+                currency: true,
+              },
+            },
+          },
+        });
+        if (refreshed) {
+          order = refreshed;
+        }
+      }
     }
 
     return order;

@@ -62,32 +62,60 @@ export class WebhookController {
     next: NextFunction
   ) {
     try {
-      const signature = (req.headers["x-nomba-signature"] ||
+      const signature = (req.headers["nomba-sig-value"] ||
+        req.headers["nomba-signature"] ||
+        req.headers["x-nomba-signature"] ||
         req.headers["x-webhook-signature"]) as string | undefined;
 
-      // Fail closed in production when signature or secret is missing
-      const hasNombaSecret = Boolean(ENV.NOMBA_WEBHOOK_SECRET || ENV.NOMBA_PRIVATE_KEY);
-      if (ENV.NODE_ENV === "production" && (!signature || !hasNombaSecret)) {
-        console.warn("⚠️ Missing Nomba webhook signature or secret in production");
-        return res.status(401).send("Invalid signature");
-      }
+      const body = req.body || {};
+      const data = body.data || body;
+      const tx = data.transaction || data.order || data.account || {};
+      let reference: string | undefined =
+        data.virtualAccountReference ||
+        tx.virtualAccountReference ||
+        tx.aliasAccountRef ||
+        tx.accountRef ||
+        data.orderReference ||
+        tx.orderReference ||
+        data.accountRef ||
+        data.reference;
 
-      if (signature && hasNombaSecret) {
-        const payload = req.rawBody ?? JSON.stringify(req.body);
-        const isValid = NombaService.verifyWebhookSignature(signature, payload);
-        if (!isValid) {
-          console.warn("⚠️ Invalid Nomba webhook signature");
-          return res.status(401).send("Invalid signature");
+      if (!reference) {
+        const rawStr = JSON.stringify(body);
+        const match = rawStr.match(/KRD-[A-Z0-9-]+|REF-[0-9-]+/);
+        if (match) {
+          reference = match[0];
         }
       }
 
-      const body = req.body;
-      const data = body.data || body;
-      const reference = data.orderReference || data.accountRef || data.virtualAccountReference || data.reference;
-
       if (reference) {
-        console.log(`⚡ Processing verified Nomba payment webhook for ref: ${reference}`);
-        await OrderService.completePayment(reference);
+        const hasNombaSecret = Boolean(
+          ENV.NOMBA_WEBHOOK_SECRET || ENV.NOMBA_PRIVATE_KEY
+        );
+        const payload = req.rawBody ?? JSON.stringify(body);
+        const sigValid =
+          Boolean(signature && hasNombaSecret) &&
+          NombaService.verifyWebhookSignature(signature!, payload);
+
+        // Verify either by HMAC signature OR by querying Nomba API directly for the virtual account payment
+        let apiVerified = false;
+        if (!sigValid && reference.startsWith("KRD-")) {
+          apiVerified = await NombaService.verifyVirtualAccountPayment(
+            reference,
+            1
+          );
+        }
+
+        if (sigValid || apiVerified || ENV.NODE_ENV !== "production") {
+          console.log(
+            `⚡ Processing verified Nomba payment webhook for ref: ${reference}`
+          );
+          await OrderService.completePayment(reference);
+        } else {
+          console.warn(
+            `⚠️ Nomba webhook for ${reference} could not be verified by signature or API lookup`
+          );
+        }
       }
 
       return res.status(200).json({ status: "success" });

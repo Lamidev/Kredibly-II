@@ -291,6 +291,51 @@ export class NombaService {
   }
 
   /**
+   * Actively verify with Nomba API whether a Dynamic Virtual Account (DVA) has received payment
+   */
+  static async verifyVirtualAccountPayment(
+    accountRef: string,
+    expectedAmount: number
+  ): Promise<boolean> {
+    if (!ENV.NOMBA_CLIENT_ID || !ENV.NOMBA_PRIVATE_KEY || !ENV.NOMBA_ACCOUNT_ID) {
+      return false;
+    }
+
+    try {
+      const token = await this.getAccessToken();
+      const response = await axios.get(
+        `${NOMBA_BASE_URL}/transactions/virtual?accountRef=${encodeURIComponent(
+          accountRef
+        )}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            accountId: ENV.NOMBA_ACCOUNT_ID,
+          },
+          timeout: 12000,
+          httpsAgent: ipv4HttpsAgent,
+          httpAgent: ipv4HttpAgent,
+        }
+      );
+
+      const results: any[] = response.data?.data?.results || [];
+      return results.some(
+        (tx) =>
+          tx.virtualAccountReference === accountRef &&
+          String(tx.status).toUpperCase() === "SUCCESS" &&
+          (!tx.entryType || String(tx.entryType).toUpperCase() === "CREDIT") &&
+          Number(tx.amount || 0) >= expectedAmount
+      );
+    } catch (err: any) {
+      console.warn(
+        "Nomba DVA payment verification check error:",
+        err.response?.data || err.message
+      );
+      return false;
+    }
+  }
+
+  /**
    * Verify Nomba webhook signature
    */
   static verifyWebhookSignature(signature: string, rawBody: string | Buffer): boolean {
