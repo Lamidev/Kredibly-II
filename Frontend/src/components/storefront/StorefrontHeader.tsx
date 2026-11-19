@@ -8,7 +8,7 @@ import { useShopperStore } from "@/store/useShopperStore";
 import { api } from "@/lib/api";
 import { formatCurrency, getImageUrl, getStorePath } from "@/lib/utils";
 import { StoreData, extractStoreCategories } from "@/types/storefront";
-import { Menu, X, Search, ShoppingBag, Truck, Loader2, User, Package, ChevronDown } from "lucide-react";
+import { Menu, X, Search, ShoppingBag, Loader2, User, Package, ChevronDown } from "lucide-react";
 
 interface StorefrontHeaderProps {
   store: StoreData;
@@ -282,7 +282,6 @@ export function StorefrontHeader({
               onClick={openTrack}
               className="hidden sm:flex px-3 py-2 rounded-[6px] bg-[#f3f4ef] hover:bg-[#e6e8e1] border border-[#daddd4] text-[12px] font-semibold text-[#20231e] items-center gap-1.5 transition-colors cursor-pointer"
             >
-              <Truck className="w-3.5 h-3.5 text-[#3b0764]" />
               <span>Track Order</span>
             </button>
 
@@ -400,10 +399,9 @@ export function StorefrontHeader({
                     setMobileMenuOpen(false);
                     openTrack();
                   }}
-                  className="w-full text-left px-3 py-2 rounded-[6px] text-xs font-semibold text-[#20231e] hover:bg-[#f3f4ef] flex items-center gap-2 cursor-pointer"
+                  className="block w-full text-left px-3 py-2 rounded-[6px] text-xs font-semibold text-[#20231e] hover:bg-[#f3f4ef] cursor-pointer"
                 >
-                  <Truck className="w-3.5 h-3.5 text-[#3b0764]" />
-                  <span>Track Order</span>
+                  Track Order
                 </button>
               </div>
             </div>
