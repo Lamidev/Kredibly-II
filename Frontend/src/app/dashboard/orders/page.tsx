@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
-import { formatCurrency } from "@/lib/utils";
+import {
+  formatCurrency,
+  formatWhatsAppNumber,
+  getImageUrl,
+} from "@/lib/utils";
 import {
   Package,
   Clock,
@@ -15,23 +19,15 @@ import {
   Phone,
   User,
   Loader2,
-  ShieldCheck,
   RefreshCw,
   Search,
-  Eye,
   TrendingUp,
   ShoppingBag,
+  ArrowLeft,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 
 interface OrderItem {
   id: string;
@@ -40,6 +36,10 @@ interface OrderItem {
   unitPrice: number | string;
   quantity: number;
   subtotal: number | string;
+  product?: {
+    images?: string[];
+    slug?: string;
+  } | null;
 }
 
 interface Order {
@@ -100,6 +100,12 @@ export default function OrdersPage() {
     setActionLoadingId(orderId);
     try {
       await api.patch(`/orders/${orderId}/status`, { status: newStatus });
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, orderStatus: newStatus } : o))
+      );
+      setSelectedOrder((prev) =>
+        prev && prev.id === orderId ? { ...prev, orderStatus: newStatus } : prev
+      );
       toast.success(`Order status updated to ${newStatus}.`);
       await fetchOrders();
     } catch (err: any) {
@@ -169,14 +175,191 @@ export default function OrdersPage() {
   };
 
   const getWhatsAppLink = (order: Order) => {
-    const cleanPhone = order.customer.phoneNumber.replace(/\D/g, "");
+    const intl = formatWhatsAppNumber(order.customer.phoneNumber);
     const msg = encodeURIComponent(
       `Hi ${order.customer.fullName}! Thank you for your order #${order.orderNumber}. I'm following up regarding your delivery!`
     );
-    return `https://wa.me/234${
-      cleanPhone.startsWith("0") ? cleanPhone.slice(1) : cleanPhone
-    }?text=${msg}`;
+    return `https://wa.me/${intl}?text=${msg}`;
   };
+
+  if (selectedOrder) {
+    const stages = [
+      { id: "PAID", label: "Confirmed" },
+      { id: "PROCESSING", label: "Processing" },
+      { id: "SHIPPED", label: "Shipped" },
+      { id: "DELIVERED", label: "Delivered" },
+      { id: "CANCELLED", label: "Cancelled" },
+    ] as const;
+
+    return (
+      <div className="space-y-6 max-w-4xl">
+        <button
+          type="button"
+          onClick={() => setSelectedOrder(null)}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-[#2e1065] cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Orders</span>
+        </button>
+
+        {/* Order Top Header Card */}
+        <Card>
+          <CardContent className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <h1 className="font-mono text-xl sm:text-2xl font-extrabold text-[#0f172a]">
+                  Order #{selectedOrder.orderNumber}
+                </h1>
+                {getStatusBadge(selectedOrder.orderStatus)}
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Placed on{" "}
+                {new Date(selectedOrder.createdAt).toLocaleDateString("en-NG", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+            </div>
+
+            <a
+              href={getWhatsAppLink(selectedOrder)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto">
+                <MessageCircle className="w-4 h-4 text-[#2e1065]" />
+                <span>Chat Customer on WhatsApp</span>
+              </Button>
+            </a>
+          </CardContent>
+        </Card>
+
+        {/* Fulfillment Stage Updater */}
+        <Card>
+          <CardContent className="p-5 sm:p-6 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Update Fulfillment Stage
+              </p>
+              {actionLoadingId === selectedOrder.id && (
+                <Loader2 className="w-4 h-4 animate-spin text-[#2e1065]" />
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {stages.map((st) => {
+                const isCurrent = selectedOrder.orderStatus === st.id;
+                return (
+                  <button
+                    key={st.id}
+                    type="button"
+                    disabled={actionLoadingId === selectedOrder.id || isCurrent}
+                    onClick={() => handleStatusUpdate(selectedOrder.id, st.id)}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition cursor-pointer disabled:cursor-default ${
+                      isCurrent
+                        ? st.id === "CANCELLED"
+                          ? "bg-red-600 border-red-600 text-white"
+                          : "bg-[#2e1065] border-[#2e1065] text-white"
+                        : "bg-white border-slate-200 text-slate-700 hover:border-[#2e1065] hover:text-[#2e1065]"
+                    }`}
+                  >
+                    {st.label}
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Customer & Delivery Destination */}
+        <Card>
+          <CardContent className="p-5 sm:p-6 space-y-2.5 text-xs">
+            <p className="font-bold uppercase tracking-wider text-slate-400 text-[10.5px]">
+              Customer &amp; Delivery Destination
+            </p>
+            <div className="flex items-center gap-2.5">
+              <User className="w-4 h-4 text-[#2e1065] shrink-0" />
+              <span className="font-bold text-[#0f172a] text-sm">
+                {selectedOrder.customer.fullName}
+              </span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <Phone className="w-4 h-4 text-[#2e1065] shrink-0" />
+              <span className="font-mono text-[#0f172a]">
+                {selectedOrder.customer.phoneNumber}
+              </span>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <MapPin className="w-4 h-4 text-[#2e1065] shrink-0 mt-0.5" />
+              <span className="text-[#0f172a]">
+                {selectedOrder.customer.address},{" "}
+                {selectedOrder.customer.city
+                  ? `${selectedOrder.customer.city}, `
+                  : ""}
+                {selectedOrder.customer.state}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Items Ordered with Product Images */}
+        <Card>
+          <CardContent className="p-5 sm:p-6 space-y-4">
+            <p className="font-bold uppercase tracking-wider text-slate-400 text-[10.5px]">
+              Items Ordered ({selectedOrder.items.length})
+            </p>
+            <div className="divide-y divide-slate-100">
+              {selectedOrder.items.map((item) => {
+                const thumb = item.product?.images?.[0];
+                return (
+                  <div
+                    key={item.id}
+                    className="py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-3 text-xs"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-12 w-12 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                        {thumb ? (
+                          <img
+                            src={getImageUrl(thumb)}
+                            alt={item.productTitle}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <Package className="w-5 h-5 text-slate-300" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-[#0f172a] text-sm truncate">
+                          {item.productTitle}
+                        </p>
+                        {item.variantName && (
+                          <p className="text-slate-500">{item.variantName}</p>
+                        )}
+                        <p className="text-slate-500 mt-0.5">
+                          Qty: {item.quantity} × {formatCurrency(item.unitPrice)}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="font-mono font-bold text-[#0f172a] text-sm shrink-0">
+                      {formatCurrency(item.subtotal)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-between font-bold">
+              <span className="text-slate-500 text-xs sm:text-sm">Total Paid</span>
+              <span className="font-display text-lg text-[#2e1065]">
+                {formatCurrency(selectedOrder.totalAmount)}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const tabs = [
     { id: "ALL", label: `All (${orders.length})` },
@@ -346,14 +529,35 @@ export default function OrdersPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredOrders.map((order) => (
+                  {filteredOrders.map((order) => {
+                    const firstThumb = order.items?.[0]?.product?.images?.[0];
+                    const extraCount = (order.items?.length || 0) - 1;
+                    return (
                     <tr
                       key={order.id}
                       onClick={() => setSelectedOrder(order)}
                       className="hover:bg-slate-50/80 transition cursor-pointer"
                     >
                       <td className="py-3.5 px-4 font-mono font-bold text-[#0f172a] whitespace-nowrap">
-                        #{order.orderNumber}
+                        <div className="flex items-center gap-2.5">
+                          <div className="relative h-9 w-9 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                            {firstThumb ? (
+                              <img
+                                src={getImageUrl(firstThumb)}
+                                alt={order.orderNumber}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <Package className="w-4 h-4 text-slate-400" />
+                            )}
+                            {extraCount > 0 && (
+                              <span className="absolute bottom-0 right-0 px-1 rounded-tl bg-[#2e1065] text-white text-[9px] font-bold">
+                                +{extraCount}
+                              </span>
+                            )}
+                          </div>
+                          <span>#{order.orderNumber}</span>
+                        </div>
                       </td>
                       <td className="py-3.5 px-4 text-slate-500 hidden sm:table-cell whitespace-nowrap">
                         {new Date(order.createdAt).toLocaleDateString("en-NG", {
@@ -377,163 +581,14 @@ export default function OrdersPage() {
                         {formatCurrency(order.totalAmount)}
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           )}
         </CardContent>
       </Card>
-
-      {/* Order Details & Fulfillment Modal */}
-      <Dialog
-        open={Boolean(selectedOrder)}
-        onOpenChange={(open) => !open && setSelectedOrder(null)}
-      >
-        <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto">
-          {selectedOrder && (
-            <>
-              <DialogHeader>
-                <div className="flex items-center gap-3">
-                  <DialogTitle className="font-mono">
-                    Order #{selectedOrder.orderNumber}
-                  </DialogTitle>
-                  {getStatusBadge(selectedOrder.orderStatus)}
-                </div>
-                <DialogDescription>
-                  Placed on{" "}
-                  {new Date(selectedOrder.createdAt).toLocaleDateString("en-NG", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-4 text-xs">
-                {/* Customer & Delivery */}
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-slate-600">
-                  <p className="font-bold uppercase tracking-wider text-slate-400 text-[10.5px]">
-                    Customer &amp; Delivery Info
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span className="font-semibold text-[#0f172a]">
-                      {selectedOrder.customer.fullName}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span className="font-mono">
-                      {selectedOrder.customer.phoneNumber}
-                    </span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-                    <span>
-                      {selectedOrder.customer.address},{" "}
-                      {selectedOrder.customer.city
-                        ? `${selectedOrder.customer.city}, `
-                        : ""}
-                      {selectedOrder.customer.state}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Items */}
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-                  <p className="font-bold uppercase tracking-wider text-slate-400 text-[10.5px]">
-                    Items Ordered
-                  </p>
-                  <div className="divide-y divide-slate-200/70">
-                    {selectedOrder.items.map((item) => (
-                      <div
-                        key={item.id}
-                        className="py-2 first:pt-0 last:pb-0 flex items-center justify-between gap-2"
-                      >
-                        <span className="text-[#0f172a]">
-                          <strong className="text-[#2e1065]">{item.quantity}x</strong>{" "}
-                          {item.productTitle}{" "}
-                          {item.variantName && `(${item.variantName})`}
-                        </span>
-                        <span className="font-mono font-semibold text-[#0f172a] shrink-0">
-                          {formatCurrency(item.subtotal)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="pt-2 border-t border-slate-200 flex items-center justify-between font-bold">
-                    <span className="text-slate-500">Total</span>
-                    <span className="font-display text-base text-[#2e1065]">
-                      {formatCurrency(selectedOrder.totalAmount)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex flex-col sm:flex-row gap-2 pt-1">
-                  <a
-                    href={getWhatsAppLink(selectedOrder)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1"
-                  >
-                    <Button type="button" variant="outline" className="w-full">
-                      <MessageCircle className="w-4 h-4 text-[#2e1065]" />
-                      <span>Chat on WhatsApp</span>
-                    </Button>
-                  </a>
-
-                  {selectedOrder.orderStatus === "PAID" && (
-                    <Button
-                      type="button"
-                      onClick={() =>
-                        handleStatusUpdate(selectedOrder.id, "SHIPPED")
-                      }
-                      disabled={actionLoadingId === selectedOrder.id}
-                      className="flex-1"
-                    >
-                      {actionLoadingId === selectedOrder.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Truck className="w-4 h-4" />
-                      )}
-                      <span>Mark as Shipped</span>
-                    </Button>
-                  )}
-
-                  {selectedOrder.orderStatus === "SHIPPED" && (
-                    <Button
-                      type="button"
-                      onClick={() =>
-                        handleStatusUpdate(selectedOrder.id, "DELIVERED")
-                      }
-                      disabled={actionLoadingId === selectedOrder.id}
-                      className="flex-1"
-                    >
-                      {actionLoadingId === selectedOrder.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <CheckCircle2 className="w-4 h-4" />
-                      )}
-                      <span>Mark Delivered</span>
-                    </Button>
-                  )}
-
-                  {selectedOrder.orderStatus === "DELIVERED" && (
-                    <Badge variant="success" className="justify-center py-2 px-3">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      Escrow Released
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

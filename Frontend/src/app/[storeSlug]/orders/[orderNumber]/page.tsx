@@ -37,11 +37,41 @@ async function getStore(storeSlug: string) {
 export async function generateMetadata({
   params,
 }: {
-  params: { orderNumber: string };
+  params: { storeSlug: string; orderNumber: string };
 }): Promise<Metadata> {
+  const order = await getOrder(params.orderNumber);
+  const firstImageRaw = order?.items?.[0]?.product?.images?.[0];
+  const base = API_URL.replace(/\/api\/?$/, "").replace(/\/+$/, "");
+  const ogImage = firstImageRaw
+    ? firstImageRaw.startsWith("http")
+      ? firstImageRaw
+      : `${base}${firstImageRaw.startsWith("/") ? "" : "/"}${firstImageRaw}`
+    : undefined;
+  const itemsText = order?.items
+    ?.map((i: any) => `${i.quantity}x ${i.productTitle}`)
+    .join(", ");
+  const title = order
+    ? `Order #${order.orderNumber} — ${order.store?.name || "Kredibly"}`
+    : `Order #${params.orderNumber} Receipt — Kredibly`;
+  const description = itemsText
+    ? `Items: ${itemsText}`
+    : "Your order receipt and delivery status on Kredibly.";
+
   return {
-    title: `Order #${params.orderNumber} Receipt — Kredibly`,
-    description: "Your order receipt and delivery status on Kredibly.",
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `https://${params.storeSlug}.kredibly.shop/orders/${params.orderNumber}`,
+      images: ogImage ? [{ url: ogImage }] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ogImage ? [ogImage] : [],
+    },
   };
 }
 

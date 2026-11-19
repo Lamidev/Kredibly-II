@@ -484,7 +484,15 @@ router.get(
           orders: {
             where: { paymentStatus: "PAID" },
             orderBy: { createdAt: "desc" },
-            include: { items: true },
+            include: {
+              items: {
+                include: {
+                  product: {
+                    select: { images: true, slug: true },
+                  },
+                },
+              },
+            },
           },
         },
       });
