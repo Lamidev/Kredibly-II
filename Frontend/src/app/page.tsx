@@ -392,13 +392,13 @@ export default function HomePage() {
 
             {/* Display Headline */}
             <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-[72px] font-display font-bold tracking-tight leading-[1.06] text-[#090D16]">
-              Turn your social media into your{" "}
-              <span className="text-[#3b0764]">online shop.</span>
+              Put your products online.{" "}
+              <span className="text-[#3b0764]">Start taking orders.</span>
             </h1>
 
             {/* Subhead */}
             <p className="text-base sm:text-lg md:text-xl text-[#525B6C] max-w-2xl mx-auto font-normal leading-relaxed">
-              Create a simple online store for your business in 2 minutes. Add your goods, share your link on WhatsApp, Instagram, or TikTok, and let customers place orders and pay you directly.
+              Create your own online store, add your products, and share your store link anywhere. Customers can browse, order and pay online.
             </p>
 
             {/* Interactive Domain Claimer with Real-Time Brand Availability Checking */}
@@ -435,7 +435,7 @@ export default function HomePage() {
                       : "bg-[#2e1065] hover:bg-[#3b0764]"
                   }`}
                 >
-                  <span>{checkResult.status === "available" ? "Claim Store Now" : "Claim Your Store"}</span>
+                  <span>{checkResult.status === "available" ? "Create your free store" : "Create your free store"}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </form>
@@ -487,226 +487,73 @@ export default function HomePage() {
               <div className="flex items-center justify-center gap-2 sm:gap-3 text-[10.5px] sm:text-[13px] text-[#64748B] font-medium pt-1 whitespace-nowrap">
                 <span className="flex items-center gap-1 shrink-0">
                   <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#3b0764] shrink-0" />
-                  <span>No coding</span>
+                  <span>Free to start</span>
                 </span>
                 <span className="w-1 h-1 rounded-full bg-[#CBD5E1] shrink-0" />
                 <span className="flex items-center gap-1 shrink-0">
                   <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#3b0764] shrink-0" />
-                  <span>No computer needed</span>
+                  <span>Scale as you grow</span>
                 </span>
                 <span className="w-1 h-1 rounded-full bg-[#CBD5E1] shrink-0" />
                 <span className="flex items-center gap-1 shrink-0">
                   <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#3b0764] shrink-0" />
-                  <span>Works on any phone</span>
+                  <span>No coding required</span>
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Live Storefront Preview Showcase — Unboxed & Realistic */}
-          <div className="mt-14 sm:mt-18 relative z-10">
-            <div className="bg-white border border-[#DADDD4] rounded-2xl shadow-[0_16px_40px_-12px_rgba(9,13,22,0.08)] overflow-hidden">
-              {/* Browser / App Window Chrome */}
-              <div className="bg-[#F3F4EF] border-b border-[#DADDD4] px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-[#E2E8F0] border border-[#CBD5E1]" />
-                  <span className="w-3 h-3 rounded-full bg-[#E2E8F0] border border-[#CBD5E1]" />
-                  <span className="w-3 h-3 rounded-full bg-[#E2E8F0] border border-[#CBD5E1]" />
+          {/* Seller Platform Value Strip (Replaces Storefront Mockup for Instant 5-Second Clarity) */}
+          <div className="mt-12 sm:mt-16 relative z-10 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            <div className="bg-white border border-[#DADDD4] rounded-2xl p-6 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-[#F7F4FC] border border-[#2e1065]/15 text-[#2e1065] flex items-center justify-center">
+                  <Store className="w-5 h-5" />
                 </div>
-
-                <div className="flex-1 max-w-md mx-auto hidden sm:flex items-center justify-center gap-2 px-3 py-1 bg-white border border-[#DADDD4] rounded-md text-xs font-mono text-[#525B6C]">
-                  <Lock className="w-3 h-3 text-[#3b0764]" />
-                  <span className="text-[#090D16] font-semibold">urbanluxe.kredibly.shop</span>
-                  <span className="text-[10px] text-[#3b0764] font-bold ml-1">• LIVE STORE</span>
-                </div>
-
-                <div className="flex items-center gap-2 text-[11px] font-mono font-bold text-[#3b0764]">
-                  <span className="inline-block w-2 h-2 rounded-full bg-[#3b0764] animate-pulse" />
-                  <span>ACCEPTING ORDERS</span>
-                </div>
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#3b0764]">
+                  01 // YOUR STORE
+                </span>
               </div>
+              <h3 className="font-display text-lg font-bold text-[#090D16]">
+                One Link for All Your Products
+              </h3>
+              <p className="text-xs sm:text-sm text-[#525B6C] leading-relaxed">
+                Get <code className="font-mono text-[#2e1065] font-semibold">yourbrand.kredibly.shop</code> with product pages, sizes, colors, and live stock ready to share on WhatsApp, IG, and TikTok.
+              </p>
+            </div>
 
-              {/* Realistic Storefront Canvas (Clean, Unboxed Luxury Presentation) */}
-              <div className="p-5 sm:p-8 bg-[#FAF9F5] space-y-6">
-                {/* Store Header Row */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E7E9E2]">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-[#2e1065] text-white flex items-center justify-center font-display font-extrabold text-sm shrink-0 shadow-xs">
-                      UL
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-display font-extrabold text-lg sm:text-xl text-[#090D16]">
-                          Urban Luxe Boutique
-                        </h4>
-                      </div>
-                      <p className="text-xs text-[#525B6C] mt-0.5">
-                        Designer heels, luxury handbags, watches &amp; signature fragrances • Lagos, Nigeria
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 sm:self-center">
-                    <span className="px-3 py-1 rounded-[6px] bg-white border border-[#DADDD4] text-xs font-mono font-bold text-[#3b0764] shadow-2xs">
-                      urbanluxe.kredibly.shop
-                    </span>
-                  </div>
+            <div className="bg-white border border-[#DADDD4] rounded-2xl p-6 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-[#F7F4FC] border border-[#2e1065]/15 text-[#2e1065] flex items-center justify-center">
+                  <CreditCard className="w-5 h-5" />
                 </div>
-
-                {/* Category Navigation Bar */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-medium scrollbar-none">
-                  <span className="px-3.5 py-1.5 rounded-[6px] bg-[#2e1065] text-white shrink-0 font-semibold shadow-2xs">
-                    All Items (18)
-                  </span>
-                  <span className="px-3.5 py-1.5 rounded-[6px] bg-white text-[#525B6C] shrink-0 border border-[#DADDD4] hover:text-[#090D16] transition-colors cursor-pointer">
-                    Heels &amp; Shoes
-                  </span>
-                  <span className="px-3.5 py-1.5 rounded-[6px] bg-white text-[#525B6C] shrink-0 border border-[#DADDD4] hover:text-[#090D16] transition-colors cursor-pointer">
-                    Designer Handbags
-                  </span>
-                  <span className="px-3.5 py-1.5 rounded-[6px] bg-white text-[#525B6C] shrink-0 border border-[#DADDD4] hover:text-[#090D16] transition-colors cursor-pointer">
-                    Watches &amp; Jewelry
-                  </span>
-                  <span className="px-3.5 py-1.5 rounded-[6px] bg-white text-[#525B6C] shrink-0 border border-[#DADDD4] hover:text-[#090D16] transition-colors cursor-pointer">
-                    Signature Perfumes
-                  </span>
-                </div>
-
-                {/* 4 Realistic Product Cards in Responsive Grid */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 pt-1">
-                  {/* Product 1 */}
-                  <div className="group flex flex-col justify-between space-y-3">
-                    <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-white border border-[#E7E9E2] shadow-2xs">
-                      <img
-                        src="/demo/heels.jpg"
-                        alt="Milan Stiletto Pointed Heels"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-xs bg-black/75 backdrop-blur-xs text-white font-mono text-[9px] font-bold">
-                        IN STOCK: 5
-                      </span>
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-[9px] font-mono uppercase tracking-wider text-[#717A8A] block">
-                        Heels &amp; Shoes
-                      </span>
-                      <h5 className="font-display font-bold text-xs sm:text-sm text-[#090D16] truncate">
-                        Milan Stiletto Pointed Heels
-                      </h5>
-                      <p className="text-[11px] text-[#525B6C] truncate">
-                        Black &amp; Gold • Sizes 37 - 42
-                      </p>
-                      <div className="pt-2 flex items-center justify-between">
-                        <span className="font-mono text-sm sm:text-base font-extrabold text-[#090D16]">
-                          ₦38,500
-                        </span>
-                        <span className="px-3 py-1 bg-[#2e1065] group-hover:bg-[#3b0764] text-white text-[11px] font-bold rounded-[6px] transition-colors">
-                          Buy Now
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Product 2 */}
-                  <div className="group flex flex-col justify-between space-y-3">
-                    <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-white border border-[#E7E9E2] shadow-2xs">
-                      <img
-                        src="/demo/bag.jpg"
-                        alt="Quilted Leather Crossbody Bag"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-xs bg-black/75 backdrop-blur-xs text-white font-mono text-[9px] font-bold">
-                        IN STOCK: 3
-                      </span>
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-[9px] font-mono uppercase tracking-wider text-[#717A8A] block">
-                        Handbags
-                      </span>
-                      <h5 className="font-display font-bold text-xs sm:text-sm text-[#090D16] truncate">
-                        Quilted Leather Crossbody Bag
-                      </h5>
-                      <p className="text-[11px] text-[#525B6C] truncate">
-                        Genuine Leather • Burgundy
-                      </p>
-                      <div className="pt-2 flex items-center justify-between">
-                        <span className="font-mono text-sm sm:text-base font-extrabold text-[#090D16]">
-                          ₦45,000
-                        </span>
-                        <span className="px-3 py-1 bg-[#2e1065] group-hover:bg-[#3b0764] text-white text-[11px] font-bold rounded-[6px] transition-colors">
-                          Buy Now
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Product 3 */}
-                  <div className="group flex flex-col justify-between space-y-3">
-                    <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-white border border-[#E7E9E2] shadow-2xs">
-                      <img
-                        src="/demo/watch.jpg"
-                        alt="Minimalist Chrono Wristwatch"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-xs bg-black/75 backdrop-blur-xs text-white font-mono text-[9px] font-bold">
-                        IN STOCK: 7
-                      </span>
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-[9px] font-mono uppercase tracking-wider text-[#717A8A] block">
-                        Watches &amp; Jewelry
-                      </span>
-                      <h5 className="font-display font-bold text-xs sm:text-sm text-[#090D16] truncate">
-                        Minimalist Chrono Wristwatch
-                      </h5>
-                      <p className="text-[11px] text-[#525B6C] truncate">
-                        Matte Black Dial • Steel Band
-                      </p>
-                      <div className="pt-2 flex items-center justify-between">
-                        <span className="font-mono text-sm sm:text-base font-extrabold text-[#090D16]">
-                          ₦62,000
-                        </span>
-                        <span className="px-3 py-1 bg-[#2e1065] group-hover:bg-[#3b0764] text-white text-[11px] font-bold rounded-[6px] transition-colors">
-                          Buy Now
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Product 4 */}
-                  <div className="group flex flex-col justify-between space-y-3">
-                    <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-white border border-[#E7E9E2] shadow-2xs">
-                      <img
-                        src="/demo/perfume.jpg"
-                        alt="Maison Oud Signature EDP"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-xs bg-black/75 backdrop-blur-xs text-white font-mono text-[9px] font-bold">
-                        IN STOCK: 4
-                      </span>
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-[9px] font-mono uppercase tracking-wider text-[#717A8A] block">
-                        Fragrances
-                      </span>
-                      <h5 className="font-display font-bold text-xs sm:text-sm text-[#090D16] truncate">
-                        Maison Oud Signature EDP
-                      </h5>
-                      <p className="text-[11px] text-[#525B6C] truncate">
-                        Long-Lasting 100ml Eau De Parfum
-                      </p>
-                      <div className="pt-2 flex items-center justify-between">
-                        <span className="font-mono text-sm sm:text-base font-extrabold text-[#090D16]">
-                          ₦28,000
-                        </span>
-                        <span className="px-3 py-1 bg-[#2e1065] group-hover:bg-[#3b0764] text-white text-[11px] font-bold rounded-[6px] transition-colors">
-                          Buy Now
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#3b0764]">
+                  02 // CHECKOUT
+                </span>
               </div>
+              <h3 className="font-display text-lg font-bold text-[#090D16]">
+                Customers Order &amp; Pay Online
+              </h3>
+              <p className="text-xs sm:text-sm text-[#525B6C] leading-relaxed">
+                Shoppers add to cart, pick their state delivery fee, and pay by instant bank transfer—no DM back-and-forth or fake transfer screenshots.
+              </p>
+            </div>
+
+            <div className="bg-white border border-[#DADDD4] rounded-2xl p-6 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-[#F7F4FC] border border-[#2e1065]/15 text-[#2e1065] flex items-center justify-center">
+                  <Wallet className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#3b0764]">
+                  03 // PAYOUTS
+                </span>
+              </div>
+              <h3 className="font-display text-lg font-bold text-[#090D16]">
+                Organized Orders &amp; Wallet
+              </h3>
+              <p className="text-xs sm:text-sm text-[#525B6C] leading-relaxed">
+                Manage every paid order from one dashboard, notify buyers automatically on dispatch, and withdraw anytime or via 8:00 AM auto-settlement.
+              </p>
             </div>
           </div>
         </section>
@@ -726,10 +573,10 @@ export default function HomePage() {
                 </span>
               </div>
               <h2 className="text-3xl sm:text-5xl md:text-6xl font-display font-bold tracking-tight text-[#090D16] leading-[1.06]">
-                Everything you need to sell online. Simple and stress-free.
+                A full online store of your own. Without the developer price tag.
               </h2>
               <p className="text-sm sm:text-base text-[#525B6C] font-normal leading-relaxed">
-                Whether you sell clothes, shoes, bags, perfumes, phones, wigs, or cakes — Kredibly makes selling online as easy as chatting on your phone.
+                Whether you sell fashion, beauty, gadgets, food, or handmade goods — Kredibly gives you a complete e-commerce website that&apos;s as easy to run as chatting on your phone.
               </p>
             </div>
 
@@ -780,7 +627,7 @@ export default function HomePage() {
                       No More Fake Bank Transfer Screenshots
                     </h3>
                     <p className="mt-2.5 text-xs sm:text-sm text-[#525B6C] leading-relaxed">
-                      Most customers prefer direct bank transfers. With Kredibly, customers get an automated transfer account or card option, and our system confirms the real payment in seconds. You will never lose goods to fake transfer alerts again.
+                      Most customers prefer direct bank transfers. With Kredibly, customers get a dedicated transfer account per order, and our system confirms the real payment in seconds. You will never lose goods to fake transfer alerts again.
                     </p>
                   </div>
                 </div>
@@ -1118,7 +965,7 @@ export default function HomePage() {
                   </li>
                   <li className="flex items-center gap-2 text-[#525B6C]">
                     <CheckCircle2 className="w-4 h-4 text-slate-400 shrink-0" />
-                    <span>2.5% transaction fee on sales</span>
+                    <span>2.5% fee (includes payment processing)</span>
                   </li>
                 </ul>
               </div>
@@ -1161,7 +1008,11 @@ export default function HomePage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span><strong>0% Platform Fee</strong> (Keep 100% price)</span>
+                    <span><strong>0% Kredibly Commission</strong></span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
+                    <span>Choose who pays Nomba DVA fee</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
@@ -1218,11 +1069,11 @@ export default function HomePage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span><strong>0% Platform Fee</strong> (Keep 100% price)</span>
+                    <span><strong>0% Kredibly Commission</strong></span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span>Connect Custom Domain</span>
+                    <span>Choose who pays Nomba DVA fee</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
@@ -1230,11 +1081,11 @@ export default function HomePage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span>3 Staff Accounts (Role Management)</span>
+                    <span>8:00 AM Auto T+1 &amp; Instant Payouts</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span>Export Customer Phonebook (CSV)</span>
+                    <span>Customer Directory &amp; Order History</span>
                   </li>
                 </ul>
               </div>
@@ -1281,15 +1132,15 @@ export default function HomePage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span>Automated Daily Bank Sweep</span>
+                    <span><strong>0% Kredibly Commission</strong></span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span>Meta / TikTok Tracking Pixels</span>
+                    <span>8:00 AM Auto T+1 &amp; Instant Payouts</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span>10 Staff Accounts + Priority Call Support</span>
+                    <span>Priority Support &amp; Custom Onboarding</span>
                   </li>
                 </ul>
               </div>
