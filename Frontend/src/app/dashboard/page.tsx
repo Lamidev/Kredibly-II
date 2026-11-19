@@ -487,79 +487,134 @@ export default function DashboardPage() {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="border-b border-slate-100 text-slate-500 bg-slate-50/70">
-                    <th className="py-3 px-4 font-semibold">Order</th>
-                    <th className="py-3 px-4 font-semibold">Customer</th>
-                    <th className="py-3 px-4 font-semibold hidden sm:table-cell">
-                      Items
-                    </th>
-                    <th className="py-3 px-4 font-semibold">Amount</th>
-                    <th className="py-3 px-4 font-semibold">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {orders.slice(0, 8).map((order) => {
-                    const firstThumb = order.items?.[0]?.product?.images?.[0];
-                    const extraCount = (order.items?.length || 0) - 1;
-                    return (
-                    <tr
+            <>
+              {/* Mobile card list */}
+              <div className="md:hidden divide-y divide-slate-100">
+                {orders.slice(0, 8).map((order) => {
+                  const firstThumb = order.items?.[0]?.product?.images?.[0];
+                  const extraCount = (order.items?.length || 0) - 1;
+                  return (
+                    <button
                       key={order.id}
+                      type="button"
                       onClick={() =>
                         router.push(`/dashboard/orders?order=${order.orderNumber}`)
                       }
-                      className="hover:bg-slate-50/90 transition cursor-pointer group"
+                      className="w-full text-left p-4 hover:bg-slate-50/90 active:bg-slate-100/80 transition flex items-center gap-3"
                     >
-                      <td className="py-3.5 px-4 font-mono font-bold text-[#0f172a] whitespace-nowrap">
-                        <div className="flex items-center gap-2.5">
-                          <div className="relative h-8 w-8 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
-                            {firstThumb ? (
-                              <img
-                                src={getImageUrl(firstThumb)}
-                                alt={order.orderNumber}
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <Package className="w-3.5 h-3.5 text-slate-400" />
-                            )}
-                            {extraCount > 0 && (
-                              <span className="absolute bottom-0 right-0 px-1 rounded-tl bg-[#2e1065] text-white text-[8.5px] font-bold">
-                                +{extraCount}
-                              </span>
-                            )}
-                          </div>
-                          <span className="group-hover:text-[#2e1065] group-hover:underline">
+                      <div className="relative h-10 w-10 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                        {firstThumb ? (
+                          <img
+                            src={getImageUrl(firstThumb)}
+                            alt={order.orderNumber}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <Package className="w-4 h-4 text-slate-400" />
+                        )}
+                        {extraCount > 0 && (
+                          <span className="absolute bottom-0 right-0 px-1 rounded-tl bg-[#2e1065] text-white text-[8.5px] font-bold">
+                            +{extraCount}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono text-xs font-bold text-[#0f172a] truncate">
                             #{order.orderNumber}
                           </span>
+                          <span className="font-mono text-xs font-bold text-[#2e1065] shrink-0">
+                            {formatCurrency(order.totalAmount)}
+                          </span>
                         </div>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <p className="font-semibold text-[#0f172a]">
-                          {order.customer.fullName}
-                        </p>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-600 hidden sm:table-cell max-w-[220px] truncate">
-                        {order.items
-                          .map((i) => `${i.quantity}x ${i.productTitle}`)
-                          .join(", ")}
-                      </td>
-                      <td className="py-3.5 px-4 font-mono font-bold text-[#2e1065] whitespace-nowrap">
-                        {formatCurrency(order.totalAmount)}
-                      </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="flex items-center justify-between gap-2">
-                          {getStatusBadge(order.orderStatus)}
-                          <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#2e1065] shrink-0" />
+                        <div className="flex items-center justify-between gap-2 mt-1">
+                          <p className="text-xs font-medium text-slate-600 truncate">
+                            {order.customer.fullName}
+                          </p>
+                          <div className="shrink-0">{getStatusBadge(order.orderStatus)}</div>
                         </div>
-                      </td>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Desktop table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-slate-500 bg-slate-50/70">
+                      <th className="py-3 px-4 font-semibold">Order</th>
+                      <th className="py-3 px-4 font-semibold">Customer</th>
+                      <th className="py-3 px-4 font-semibold hidden sm:table-cell">
+                        Items
+                      </th>
+                      <th className="py-3 px-4 font-semibold">Amount</th>
+                      <th className="py-3 px-4 font-semibold">Status</th>
                     </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {orders.slice(0, 8).map((order) => {
+                      const firstThumb = order.items?.[0]?.product?.images?.[0];
+                      const extraCount = (order.items?.length || 0) - 1;
+                      return (
+                      <tr
+                        key={order.id}
+                        onClick={() =>
+                          router.push(`/dashboard/orders?order=${order.orderNumber}`)
+                        }
+                        className="hover:bg-slate-50/90 transition cursor-pointer group"
+                      >
+                        <td className="py-3.5 px-4 font-mono font-bold text-[#0f172a] whitespace-nowrap">
+                          <div className="flex items-center gap-2.5">
+                            <div className="relative h-8 w-8 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                              {firstThumb ? (
+                                <img
+                                  src={getImageUrl(firstThumb)}
+                                  alt={order.orderNumber}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <Package className="w-3.5 h-3.5 text-slate-400" />
+                              )}
+                              {extraCount > 0 && (
+                                <span className="absolute bottom-0 right-0 px-1 rounded-tl bg-[#2e1065] text-white text-[8.5px] font-bold">
+                                  +{extraCount}
+                                </span>
+                              )}
+                            </div>
+                            <span className="group-hover:text-[#2e1065] group-hover:underline">
+                              #{order.orderNumber}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <p className="font-semibold text-[#0f172a]">
+                            {order.customer.fullName}
+                          </p>
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-600 hidden sm:table-cell max-w-[220px] truncate">
+                          {order.items
+                            .map((i) => `${i.quantity}x ${i.productTitle}`)
+                            .join(", ")}
+                        </td>
+                        <td className="py-3.5 px-4 font-mono font-bold text-[#2e1065] whitespace-nowrap">
+                          {formatCurrency(order.totalAmount)}
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="flex items-center justify-between gap-2">
+                            {getStatusBadge(order.orderStatus)}
+                            <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#2e1065] shrink-0" />
+                          </div>
+                        </td>
+                      </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

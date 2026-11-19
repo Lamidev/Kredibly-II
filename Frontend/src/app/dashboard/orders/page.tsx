@@ -695,79 +695,142 @@ export default function OrdersPage() {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto border border-slate-100 rounded-xl">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wider text-slate-500 bg-slate-50/70">
-                    <th className="py-3 px-4 font-semibold">Order ID</th>
-                    <th className="py-3 px-4 font-semibold hidden sm:table-cell">
-                      Date
-                    </th>
-                    <th className="py-3 px-4 font-semibold">Customer</th>
-                    <th className="py-3 px-4 font-semibold">Status</th>
-                    <th className="py-3 px-4 font-semibold">Total</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredOrders
-                    .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
-                    .map((order) => {
+            <>
+              {/* Mobile card list */}
+              <div className="md:hidden divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden">
+                {filteredOrders
+                  .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+                  .map((order) => {
                     const firstThumb = order.items?.[0]?.product?.images?.[0];
                     const extraCount = (order.items?.length || 0) - 1;
                     return (
-                    <tr
-                      key={order.id}
-                      onClick={() => setSelectedOrder(order)}
-                      className="hover:bg-slate-50/80 transition cursor-pointer"
-                    >
-                      <td className="py-3.5 px-4 font-mono font-bold text-[#0f172a] whitespace-nowrap">
-                        <div className="flex items-center gap-2.5">
-                          <div className="relative h-9 w-9 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
-                            {firstThumb ? (
-                              <img
-                                src={getImageUrl(firstThumb)}
-                                alt={order.orderNumber}
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <Package className="w-4 h-4 text-slate-400" />
-                            )}
-                            {extraCount > 0 && (
-                              <span className="absolute bottom-0 right-0 px-1 rounded-tl bg-[#2e1065] text-white text-[9px] font-bold">
-                                +{extraCount}
-                              </span>
-                            )}
-                          </div>
-                          <span>#{order.orderNumber}</span>
+                      <button
+                        key={order.id}
+                        type="button"
+                        onClick={() => setSelectedOrder(order)}
+                        className="w-full text-left p-3.5 hover:bg-slate-50/80 active:bg-slate-100/80 transition flex items-start gap-3"
+                      >
+                        <div className="relative h-10 w-10 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center mt-0.5">
+                          {firstThumb ? (
+                            <img
+                              src={getImageUrl(firstThumb)}
+                              alt={order.orderNumber}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <Package className="w-4 h-4 text-slate-400" />
+                          )}
+                          {extraCount > 0 && (
+                            <span className="absolute bottom-0 right-0 px-1 rounded-tl bg-[#2e1065] text-white text-[9px] font-bold">
+                              +{extraCount}
+                            </span>
+                          )}
                         </div>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-500 hidden sm:table-cell whitespace-nowrap">
-                        {new Date(order.createdAt).toLocaleDateString("en-NG", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <p className="font-semibold text-[#0f172a]">
-                          {order.customer.fullName}
-                        </p>
-                        <p className="text-[11px] text-slate-500 font-mono">
-                          {order.customer.phoneNumber}
-                        </p>
-                      </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        {getStatusBadge(order.orderStatus)}
-                      </td>
-                      <td className="py-3.5 px-4 font-mono font-bold text-[#0f172a] whitespace-nowrap">
-                        {formatCurrency(order.totalAmount)}
-                      </td>
-                    </tr>
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-mono text-xs font-bold text-[#0f172a] truncate">
+                              #{order.orderNumber}
+                            </span>
+                            <span className="font-mono text-xs font-bold text-[#0f172a] shrink-0">
+                              {formatCurrency(order.totalAmount)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-xs font-semibold text-slate-700 truncate">
+                              {order.customer.fullName}
+                            </p>
+                            <div className="shrink-0">{getStatusBadge(order.orderStatus)}</div>
+                          </div>
+                          <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500">
+                            <span className="font-mono truncate">{order.customer.phoneNumber}</span>
+                            <span className="shrink-0">
+                              {new Date(order.createdAt).toLocaleDateString("en-NG", {
+                                day: "numeric",
+                                month: "short",
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      </button>
                     );
                   })}
-                </tbody>
-              </table>
-            </div>
+              </div>
+
+              {/* Desktop table */}
+              <div className="hidden md:block overflow-x-auto border border-slate-100 rounded-xl">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wider text-slate-500 bg-slate-50/70">
+                      <th className="py-3 px-4 font-semibold">Order ID</th>
+                      <th className="py-3 px-4 font-semibold hidden sm:table-cell">
+                        Date
+                      </th>
+                      <th className="py-3 px-4 font-semibold">Customer</th>
+                      <th className="py-3 px-4 font-semibold">Status</th>
+                      <th className="py-3 px-4 font-semibold">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredOrders
+                      .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+                      .map((order) => {
+                      const firstThumb = order.items?.[0]?.product?.images?.[0];
+                      const extraCount = (order.items?.length || 0) - 1;
+                      return (
+                      <tr
+                        key={order.id}
+                        onClick={() => setSelectedOrder(order)}
+                        className="hover:bg-slate-50/80 transition cursor-pointer"
+                      >
+                        <td className="py-3.5 px-4 font-mono font-bold text-[#0f172a] whitespace-nowrap">
+                          <div className="flex items-center gap-2.5">
+                            <div className="relative h-9 w-9 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                              {firstThumb ? (
+                                <img
+                                  src={getImageUrl(firstThumb)}
+                                  alt={order.orderNumber}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <Package className="w-4 h-4 text-slate-400" />
+                              )}
+                              {extraCount > 0 && (
+                                <span className="absolute bottom-0 right-0 px-1 rounded-tl bg-[#2e1065] text-white text-[9px] font-bold">
+                                  +{extraCount}
+                                </span>
+                              )}
+                            </div>
+                            <span>#{order.orderNumber}</span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-500 hidden sm:table-cell whitespace-nowrap">
+                          {new Date(order.createdAt).toLocaleDateString("en-NG", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <p className="font-semibold text-[#0f172a]">
+                            {order.customer.fullName}
+                          </p>
+                          <p className="text-[11px] text-slate-500 font-mono">
+                            {order.customer.phoneNumber}
+                          </p>
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          {getStatusBadge(order.orderStatus)}
+                        </td>
+                        <td className="py-3.5 px-4 font-mono font-bold text-[#0f172a] whitespace-nowrap">
+                          {formatCurrency(order.totalAmount)}
+                        </td>
+                      </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
           <Pagination
             currentPage={currentPage}
