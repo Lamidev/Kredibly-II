@@ -5,6 +5,7 @@ import { AppError } from "../middleware/errorHandler";
 import { NombaService } from "./nomba.service";
 import { EmailService } from "./email.service";
 import { DojahService } from "./dojah.service";
+import { PushService } from "./push.service";
 
 export class WalletService {
   /**
@@ -531,6 +532,12 @@ export class WalletService {
         data: { status: "COMPLETED" },
       });
 
+      PushService.sendStorePush(storeId, {
+        title: "Payout Sent to Bank",
+        body: `₦${netPayout.toLocaleString("en-NG")} sent to ${store.bankName} (${store.accountNumber})`,
+        url: "/dashboard/wallet",
+      }).catch((err) => console.error("Withdrawal push failed:", err));
+
       return {
         success: true,
         message: `Withdrawal of ₦${netPayout.toLocaleString()} (₦${TRANSFER_FEE} transfer fee) sent to ${store.bankName} (${store.accountNumber})`,
@@ -697,6 +704,12 @@ export class WalletService {
               accountNumber: store.accountNumber,
               reference,
             }).catch((err) => console.error("Auto T+1 email failed:", err));
+
+            PushService.sendStorePush(store.id, {
+              title: "Daily T+1 Settlement Sent",
+              body: `₦${netPayout.toLocaleString("en-NG")} settled to ${store.bankName} (${store.accountNumber})`,
+              url: "/dashboard/wallet",
+            }).catch((err) => console.error("Auto T+1 push failed:", err));
           } catch (transferErr: any) {
             console.error(`Auto T+1 transfer failed for ${store.slug}:`, transferErr.message);
             await prisma.$transaction(async (tx) => {
