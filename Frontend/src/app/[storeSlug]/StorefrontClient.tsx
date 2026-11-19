@@ -8,6 +8,7 @@ import { StorefrontFooter } from "@/components/storefront/StorefrontFooter";
 import { FilterDrawer, FilterState } from "@/components/storefront/FilterDrawer";
 import { CartDrawer } from "@/components/storefront/CartDrawer";
 import { FloatingCartBar } from "@/components/storefront/FloatingCartBar";
+import { FloatingWhatsApp } from "@/components/storefront/FloatingWhatsApp";
 import { CheckoutDrawer } from "@/components/storefront/CheckoutDrawer";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { getImageUrl } from "@/lib/utils";
@@ -535,6 +536,7 @@ export function StorefrontClient({ store }: { store: StoreData }) {
         onReset={resetFilters}
       />
 
+      <FloatingWhatsApp store={store} />
       <FloatingCartBar />
       <CartDrawer onCheckoutClick={() => setCheckoutOpen(true)} />
       <CheckoutDrawer

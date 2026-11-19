@@ -8,6 +8,7 @@ import { FilterDrawer, FilterState } from "@/components/storefront/FilterDrawer"
 import { CartDrawer } from "@/components/storefront/CartDrawer";
 import { CheckoutDrawer } from "@/components/storefront/CheckoutDrawer";
 import { FloatingCartBar } from "@/components/storefront/FloatingCartBar";
+import { FloatingWhatsApp } from "@/components/storefront/FloatingWhatsApp";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import {
   StoreData,
@@ -388,6 +389,7 @@ export function AllProductsClient({
         onReset={resetFilters}
       />
 
+      <FloatingWhatsApp store={store} />
       <FloatingCartBar />
       <CartDrawer onCheckoutClick={() => setCheckoutOpen(true)} />
       <CheckoutDrawer

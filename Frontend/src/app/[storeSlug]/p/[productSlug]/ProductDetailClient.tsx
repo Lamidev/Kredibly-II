@@ -7,6 +7,7 @@ import { StorefrontHeader } from "@/components/storefront/StorefrontHeader";
 import { StorefrontFooter } from "@/components/storefront/StorefrontFooter";
 import { CartDrawer } from "@/components/storefront/CartDrawer";
 import { CheckoutDrawer } from "@/components/storefront/CheckoutDrawer";
+import { FloatingWhatsApp } from "@/components/storefront/FloatingWhatsApp";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { formatCurrency, getImageUrl } from "@/lib/utils";
 import {
@@ -447,6 +448,7 @@ export function ProductDetailClient({
         </div>
       </div>
 
+      <FloatingWhatsApp store={store} />
       <CartDrawer onCheckoutClick={() => setCheckoutOpen(true)} />
       <CheckoutDrawer
         storeSlug={store.slug}

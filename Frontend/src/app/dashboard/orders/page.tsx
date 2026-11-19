@@ -17,6 +17,7 @@ import {
   MessageCircle,
   MapPin,
   Phone,
+  Mail,
   User,
   Loader2,
   RefreshCw,
@@ -24,6 +25,9 @@ import {
   TrendingUp,
   ShoppingBag,
   ArrowLeft,
+  RotateCcw,
+  AlertCircle,
+  ChevronRight,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -53,6 +57,7 @@ interface Order {
   customer: {
     fullName: string;
     phoneNumber: string;
+    email?: string | null;
     address: string;
     state: string;
     city?: string | null;
@@ -195,13 +200,19 @@ export default function OrdersPage() {
   };
 
   if (selectedOrder) {
-    const stages = [
+    const flow = [
       { id: "PAID", label: "Confirmed" },
-      { id: "PROCESSING", label: "Processing" },
-      { id: "SHIPPED", label: "Shipped" },
+      { id: "SHIPPED", label: "Dispatched" },
       { id: "DELIVERED", label: "Delivered" },
-      { id: "CANCELLED", label: "Cancelled" },
     ] as const;
+
+    const currentIdx = Math.max(
+      0,
+      flow.findIndex((s) => s.id === selectedOrder.orderStatus)
+    );
+    const nextStage =
+      currentIdx < flow.length - 1 ? flow[currentIdx + 1] : null;
+    const prevStage = currentIdx > 0 ? flow[currentIdx - 1] : null;
 
     return (
       <div className="space-y-6 max-w-4xl">
@@ -216,7 +227,7 @@ export default function OrdersPage() {
 
         {/* Order Top Header Card */}
         <Card>
-          <CardContent className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <CardContent className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="font-mono text-xl sm:text-2xl font-extrabold text-[#0f172a]">
@@ -235,41 +246,71 @@ export default function OrdersPage() {
                 })}
               </p>
             </div>
-
-            <a
-              href={getWhatsAppLink(selectedOrder)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto">
-                <MessageCircle className="w-4 h-4 text-[#2e1065]" />
-                <span>Chat Customer on WhatsApp</span>
-              </Button>
-            </a>
           </CardContent>
         </Card>
 
-        {/* Visual Fulfillment Stepper */}
+        {/* Fulfillment Status Timeline (Matching Reference UI, No Logistics) */}
         <Card>
-          <CardContent className="p-5 sm:p-6 space-y-5">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
+          <CardContent className="p-5 sm:p-6 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Fulfillment Progress
-                </p>
+                <h2 className="font-display text-base font-bold text-[#0f172a]">
+                  Fulfillment Status
+                </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Tap any stage below to update the buyer&apos;s live tracking status.
+                  Update this order&apos;s delivery progress and notify the buyer.
                 </p>
               </div>
-              {actionLoadingId === selectedOrder.id && (
-                <Loader2 className="w-4 h-4 animate-spin text-[#2e1065]" />
+
+              {selectedOrder.orderStatus !== "CANCELLED" && (
+                <div className="flex items-center gap-2 shrink-0">
+                  {selectedOrder.orderStatus !== "DELIVERED" && (
+                    <button
+                      type="button"
+                      disabled={actionLoadingId === selectedOrder.id}
+                      onClick={() => {
+                        if (
+                          confirm(
+                            "Cancel this order? This restores item stock and notifies the buyer by email. Handle any refund directly with the buyer."
+                          )
+                        ) {
+                          handleStatusUpdate(selectedOrder.id, "CANCELLED");
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-full border border-red-200 bg-red-50/60 hover:bg-red-50 text-red-600 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition"
+                    >
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      <span>Cancel Order</span>
+                    </button>
+                  )}
+
+                  {prevStage && (
+                    <button
+                      type="button"
+                      disabled={actionLoadingId === selectedOrder.id}
+                      onClick={() => {
+                        if (
+                          confirm(
+                            `Reset status back to "${prevStage.label}"?`
+                          )
+                        ) {
+                          handleStatusUpdate(selectedOrder.id, prevStage.id);
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Reset Status</span>
+                    </button>
+                  )}
+                </div>
               )}
             </div>
 
             {selectedOrder.orderStatus === "CANCELLED" ? (
               <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <p className="text-xs font-semibold text-red-700">
-                  This order is marked as Cancelled.
+                  This order has been cancelled and item stock was restored.
                 </p>
                 <Button
                   type="button"
@@ -282,147 +323,100 @@ export default function OrdersPage() {
                 </Button>
               </div>
             ) : (
-              (() => {
-                const flow = [
-                  { id: "PAID", label: "Confirmed", sub: "Payment received" },
-                  { id: "PROCESSING", label: "Packing", sub: "Preparing order" },
-                  { id: "SHIPPED", label: "Dispatched", sub: "On the way" },
-                  { id: "DELIVERED", label: "Delivered", sub: "Completed" },
-                ] as const;
-                const currentIdx = Math.max(
-                  0,
-                  flow.findIndex((s) => s.id === selectedOrder.orderStatus)
-                );
-                const nextStage =
-                  currentIdx < flow.length - 1 ? flow[currentIdx + 1] : null;
+              <>
+                {/* 3-Step Connected Circular Timeline */}
+                <div className="relative flex items-start justify-between pt-1 pb-2 px-2 sm:px-6">
+                  {/* Connecting Background Line */}
+                  <div className="absolute top-[19px] left-10 right-10 sm:left-16 sm:right-16 h-[2px] bg-slate-200 z-0" />
+                  {/* Active Progress Fill */}
+                  <div
+                    className="absolute top-[19px] left-10 sm:left-16 h-[2px] bg-[#2e1065] z-0 transition-all duration-300"
+                    style={{
+                      width:
+                        currentIdx === 0
+                          ? "0%"
+                          : currentIdx === 1
+                          ? "42%"
+                          : "calc(100% - 80px)",
+                    }}
+                  />
 
-                return (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                      {flow.map((st, idx) => {
-                        const isDone = idx < currentIdx;
-                        const isCurrent = idx === currentIdx;
-                        return (
-                          <button
-                            key={st.id}
-                            type="button"
-                            disabled={
-                              actionLoadingId === selectedOrder.id || isCurrent
-                            }
-                            onClick={() =>
-                              handleStatusUpdate(selectedOrder.id, st.id)
-                            }
-                            className={`text-left p-3 rounded-xl border transition cursor-pointer disabled:cursor-default ${
-                              isCurrent
-                                ? "bg-[#2e1065] border-[#2e1065] text-white shadow-sm"
-                                : isDone
-                                ? "bg-emerald-50/70 border-emerald-200 text-emerald-900 hover:border-emerald-400"
-                                : "bg-slate-50 border-slate-200 text-slate-600 hover:border-[#2e1065] hover:bg-white"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between gap-1 mb-1">
-                              <span
-                                className={`text-[10px] font-mono font-bold uppercase ${
-                                  isCurrent
-                                    ? "text-purple-200"
-                                    : isDone
-                                    ? "text-emerald-700"
-                                    : "text-slate-400"
-                                }`}
-                              >
-                                Step {idx + 1}
-                              </span>
-                              {isDone && (
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                              )}
-                            </div>
-                            <p className="text-xs font-bold">{st.label}</p>
-                            <p
-                              className={`text-[10.5px] mt-0.5 ${
-                                isCurrent
-                                  ? "text-purple-100"
-                                  : isDone
-                                  ? "text-emerald-700"
-                                  : "text-slate-400"
-                              }`}
-                            >
-                              {st.sub}
-                            </p>
-                          </button>
-                        );
-                      })}
-                    </div>
+                  {flow.map((st, idx) => {
+                    const isCompleted =
+                      idx < currentIdx ||
+                      (idx === flow.length - 1 &&
+                        selectedOrder.orderStatus === "DELIVERED");
+                    const isCurrent =
+                      idx === currentIdx &&
+                      selectedOrder.orderStatus !== "DELIVERED";
 
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
-                      {nextStage ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          disabled={actionLoadingId === selectedOrder.id}
-                          onClick={() =>
-                            handleStatusUpdate(selectedOrder.id, nextStage.id)
-                          }
-                        >
-                          <Truck className="w-3.5 h-3.5" />
-                          <span>Move to {nextStage.label}</span>
-                        </Button>
-                      ) : (
-                        <span className="text-xs font-semibold text-emerald-700 inline-flex items-center gap-1.5">
-                          <CheckCircle2 className="w-4 h-4" />
-                          Order fulfilled &amp; delivered
-                        </span>
-                      )}
-
-                      <button
-                        type="button"
-                        disabled={actionLoadingId === selectedOrder.id}
-                        onClick={() =>
-                          handleStatusUpdate(selectedOrder.id, "CANCELLED")
-                        }
-                        className="text-xs font-semibold text-red-600 hover:underline cursor-pointer"
+                    return (
+                      <div
+                        key={st.id}
+                        className="relative z-10 flex flex-col items-center text-center gap-2 min-w-[76px]"
                       >
-                        Cancel Order
-                      </button>
-                    </div>
+                        <div
+                          className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                            isCompleted
+                              ? "bg-[#2e1065] text-white shadow-xs"
+                              : isCurrent
+                              ? "bg-amber-500 text-white ring-4 ring-amber-100"
+                              : "bg-slate-100 text-slate-400 border border-slate-200"
+                          }`}
+                        >
+                          {isCompleted ? (
+                            <CheckCircle2 className="w-4 h-4" />
+                          ) : (
+                            idx + 1
+                          )}
+                        </div>
+                        <span
+                          className={`text-xs font-semibold ${
+                            isCompleted || isCurrent
+                              ? "text-[#0f172a]"
+                              : "text-slate-400"
+                          }`}
+                        >
+                          {st.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Full-width Primary Action CTA */}
+                {nextStage ? (
+                  <button
+                    type="button"
+                    disabled={actionLoadingId === selectedOrder.id}
+                    onClick={() =>
+                      handleStatusUpdate(selectedOrder.id, nextStage.id)
+                    }
+                    className="w-full h-11 rounded-xl bg-[#2e1065] hover:bg-[#3b0764] disabled:opacity-50 text-white font-display font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition shadow-xs cursor-pointer"
+                  >
+                    {actionLoadingId === selectedOrder.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <span>
+                          Advance Status to &ldquo;{nextStage.label}&rdquo;
+                        </span>
+                        <ChevronRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <div className="w-full py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center justify-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Order Delivered &amp; Completed</span>
                   </div>
-                );
-              })()
+                )}
+              </>
             )}
           </CardContent>
         </Card>
 
-        {/* Customer & Delivery Destination */}
-        <Card>
-          <CardContent className="p-5 sm:p-6 space-y-2.5 text-xs">
-            <p className="font-bold uppercase tracking-wider text-slate-400 text-[10.5px]">
-              Customer &amp; Delivery Destination
-            </p>
-            <div className="flex items-center gap-2.5">
-              <User className="w-4 h-4 text-[#2e1065] shrink-0" />
-              <span className="font-bold text-[#0f172a] text-sm">
-                {selectedOrder.customer.fullName}
-              </span>
-            </div>
-            <div className="flex items-center gap-2.5">
-              <Phone className="w-4 h-4 text-[#2e1065] shrink-0" />
-              <span className="font-mono text-[#0f172a]">
-                {selectedOrder.customer.phoneNumber}
-              </span>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <MapPin className="w-4 h-4 text-[#2e1065] shrink-0 mt-0.5" />
-              <span className="text-[#0f172a]">
-                {selectedOrder.customer.address},{" "}
-                {selectedOrder.customer.city
-                  ? `${selectedOrder.customer.city}, `
-                  : ""}
-                {selectedOrder.customer.state}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Items Ordered with Product Images */}
+        {/* Items Ordered FIRST (with Product Images) */}
         <Card>
           <CardContent className="p-5 sm:p-6 space-y-4">
             <p className="font-bold uppercase tracking-wider text-slate-400 text-[10.5px]">
@@ -472,6 +466,74 @@ export default function OrdersPage() {
               <span className="font-display text-lg text-[#2e1065]">
                 {formatCurrency(selectedOrder.totalAmount)}
               </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Customer & Delivery Destination BELOW Items Ordered (with Contact Actions at bottom) */}
+        <Card>
+          <CardContent className="p-5 sm:p-6 space-y-4 text-xs">
+            <p className="font-bold uppercase tracking-wider text-slate-400 text-[10.5px]">
+              Customer &amp; Delivery Destination
+            </p>
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-2.5">
+                <User className="w-4 h-4 text-[#2e1065] shrink-0" />
+                <span className="font-bold text-[#0f172a] text-sm">
+                  {selectedOrder.customer.fullName}
+                </span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <Phone className="w-4 h-4 text-[#2e1065] shrink-0" />
+                <span className="font-mono text-[#0f172a]">
+                  {selectedOrder.customer.phoneNumber}
+                </span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <MapPin className="w-4 h-4 text-[#2e1065] shrink-0 mt-0.5" />
+                <span className="text-[#0f172a]">
+                  {selectedOrder.customer.address},{" "}
+                  {selectedOrder.customer.city
+                    ? `${selectedOrder.customer.city}, `
+                    : ""}
+                  {selectedOrder.customer.state}
+                </span>
+              </div>
+            </div>
+
+            {/* Contact Actions (WhatsApp + Call + Email fallback) */}
+            <div className="pt-3 border-t border-slate-100 flex flex-wrap gap-2">
+              <a
+                href={getWhatsAppLink(selectedOrder)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 min-w-[140px]"
+              >
+                <Button type="button" variant="outline" size="sm" className="w-full">
+                  <MessageCircle className="w-4 h-4 text-emerald-600" />
+                  <span>WhatsApp</span>
+                </Button>
+              </a>
+              <a
+                href={`tel:${selectedOrder.customer.phoneNumber}`}
+                className="flex-1 min-w-[100px]"
+              >
+                <Button type="button" variant="outline" size="sm" className="w-full">
+                  <Phone className="w-4 h-4 text-[#2e1065]" />
+                  <span>Call</span>
+                </Button>
+              </a>
+              {selectedOrder.customer.email && (
+                <a
+                  href={`mailto:${selectedOrder.customer.email}`}
+                  className="flex-1 min-w-[100px]"
+                >
+                  <Button type="button" variant="outline" size="sm" className="w-full">
+                    <Mail className="w-4 h-4 text-[#2e1065]" />
+                    <span>Email</span>
+                  </Button>
+                </a>
+              )}
             </div>
           </CardContent>
         </Card>

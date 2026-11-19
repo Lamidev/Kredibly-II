@@ -16,6 +16,7 @@ import {
   Settings,
   Copy,
   LogOut,
+  Sparkles,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -157,6 +158,24 @@ function SidebarContent({
               </Link>
             );
           })}
+
+          {/* Upcoming Feature: Kredibly AI */}
+          <div
+            onClick={() =>
+              toast.info(
+                "Kredibly AI Assistant (store bio & product descriptions) is coming soon!"
+              )
+            }
+            className="flex items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-[13.5px] font-semibold text-slate-500 hover:bg-slate-100/80 transition-all cursor-pointer"
+          >
+            <span className="flex items-center gap-3">
+              <Sparkles className="w-[18px] h-[18px] text-[#2e1065]/70 shrink-0" />
+              <span>Kredibly AI</span>
+            </span>
+            <span className="px-1.5 py-0.5 rounded-full bg-[#2e1065]/10 text-[#2e1065] text-[10px] font-bold uppercase tracking-wider">
+              Soon
+            </span>
+          </div>
         </nav>
       </div>
 

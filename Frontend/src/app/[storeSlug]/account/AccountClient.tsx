@@ -557,7 +557,7 @@ export function AccountClient({ store }: { store: StoreData }) {
                         {formatCurrency(ord.totalAmount)}
                       </span>
                       <span className="font-semibold text-[#2e1065] underline">
-                        View Receipt →
+                        View Order →
                       </span>
                     </div>
                   </Link>
