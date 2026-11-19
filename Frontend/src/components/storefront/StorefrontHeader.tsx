@@ -119,7 +119,7 @@ export function StorefrontHeader({
     } catch (err: any) {
       setTrackError(
         err.response?.data?.message ||
-          "Could not locate order. Enter your full phone number or order number."
+          "Could not locate order. Enter your exact order number (e.g. KRD-9384207)."
       );
       setTrackedOrders(null);
     } finally {
@@ -349,7 +349,7 @@ export function StorefrontHeader({
                   Track Your Order
                 </h3>
                 <p className="text-xs text-[#62665d]">
-                  Enter your full phone number or order number (e.g. KRD-1024).
+                  Enter your order number (e.g. KRD-9384207).
                 </p>
               </div>
               <button
@@ -365,10 +365,10 @@ export function StorefrontHeader({
               <input
                 type="text"
                 required
-                placeholder="e.g. 08031234567 or KRD-1049"
+                placeholder="e.g. KRD-9384207"
                 value={trackInput}
-                onChange={(e) => setTrackInput(e.target.value)}
-                className="flex-1 h-[44px] px-3.5 rounded-[6px] bg-[#f4f5f7] focus:bg-white border border-[#e2e8f0] focus:border-[#2e1065] text-[13.5px] text-[#0f172a] outline-none"
+                onChange={(e) => setTrackInput(e.target.value.toUpperCase())}
+                className="flex-1 h-[44px] px-3.5 rounded-[6px] bg-[#f4f5f7] focus:bg-white border border-[#e2e8f0] focus:border-[#2e1065] text-[13.5px] font-mono uppercase text-[#0f172a] outline-none"
               />
               <button
                 type="submit"
@@ -400,7 +400,7 @@ export function StorefrontHeader({
                   trackedOrders.map((ord) => (
                     <Link
                       key={ord.id}
-                      href={`/${store.slug}/orders/${ord.orderNumber}`}
+                      href={getStorePath(store.slug, `/orders/${ord.orderNumber}`)}
                       onClick={closeTrack}
                       className="block p-3.5 rounded-[6px] bg-[#fafaf8] hover:bg-[#f3f4ef] border border-[#daddd4] transition-colors space-y-1.5"
                     >
