@@ -176,7 +176,7 @@ export class EmailService {
             <li><strong>Footer &amp; Contact:</strong> Add your support email, address, and social links (Instagram, TikTok) in <em>Store Settings</em>.</li>
             <li><strong>Exclusive Offer &amp; Delivery:</strong> Pin a custom offer banner at the top of your store and set delivery fees in <em>Delivery &amp; Offers</em>.</li>
             <li><strong>Add Your Products:</strong> Upload photos and publish your first product in <em>Products</em>.</li>
-            <li><strong>Link Payout Bank:</strong> Verify your Nigerian bank account in <em>Wallet &amp; Payouts</em>.</li>
+            <li><strong>Link Bank &amp; Verify Identity (KYC):</strong> Link your Nigerian bank account and verify your NIN or BVN in <em>Wallet &amp; Payouts</em> to unlock instant withdrawals &amp; 8:00 AM Auto T+1 payouts.</li>
           </ol>
         </div>
 
@@ -193,7 +193,7 @@ export class EmailService {
       </div>
     `;
 
-    const text = `Hi ${data.fullName},\n\nCongratulations on creating ${data.storeName} on Kredibly! Your storefront is live at ${storeUrl}.\n\nQuick 5-Step Setup:\n1. Upload logo, hero cover & bio (Store Settings)\n2. Add support email, address & social links (Store Settings)\n3. Set your Exclusive Offer banner & delivery fees (Delivery & Offers)\n4. Add your first product (Products)\n5. Link your payout bank account (Wallet & Payouts)\n\nMerchant Dashboard: ${dashboardUrl}\n\n— The Kredibly Team`;
+    const text = `Hi ${data.fullName},\n\nCongratulations on creating ${data.storeName} on Kredibly! Your storefront is live at ${storeUrl}.\n\nQuick 5-Step Setup:\n1. Upload logo, hero cover & bio (Store Settings)\n2. Add support email, address & social links (Store Settings)\n3. Set your Exclusive Offer banner & delivery fees (Delivery & Offers)\n4. Add your first product (Products)\n5. Link payout bank & verify NIN/BVN KYC (Wallet & Payouts) to unlock payouts\n\nMerchant Dashboard: ${dashboardUrl}\n\n— The Kredibly Team`;
 
     return this.send({
       to: data.to,

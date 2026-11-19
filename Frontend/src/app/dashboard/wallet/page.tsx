@@ -534,7 +534,7 @@ export default function WalletPage() {
                     </p>
                   ) : (
                     <p className="text-xs text-slate-500">
-                      Verify your 11-digit NIN or BVN once to unlock instant bank withdrawals and 8:00 AM Auto T+1 payouts.
+                      Verify your 11-digit NIN or BVN once to unlock instant bank withdrawals and 8:00 AM Auto T+1 payouts (auto-settlements are paused until verified).
                     </p>
                   )}
                 </div>
