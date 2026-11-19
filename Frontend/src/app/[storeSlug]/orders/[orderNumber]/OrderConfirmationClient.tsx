@@ -385,27 +385,6 @@ export function OrderConfirmationClient({
                   {statusMeta.label}
                 </span>
               </div>
-
-              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#e6e8e1]">
-                <a
-                  href={whatsappUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 min-w-[180px] py-2.5 px-4 bg-[#2e1065] hover:bg-[#3b0764] text-white font-semibold rounded-xl transition flex items-center justify-center gap-2 text-xs shadow-sm"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  <span>Message {order.store.name}</span>
-                </a>
-                {isShopperLoggedIn && (
-                  <Link
-                    href={getStorePath(order.store.slug, "/account")}
-                    className="py-2.5 px-4 bg-[#fafaf8] hover:bg-[#f3f4ef] border border-[#daddd4] text-[#20231e] font-semibold rounded-xl transition flex items-center justify-center gap-1.5 text-xs"
-                  >
-                    <User className="w-3.5 h-3.5 text-[#2e1065]" />
-                    <span>My Orders</span>
-                  </Link>
-                )}
-              </div>
             </div>
 
             {itemsOrderedCard}

@@ -268,13 +268,6 @@ export class WalletService {
       throw new AppError("Store wallet not found", 404);
     }
 
-    if (store.kycStatus !== "VERIFIED") {
-      throw new AppError(
-        "Please complete Identity Verification (KYC) before requesting a withdrawal.",
-        403
-      );
-    }
-
     if (!store.accountNumber || !store.bankName) {
       throw new AppError(
         "Please link and verify your payout bank details before requesting a withdrawal",
@@ -427,20 +420,6 @@ export class WalletService {
 
     if (!store || !store.wallet) {
       throw new AppError("Store wallet not found", 404);
-    }
-
-    if (store.kycStatus !== "VERIFIED") {
-      throw new AppError(
-        "Please complete Identity Verification (KYC) before withdrawing funds.",
-        403
-      );
-    }
-
-    if (store.kycStatus !== "VERIFIED") {
-      throw new AppError(
-        "Please complete Identity Verification (KYC) before requesting a withdrawal.",
-        403
-      );
     }
 
     if (!store.accountNumber || !store.bankName) {
@@ -606,7 +585,6 @@ export class WalletService {
         where: {
           availableBalance: { gte: 1000 },
           store: {
-            kycStatus: "VERIFIED",
             accountNumber: { not: null },
             bankName: { not: null },
             OR: [

@@ -385,15 +385,12 @@ export default function WalletPage() {
           disabled={
             available < 1000 ||
             !hasBankDetails ||
-            isWithdrawalLocked ||
-            !isKycVerified
+            isWithdrawalLocked
           }
         >
           <ArrowUpRight className="w-4 h-4" />
           <span>
-            {!isKycVerified
-              ? "Verify KYC to Withdraw"
-              : isWithdrawalLocked
+            {isWithdrawalLocked
               ? "Withdrawals Locked (24h)"
               : "Withdraw to Bank"}
           </span>
@@ -489,7 +486,8 @@ export default function WalletPage() {
             </Card>
           </div>
 
-          {/* Identity Verification (KYC) Card */}
+          {/* Identity Verification (KYC) Card — shown once verified (re-enable submission when Prembly live API is active) */}
+          {isKycVerified && (
           <Card>
             <CardContent className="p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -582,6 +580,7 @@ export default function WalletPage() {
               </div>
             </CardContent>
           </Card>
+          )}
 
           {/* Transaction Ledger */}
           <Card>
@@ -609,54 +608,47 @@ export default function WalletPage() {
                   </p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-100 text-slate-500 bg-slate-50/70">
-                        <th className="py-3 px-4 font-semibold">Date</th>
-                        <th className="py-3 px-4 font-semibold">Type</th>
-                        <th className="py-3 px-4 font-semibold">Reference / Order</th>
-                        <th className="py-3 px-4 font-semibold">Net Amount</th>
-                        <th className="py-3 px-4 font-semibold">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {wallet.transactions
-                        .slice((txPage - 1) * TX_PAGE_SIZE, txPage * TX_PAGE_SIZE)
-                        .map((tx) => (
-                        <tr key={tx.id} className="hover:bg-slate-50/60 transition">
-                          <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
-                            {new Date(tx.createdAt).toLocaleDateString("en-NG", {
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </td>
-                          <td className="py-3.5 px-4">
+                <>
+                  {/* Mobile Card List (no cramped columns) */}
+                  <div className="md:hidden divide-y divide-slate-100">
+                    {wallet.transactions
+                      .slice((txPage - 1) * TX_PAGE_SIZE, txPage * TX_PAGE_SIZE)
+                      .map((tx) => (
+                        <div key={tx.id} className="p-4 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
                             {getTransactionBadge(tx.type)}
-                          </td>
-                          <td className="py-3.5 px-4">
-                            <p className="font-mono text-[#0f172a] font-medium">
+                            <span
+                              className={`font-mono text-sm font-bold ${
+                                tx.type === "WITHDRAWAL"
+                                  ? "text-red-600"
+                                  : "text-emerald-600"
+                              }`}
+                            >
+                              {tx.type === "WITHDRAWAL" ? "-" : "+"}
+                              {formatCurrency(tx.netAmount)}
+                            </span>
+                          </div>
+
+                          <div className="space-y-0.5 min-w-0">
+                            <p className="font-mono text-xs text-[#0f172a] font-semibold break-all">
                               {tx.reference}
                             </p>
                             {tx.order && (
-                              <p className="text-[10.5px] text-slate-500">
+                              <p className="text-[11px] text-slate-500">
                                 Order #{tx.order.orderNumber} • {tx.order.customer.fullName}
                               </p>
                             )}
-                          </td>
-                          <td
-                            className={`py-3.5 px-4 font-mono font-bold ${
-                              tx.type === "WITHDRAWAL"
-                                ? "text-red-600"
-                                : "text-emerald-600"
-                            }`}
-                          >
-                            {tx.type === "WITHDRAWAL" ? "-" : "+"}
-                            {formatCurrency(tx.netAmount)}
-                          </td>
-                          <td className="py-3.5 px-4">
+                          </div>
+
+                          <div className="flex items-center justify-between gap-2 pt-1 text-[11px] text-slate-500">
+                            <span>
+                              {new Date(tx.createdAt).toLocaleDateString("en-NG", {
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
                             <Badge
                               variant={
                                 tx.status === "COMPLETED"
@@ -668,12 +660,78 @@ export default function WalletPage() {
                             >
                               {tx.status}
                             </Badge>
-                          </td>
-                        </tr>
+                          </div>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
+                  </div>
+
+                  {/* Desktop Table */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-100 text-slate-500 bg-slate-50/70">
+                          <th className="py-3 px-4 font-semibold">Date</th>
+                          <th className="py-3 px-4 font-semibold">Type</th>
+                          <th className="py-3 px-4 font-semibold">Reference / Order</th>
+                          <th className="py-3 px-4 font-semibold">Net Amount</th>
+                          <th className="py-3 px-4 font-semibold">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {wallet.transactions
+                          .slice((txPage - 1) * TX_PAGE_SIZE, txPage * TX_PAGE_SIZE)
+                          .map((tx) => (
+                          <tr key={tx.id} className="hover:bg-slate-50/60 transition">
+                            <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
+                              {new Date(tx.createdAt).toLocaleDateString("en-NG", {
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              {getTransactionBadge(tx.type)}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <p className="font-mono text-[#0f172a] font-medium">
+                                {tx.reference}
+                              </p>
+                              {tx.order && (
+                                <p className="text-[10.5px] text-slate-500">
+                                  Order #{tx.order.orderNumber} • {tx.order.customer.fullName}
+                                </p>
+                              )}
+                            </td>
+                            <td
+                              className={`py-3.5 px-4 font-mono font-bold ${
+                                tx.type === "WITHDRAWAL"
+                                  ? "text-red-600"
+                                  : "text-emerald-600"
+                              }`}
+                            >
+                              {tx.type === "WITHDRAWAL" ? "-" : "+"}
+                              {formatCurrency(tx.netAmount)}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <Badge
+                                variant={
+                                  tx.status === "COMPLETED"
+                                    ? "success"
+                                    : tx.status === "FAILED"
+                                    ? "destructive"
+                                    : "warning"
+                                }
+                              >
+                                {tx.status}
+                              </Badge>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
               {wallet?.transactions && wallet.transactions.length > TX_PAGE_SIZE && (
                 <div className="px-4 pb-4">

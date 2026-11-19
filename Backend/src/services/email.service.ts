@@ -149,55 +149,80 @@ export class EmailService {
   }) {
     const storeUrl = `https://${data.storeSlug}.kredibly.shop`;
     const dashboardUrl = `${ENV.FRONTEND_URL}/dashboard`;
+    const firstName = (data.fullName || "").trim().split(" ")[0] || "there";
 
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; color: #0f172a; background-color: #ffffff;">
         <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 24px;">
           <p style="margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #2e1065;">Kredibly</p>
-          <h1 style="color: #0f172a; margin: 8px 0 0 0; font-size: 24px; font-weight: 700;">Welcome to Kredibly</h1>
-          <p style="color: #64748b; font-size: 14px; margin: 6px 0 0 0;">Your online store is live and ready for orders.</p>
+          <h1 style="color: #0f172a; margin: 8px 0 0 0; font-size: 24px; font-weight: 800;">Welcome aboard, ${this.escapeHtml(firstName)}!</h1>
         </div>
 
-        <div style="background-color: #faf9f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 24px;">
-          <p style="margin: 0 0 12px 0; font-size: 15px;">Hi <strong>${data.fullName}</strong>,</p>
-          <p style="margin: 0 0 16px 0; line-height: 1.6; color: #334155; font-size: 14px;">
-            Congratulations on creating <strong>${data.storeName}</strong>. Your storefront is ready to accept orders and receive verified payments directly.
+        <div style="font-size: 14.5px; line-height: 1.7; color: #334155;">
+          <p style="margin: 0 0 14px 0;">Hello ${this.escapeHtml(firstName)},</p>
+          <p style="margin: 0 0 14px 0;">
+            Welcome to <strong>Kredibly</strong>, and thank you for launching <strong>${this.escapeHtml(data.storeName)}</strong> with us.
           </p>
-          <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 16px;">
-            <p style="margin: 0 0 4px 0; font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;">Your Store Link</p>
-            <a href="${storeUrl}" style="color: #2e1065; font-size: 15px; font-weight: 600; text-decoration: none;" target="_blank">${storeUrl}</a>
-          </div>
+          <p style="margin: 0 0 14px 0;">
+            I&apos;m truly excited to have you join our community of growing businesses that care about giving their customers a fast, trustworthy, and effortless way to shop online.
+          </p>
+          <p style="margin: 0 0 14px 0;">
+            At Kredibly, we believe selling online shouldn&apos;t require hiring a developer, repeating prices in DMs all day, or chasing fake transfer screenshots. Our goal is to give your business a complete online store—with instant bank transfer verification, automated order tracking, and direct payouts—so you can focus on growing what matters most.
+          </p>
+          <p style="margin: 0 0 8px 0;">
+            We will constantly improve ways to serve you, guided by one core question:
+          </p>
+          <p style="margin: 0 0 16px 0; padding: 12px 16px; background-color: #f7f4fc; border-left: 3px solid #2e1065; border-radius: 6px; font-weight: 700; color: #2e1065;">
+            How can we make selling online easier and more profitable for your business?
+          </p>
+          <p style="margin: 0 0 14px 0;">
+            I encourage you to explore your dashboard, customize your storefront, and reach out to our support team at <a href="mailto:support@usekredibly.com" style="color: #2e1065; font-weight: 600;">support@usekredibly.com</a> whenever you need help. We&apos;re here to partner with you, not just provide a tool.
+          </p>
+          <p style="margin: 0 0 18px 0;">
+            Lastly, if you have any major feedback I should prioritize, feel free to email me directly at <a href="mailto:usekredibly@gmail.com" style="color: #2e1065; font-weight: 600;">usekredibly@gmail.com</a>. I would love to hear from you.
+          </p>
+        </div>
+
+        <div style="background-color: #faf9f5; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+          <p style="margin: 0 0 4px 0; font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;">Your Live Store Link</p>
+          <a href="${storeUrl}" style="color: #2e1065; font-size: 15px; font-weight: 700; text-decoration: none;" target="_blank">${storeUrl}</a>
         </div>
 
         <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 24px;">
-          <p style="margin: 0 0 12px 0; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #2e1065;">Quick 5-Step Store Setup</p>
+          <p style="margin: 0 0 12px 0; font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #2e1065;">Complete Your 5-Step Onboarding</p>
           <ol style="margin: 0; padding-left: 18px; color: #334155; font-size: 13.5px; line-height: 1.75;">
             <li><strong>Brand &amp; Hero:</strong> Upload your store logo, hero cover photo, and store bio in <em>Store Settings</em>.</li>
             <li><strong>Footer &amp; Contact:</strong> Add your support email, address, and social links (Instagram, TikTok) in <em>Store Settings</em>.</li>
             <li><strong>Exclusive Offer &amp; Delivery:</strong> Pin a custom offer banner at the top of your store and set delivery fees in <em>Delivery &amp; Offers</em>.</li>
-            <li><strong>Add Your Products:</strong> Upload photos and publish your first product in <em>Products</em>.</li>
+            <li><strong>Add Your Products:</strong> Upload photos and publish your products in <em>Products</em>.</li>
             <li><strong>Link Bank &amp; Verify Identity (KYC):</strong> Link your Nigerian bank account and verify your NIN or BVN in <em>Wallet &amp; Payouts</em> to unlock instant withdrawals &amp; 8:00 AM Auto T+1 payouts.</li>
           </ol>
         </div>
 
         <div style="margin: 24px 0;">
           <a href="${dashboardUrl}" style="background-color: #2e1065; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; display: inline-block;">
-            Open Merchant Dashboard
+            Sign in to your dashboard &rarr;
           </a>
+        </div>
+
+        <div style="margin-top: 24px; font-size: 14px; color: #334155; line-height: 1.6;">
+          <p style="margin: 0;">Warm regards,</p>
+          <p style="margin: 4px 0 0 0; font-weight: 700; color: #0f172a;">Akinyemi Oluwaseun</p>
+          <p style="margin: 0; font-size: 13px; color: #64748b;">Founder, Kredibly · Akinbyte Technologies Limited</p>
         </div>
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 28px 0 16px 0;" />
         <p style="font-size: 12px; color: #94a3b8; margin: 0;">
-          © ${new Date().getFullYear()} Kredibly. Simple online storefronts for social sellers.
+          Kredibly • Online Storefronts &amp; Instant Checkout Made Simple
         </p>
       </div>
     `;
 
-    const text = `Hi ${data.fullName},\n\nCongratulations on creating ${data.storeName} on Kredibly! Your storefront is live at ${storeUrl}.\n\nQuick 5-Step Setup:\n1. Upload logo, hero cover & bio (Store Settings)\n2. Add support email, address & social links (Store Settings)\n3. Set your Exclusive Offer banner & delivery fees (Delivery & Offers)\n4. Add your first product (Products)\n5. Link payout bank & verify NIN/BVN KYC (Wallet & Payouts) to unlock payouts\n\nMerchant Dashboard: ${dashboardUrl}\n\n— The Kredibly Team`;
+    const text = `Welcome aboard, ${firstName}!\n\nHello ${firstName},\n\nWelcome to Kredibly, and thank you for launching ${data.storeName} with us.\n\nAt Kredibly, we believe selling online shouldn't require hiring a developer, repeating prices in DMs, or chasing fake transfer screenshots. Your storefront is live at ${storeUrl}.\n\nComplete your 5-step onboarding in your dashboard (${dashboardUrl}):\n1. Upload logo, hero cover & bio (Store Settings)\n2. Add support email, address & social links (Store Settings)\n3. Set your Exclusive Offer banner & delivery fees (Delivery & Offers)\n4. Add your products (Products)\n5. Link payout bank & verify NIN/BVN KYC (Wallet & Payouts) to unlock instant withdrawals & 8:00 AM Auto T+1 payouts\n\nIf you have any feedback, reply or email usekredibly@gmail.com.\n\nWarm regards,\nAkinyemi Oluwaseun\nFounder, Kredibly (Akinbyte Technologies Limited)`;
 
     return this.send({
       to: data.to,
-      subject: `Welcome to Kredibly — ${data.storeName} is live`,
+      subject: `Welcome aboard, ${firstName} — ${data.storeName} is live on Kredibly`,
       html,
       text,
     });

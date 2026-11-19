@@ -188,13 +188,6 @@ export default function DashboardPage() {
       done: hasBankAccount,
       href: "/dashboard/wallet",
     },
-    {
-      id: "kyc",
-      label: "Verify Identity (NIN or BVN)",
-      desc: "Required to unlock instant withdrawals and 8:00 AM Auto T+1 payouts.",
-      done: isKycVerified,
-      href: "/dashboard/wallet",
-    },
   ];
   const completedSetupCount = setupSteps.filter((s) => s.done).length;
   const showSetupChecklist =
