@@ -25,4 +25,7 @@ export const ENV = {
   DOJAH_APP_ID: process.env.DOJAH_APP_ID || "",
   DOJAH_PRIVATE_KEY: process.env.DOJAH_PRIVATE_KEY || "",
   DOJAH_BASE_URL: process.env.DOJAH_BASE_URL || "https://api.dojah.io",
+  PREMBLY_APP_ID: process.env.PREMBLY_APP_ID || "",
+  PREMBLY_API_KEY: process.env.PREMBLY_API_KEY || "",
+  PREMBLY_BASE_URL: process.env.PREMBLY_BASE_URL || "https://api.prembly.com",
 };
