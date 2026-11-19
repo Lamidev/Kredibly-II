@@ -71,6 +71,8 @@ const PROMOS_ENABLED = false;
 interface CheckoutDrawerProps {
   storeSlug: string;
   shippingConfig?: ShippingConfig | null;
+  subscriptionTier?: string;
+  passFeeToCustomer?: boolean;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -88,6 +90,8 @@ interface VirtualAccountState {
 export function CheckoutDrawer({
   storeSlug,
   shippingConfig,
+  subscriptionTier,
+  passFeeToCustomer,
   isOpen,
   onClose,
 }: CheckoutDrawerProps) {
@@ -131,7 +135,12 @@ export function CheckoutDrawer({
     subtotal
   );
   const discountAmount = appliedPromo ? appliedPromo.discountAmount : 0;
-  const totalDue = Math.max(0, subtotal - discountAmount) + shippingFee;
+  const basePayable = Math.max(0, subtotal - discountAmount) + shippingFee;
+  const processingFee =
+    subscriptionTier !== "STARTER" && passFeeToCustomer && basePayable > 0
+      ? Math.max(10, Math.min(150, Math.round(basePayable * 0.01 * 100) / 100))
+      : 0;
+  const totalDue = basePayable + processingFee;
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -1023,6 +1032,14 @@ export function CheckoutDrawer({
                     <div className="flex items-center justify-between text-emerald-600">
                       <span>Promo ({appliedPromo.code})</span>
                       <span>-{formatCurrency(appliedPromo.discountAmount)}</span>
+                    </div>
+                  )}
+                  {processingFee > 0 && (
+                    <div className="flex items-center justify-between text-[#64748b]">
+                      <span>Payment Processing Fee</span>
+                      <span className="font-semibold text-[#0f172a]">
+                        {formatCurrency(processingFee)}
+                      </span>
                     </div>
                   )}
                   <p className="text-[11px] text-[#64748b]">

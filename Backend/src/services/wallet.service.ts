@@ -309,6 +309,10 @@ export class WalletService {
     };
   }
 
+  static getTransferFee(amount: number): number {
+    return amount < 5000 ? 20 : amount <= 50000 ? 25 : 50;
+  }
+
   /**
    * Request withdrawal from Available Balance to registered Nigerian bank account via Nomba
    */
@@ -383,8 +387,8 @@ export class WalletService {
       );
     }
 
-    const TRANSFER_FEE = 100;
-    const netPayout = amount - TRANSFER_FEE;
+    const TRANSFER_FEE = WalletService.getTransferFee(amount);
+    const netPayout = Math.round((amount - TRANSFER_FEE) * 100) / 100;
     const reference = `WD-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
 
     // 1. Atomically decrement available balance only if sufficient funds remain
@@ -545,6 +549,9 @@ export class WalletService {
 
         if (eligibleAmount < 1000) continue;
 
+        const transferFee = WalletService.getTransferFee(eligibleAmount);
+        const netPayout = Math.round((eligibleAmount - transferFee) * 100) / 100;
+
         try {
           const txRecord = await prisma.$transaction(async (tx) => {
             const debited = await tx.wallet.updateMany({
@@ -563,8 +570,8 @@ export class WalletService {
               data: {
                 walletId: wallet.id,
                 amount: eligibleAmount,
-                platformFee: 0,
-                netAmount: eligibleAmount,
+                platformFee: transferFee,
+                netAmount: netPayout,
                 type: "WITHDRAWAL",
                 status: "PENDING",
                 reference,
@@ -577,7 +584,7 @@ export class WalletService {
           try {
             if (ENV.NOMBA_CLIENT_ID && ENV.NOMBA_PRIVATE_KEY && ENV.NOMBA_ACCOUNT_ID) {
               await NombaService.initiateTransfer({
-                amount: eligibleAmount,
+                amount: netPayout,
                 bankCode: store.bankCode || "058",
                 accountNumber: store.accountNumber,
                 accountName: store.accountName || store.name,
@@ -585,7 +592,7 @@ export class WalletService {
               });
             } else {
               console.log(
-                `[Nomba Dev T+1] Simulated auto-settlement of ₦${eligibleAmount} to ${store.bankName} (${store.accountNumber})`
+                `[Nomba Dev T+1] Simulated auto-settlement of ₦${netPayout} (fee ₦${transferFee}) to ${store.bankName} (${store.accountNumber})`
               );
             }
 
@@ -600,7 +607,7 @@ export class WalletService {
               to: store.owner.email,
               fullName: store.owner.fullName,
               storeName: store.name,
-              amount: eligibleAmount,
+              amount: netPayout,
               bankName: store.bankName,
               accountNumber: store.accountNumber,
               reference,
