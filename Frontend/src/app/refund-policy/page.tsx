@@ -1,28 +1,28 @@
 import { LegalLayout } from "@/components/LegalLayout";
 
 export const metadata = {
-  title: "Refund & Escrow Policy | Kredibly II",
+  title: "Refund & Returns Policy | Kredibly",
   description:
-    "Official refund, returns, and escrow protection guidelines for buyers and merchants on Kredibly storefronts.",
+    "Official refund, returns, and dispute resolution guidelines for buyers and merchants on Kredibly storefronts.",
 };
 
 export default function RefundPolicyPage() {
   return (
     <LegalLayout
-      title="Refund &amp; Escrow Policy"
-      subtitle="Clear guidelines on how buyer protection, order returns, dispute mediation, and merchant settlements operate on Kredibly."
-      lastUpdated="November 17, 2026"
+      title="Refund &amp; Returns Policy"
+      subtitle="Clear guidelines on how order returns, dispute resolution, and merchant refunds operate on Kredibly."
+      lastUpdated="November 19, 2026"
     >
       <div className="space-y-8">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-[#090D16] mb-3">
-            1. The Kredibly Zero-Scam Trust Shield
+            1. Verified Checkout &amp; Order Transparency
           </h2>
           <p className="text-sm leading-relaxed text-[#525B6C]">
-            Unlike unregulated Instagram and WhatsApp direct transfers where buyers risk sending money into personal bank accounts and merchants risk false alerts, every transaction on Kredibly is powered by our <strong>Escrow Trust Shield</strong>.
+            Every transaction on Kredibly is processed securely through licensed financial partners with an automated digital receipt and live order tracking, eliminating unverified screenshots and payment confusion.
           </p>
           <p className="mt-3 text-sm leading-relaxed text-[#525B6C]">
-            When a customer makes a purchase on any Kredibly storefront (e.g. <code className="text-xs bg-[#F3F4EF] px-1.5 py-0.5 rounded text-[#2e1065]">kredibly.shop/brandname</code>), their money is held safely in escrow until the package is fulfilled and verified.
+            When a customer places an order on any Kredibly storefront (e.g. <code className="text-xs bg-[#F3F4EF] px-1.5 py-0.5 rounded text-[#2e1065]">brandname.kredibly.shop</code>), payment is verified automatically and the order status is tracked from confirmation through dispatch and delivery.
           </p>
         </div>
 
@@ -30,20 +30,20 @@ export default function RefundPolicyPage() {
 
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-[#090D16] mb-3">
-            2. The 24-Hour Inspection &amp; Auto-Release Window
+            2. The 24-Hour Delivery Inspection Window
           </h2>
           <p className="text-sm leading-relaxed text-[#525B6C]">
-            To ensure rapid cash flow for honest merchants while guaranteeing protection for buyers:
+            To keep returns fair and predictable for both buyers and independent merchants:
           </p>
           <ul className="list-disc pl-5 mt-3 space-y-2 text-sm text-[#525B6C]">
             <li>
-              <strong>Delivery Confirmation:</strong> When an order is delivered by dispatch riders or courier services, delivery status is updated via the automated tracking link or merchant dispatch code.
+              <strong>Delivery Confirmation:</strong> When an order is dispatched and delivered, status updates are sent to the buyer via email and visible on the order tracking page.
             </li>
             <li>
-              <strong>24-Hour Inspection Window:</strong> The buyer has twenty-four (24) hours from receipt of the parcel to inspect their items.
+              <strong>24-Hour Inspection Window:</strong> Buyers have twenty-four (24) hours from receipt of the parcel to inspect their items and report any eligible issue.
             </li>
             <li>
-              <strong>Instant Auto-Release:</strong> If no dispute or damage claim is raised within 24 hours of delivery, the system automatically marks the transaction complete and releases the total funds into the merchant&apos;s wallet for immediate withdrawal.
+              <strong>Merchant Accountability:</strong> Verified refund claims are coordinated directly with the merchant in line with our marketplace standards.
             </li>
           </ul>
         </div>
@@ -124,7 +124,7 @@ export default function RefundPolicyPage() {
               <strong>48-Hour Resolution Desk:</strong> Our dedicated Nigerian dispute team reviews the dispatch records, product listings, and submitted media within 48 hours.
             </li>
             <li>
-              <strong>Resolution:</strong> If the claim is verified, the return is initiated and the funds returned to the buyer upon receipt of return tracking. If the claim is found to be false or abusive, the escrow funds are immediately released in full to the merchant.
+              <strong>Resolution:</strong> If the claim is verified, the return is initiated and the buyer is refunded upon return confirmation. If the claim is found to be false or abusive, the dispute is closed in the merchant&apos;s favour.
             </li>
           </ul>
         </div>

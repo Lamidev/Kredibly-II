@@ -469,4 +469,144 @@ export class WalletService {
       throw new AppError(`Payout could not be processed: ${err.message}. Funds have been restored to your wallet.`, 502);
     }
   }
+
+  /**
+   * Automated T+1 Daily Settlement (runs at 8:00 AM WAT).
+   * Settles cleared funds from previous days (>= ₦1,000) to merchants who haven't manually withdrawn.
+   */
+  static async processAutoT1Settlements() {
+    const now = new Date();
+    // Compute 00:00:00 WAT (UTC+1) for today so only T+1 (prior-day) funds are auto-settled
+    const watNow = new Date(now.getTime() + 60 * 60 * 1000);
+    const todayStartWat = new Date(
+      Date.UTC(watNow.getUTCFullYear(), watNow.getUTCMonth(), watNow.getUTCDate(), 0, 0, 0) -
+        60 * 60 * 1000
+    );
+
+    const candidateWallets = await prisma.wallet.findMany({
+      where: {
+        availableBalance: { gte: 1000 },
+        store: {
+          accountNumber: { not: null },
+          bankName: { not: null },
+          OR: [
+            { withdrawalLockedUntil: null },
+            { withdrawalLockedUntil: { lte: now } },
+          ],
+        },
+      },
+      include: {
+        store: {
+          include: {
+            owner: { select: { email: true, fullName: true } },
+          },
+        },
+      },
+    });
+
+    let settledCount = 0;
+
+    for (const wallet of candidateWallets) {
+      const { store } = wallet;
+      if (!store.accountNumber || !store.bankName) continue;
+
+      const available = Number(wallet.availableBalance);
+      const todayInflowsAgg = await prisma.transaction.aggregate({
+        where: {
+          walletId: wallet.id,
+          type: "ORDER_PAYMENT",
+          status: "COMPLETED",
+          createdAt: { gte: todayStartWat },
+        },
+        _sum: { netAmount: true },
+      });
+
+      const todayInflows = Number(todayInflowsAgg._sum.netAmount || 0);
+      const eligibleAmount = Math.floor((available - todayInflows) * 100) / 100;
+
+      if (eligibleAmount < 1000) continue;
+
+      const reference = `T1-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
+
+      try {
+        const txRecord = await prisma.$transaction(async (tx) => {
+          const debited = await tx.wallet.updateMany({
+            where: {
+              id: wallet.id,
+              availableBalance: { gte: eligibleAmount },
+            },
+            data: {
+              availableBalance: { decrement: eligibleAmount },
+            },
+          });
+
+          if (debited.count === 0) return null;
+
+          return tx.transaction.create({
+            data: {
+              walletId: wallet.id,
+              amount: eligibleAmount,
+              platformFee: 0,
+              netAmount: eligibleAmount,
+              type: "WITHDRAWAL",
+              status: "PENDING",
+              reference,
+            },
+          });
+        });
+
+        if (!txRecord) continue;
+
+        try {
+          if (ENV.NOMBA_CLIENT_ID && ENV.NOMBA_PRIVATE_KEY && ENV.NOMBA_ACCOUNT_ID) {
+            await NombaService.initiateTransfer({
+              amount: eligibleAmount,
+              bankCode: store.bankCode || "058",
+              accountNumber: store.accountNumber,
+              accountName: store.accountName || store.name,
+              narration: `KREDIBLY T1 - ${store.name}`,
+            });
+          } else {
+            console.log(
+              `[Nomba Dev T+1] Simulated auto-settlement of ₦${eligibleAmount} to ${store.bankName} (${store.accountNumber})`
+            );
+          }
+
+          await prisma.transaction.update({
+            where: { id: txRecord.id },
+            data: { status: "COMPLETED" },
+          });
+
+          settledCount++;
+
+          EmailService.sendAutoSettlementEmail({
+            to: store.owner.email,
+            fullName: store.owner.fullName,
+            storeName: store.name,
+            amount: eligibleAmount,
+            bankName: store.bankName,
+            accountNumber: store.accountNumber,
+            reference,
+          }).catch((err) => console.error("Auto T+1 email failed:", err));
+        } catch (transferErr: any) {
+          console.error(`Auto T+1 transfer failed for ${store.slug}:`, transferErr.message);
+          await prisma.$transaction(async (tx) => {
+            await tx.wallet.update({
+              where: { id: wallet.id },
+              data: { availableBalance: { increment: eligibleAmount } },
+            });
+            await tx.transaction.update({
+              where: { id: txRecord.id },
+              data: { status: "FAILED" },
+            });
+          });
+        }
+      } catch (err) {
+        console.error(`Auto T+1 settlement error for ${store.slug}:`, err);
+      }
+    }
+
+    console.log(`[Auto T+1] Completed 8:00 AM WAT run. Settled ${settledCount} store(s).`);
+    return { settledCount };
+  }
 }

@@ -14,7 +14,7 @@ interface LegalLayoutProps {
 const TABS = [
   { label: "Terms of Service", href: "/terms" },
   { label: "Privacy Policy", href: "/privacy" },
-  { label: "Refund & Escrow Policy", href: "/refund-policy" },
+  { label: "Refund & Returns Policy", href: "/refund-policy" },
 ];
 
 export function LegalLayout({
@@ -146,7 +146,7 @@ export function LegalLayout({
                 Privacy Policy
               </Link>
               <Link href="/refund-policy" className="hover:text-[#090D16] transition-colors">
-                Refund &amp; Escrow Policy
+                Refund &amp; Returns Policy
               </Link>
               <Link href="/login" className="hover:text-[#090D16] transition-colors">
                 Merchant Sign In
@@ -155,7 +155,7 @@ export function LegalLayout({
           </div>
 
           <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px]">
-            <p>© {new Date().getFullYear()} Kredibly Technologies. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} Akinbyte Technologies Limited (RC: 9466327). All rights reserved.</p>
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>Federal Republic of Nigeria · FCCPA &amp; NDPA Compliant</span>

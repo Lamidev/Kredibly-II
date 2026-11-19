@@ -121,19 +121,14 @@ export default function ProductsPage() {
     } else {
       document.body.style.overflow = "";
     }
-    useEffect(() => {
-    setCurrentPage(1);
-  }, [activeTab, searchQuery, sortBy]);
-
-  const paginatedProducts = displayedProducts.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  );
-
-  return () => {
+    return () => {
       document.body.style.overflow = "";
     };
   }, [modalOpen]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchQuery, sortBy]);
 
   const fetchProducts = async () => {
     try {
@@ -499,16 +494,7 @@ export default function ProductsPage() {
     .filter((p) => {
       const q = searchQuery.trim().toLowerCase();
       if (!q) return true;
-      useEffect(() => {
-    setCurrentPage(1);
-  }, [activeTab, searchQuery, sortBy]);
-
-  const paginatedProducts = displayedProducts.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  );
-
-  return (
+      return (
         p.title.toLowerCase().includes(q) ||
         (p.category || "").toLowerCase().includes(q) ||
         (p.brand || "").toLowerCase().includes(q)
@@ -526,10 +512,6 @@ export default function ProductsPage() {
       }
       return 0;
     });
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [activeTab, searchQuery, sortBy]);
 
   const paginatedProducts = displayedProducts.slice(
     (currentPage - 1) * PAGE_SIZE,
@@ -701,7 +683,10 @@ export default function ProductsPage() {
                       const compareNum = Number(product.comparePrice || 0);
                       const hasDiscount = compareNum > baseNum && baseNum > 0;
                       const discountPct = hasDiscount
-                        ? Math.round(((compareNum - baseNum) / compareNum) * 100)
+                        ? Math.max(
+                            1,
+                            Math.round(((compareNum - baseNum) / compareNum) * 100)
+                          )
                         : 0;
                       const subMeta = [
                         product.brand,
@@ -712,16 +697,7 @@ export default function ProductsPage() {
                         .filter(Boolean)
                         .join(" · ");
 
-                      useEffect(() => {
-    setCurrentPage(1);
-  }, [activeTab, searchQuery, sortBy]);
-
-  const paginatedProducts = displayedProducts.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  );
-
-  return (
+                      return (
                         <tr
                           key={product.id}
                           className="hover:bg-slate-50/70 transition"
@@ -881,19 +857,13 @@ export default function ProductsPage() {
                 const compareNum = Number(product.comparePrice || 0);
                 const hasDiscount = compareNum > baseNum && baseNum > 0;
                 const discountPct = hasDiscount
-                  ? Math.round(((compareNum - baseNum) / compareNum) * 100)
+                  ? Math.max(
+                      1,
+                      Math.round(((compareNum - baseNum) / compareNum) * 100)
+                    )
                   : 0;
 
-                useEffect(() => {
-    setCurrentPage(1);
-  }, [activeTab, searchQuery, sortBy]);
-
-  const paginatedProducts = displayedProducts.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  );
-
-  return (
+                return (
                   <Card key={product.id} className="overflow-hidden">
                     <div className="p-3.5 flex items-start gap-3">
                       {/* Thumbnail */}
@@ -1061,7 +1031,7 @@ export default function ProductsPage() {
 
       {/* Slide-Over Product Sheet (Full-screen on mobile, right sheet on desktop) */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end overflow-hidden">
+        <div className="fixed inset-0 !mt-0 z-50 flex justify-end overflow-hidden">
           {/* Backdrop */}
           <div
             onClick={() => !submitting && setModalOpen(false)}
@@ -1308,7 +1278,11 @@ export default function ProductsPage() {
                       <span className="line-through text-slate-400">
                         {formatCurrency(actualPriceNum)}
                       </span>{" "}
-                      will be crossed out.
+                      will be crossed out{" "}
+                      <span className="font-bold text-red-600">
+                        (-{Math.max(1, Math.round(((actualPriceNum - discountPriceNum) / actualPriceNum) * 100))}% OFF)
+                      </span>
+                      .
                     </p>
                   )}
               </div>
@@ -1346,16 +1320,7 @@ export default function ProductsPage() {
                     const alreadyAdded = attributes.some(
                       (a) => a.label.trim().toLowerCase() === preset.toLowerCase()
                     );
-                    useEffect(() => {
-    setCurrentPage(1);
-  }, [activeTab, searchQuery, sortBy]);
-
-  const paginatedProducts = displayedProducts.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  );
-
-  return (
+                    return (
                       <button
                         key={preset}
                         type="button"
@@ -1494,16 +1459,7 @@ export default function ProductsPage() {
                         const badName =
                           v.name.trim().length > 0 &&
                           !/[a-zA-Z]/.test(v.name.trim());
-                        useEffect(() => {
-    setCurrentPage(1);
-  }, [activeTab, searchQuery, sortBy]);
-
-  const paginatedProducts = displayedProducts.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  );
-
-  return (
+                        return (
                           <div key={i} className="space-y-1">
                             <div className="grid grid-cols-[1fr_92px_58px_20px] items-center gap-2">
                               <input
