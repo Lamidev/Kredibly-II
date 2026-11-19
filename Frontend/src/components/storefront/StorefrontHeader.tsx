@@ -8,7 +8,7 @@ import { useShopperStore } from "@/store/useShopperStore";
 import { api } from "@/lib/api";
 import { formatCurrency, getImageUrl, getStorePath } from "@/lib/utils";
 import { StoreData, extractStoreCategories } from "@/types/storefront";
-import { Menu, X, Search, ShoppingBag, Truck, Loader2, User, Package, Home, ChevronDown, Info } from "lucide-react";
+import { Menu, X, Search, ShoppingBag, Truck, Loader2, User, Package, ChevronDown } from "lucide-react";
 
 interface StorefrontHeaderProps {
   store: StoreData;
@@ -333,14 +333,13 @@ export function StorefrontHeader({
               <Link
                 href={homePath}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`w-full text-left px-3 py-2 rounded-[6px] text-xs flex items-center gap-2 transition-colors ${
+                className={`block w-full text-left px-3 py-2 rounded-[6px] text-xs transition-colors ${
                   isHomeActive
                     ? "font-bold text-[#20231e] bg-[#f3f4ef]"
                     : "font-semibold text-[#20231e] hover:bg-[#f3f4ef]"
                 }`}
               >
-                <Home className="w-3.5 h-3.5 text-[#3b0764]" />
-                <span>Home</span>
+                Home
               </Link>
               <button
                 type="button"
@@ -386,14 +385,13 @@ export function StorefrontHeader({
               <Link
                 href={aboutPath}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`w-full text-left px-3 py-2 rounded-[6px] text-xs flex items-center gap-2 transition-colors ${
+                className={`block w-full text-left px-3 py-2 rounded-[6px] text-xs transition-colors ${
                   isAboutActive
                     ? "font-bold text-[#20231e] bg-[#f3f4ef]"
                     : "font-semibold text-[#20231e] hover:bg-[#f3f4ef]"
                 }`}
               >
-                <Info className="w-3.5 h-3.5 text-[#3b0764]" />
-                <span>About</span>
+                About
               </Link>
               <div className="pt-1.5 mt-1.5 border-t border-[#e6e8e1]">
                 <button
