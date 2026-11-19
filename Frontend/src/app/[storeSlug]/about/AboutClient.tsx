@@ -13,17 +13,10 @@ import {
   MapPin,
   Mail,
   Phone,
-  MessageCircle,
   ShoppingBag,
   ArrowRight,
   ShieldCheck,
 } from "lucide-react";
-
-function toWaLink(whatsappNumber: string) {
-  const clean = (whatsappNumber || "").replace(/[^0-9]/g, "");
-  const intl = clean.startsWith("0") ? `234${clean.slice(1)}` : clean;
-  return `https://wa.me/${intl}`;
-}
 
 export function AboutClient({ store }: { store: StoreData }) {
   const { isOpen: cartOpen, closeCart } = useCartStore();
@@ -88,18 +81,6 @@ export function AboutClient({ store }: { store: StoreData }) {
               <span>Browse Products</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
-
-            {store.whatsappNumber && (
-              <a
-                href={toWaLink(store.whatsappNumber)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#f3f4ef] hover:bg-[#e6e8e1] border border-[#daddd4] text-[#20231e] text-xs sm:text-sm font-semibold transition-colors"
-              >
-                <MessageCircle className="w-4 h-4 text-emerald-600" />
-                <span>Chat on WhatsApp</span>
-              </a>
-            )}
           </div>
         </section>
 
