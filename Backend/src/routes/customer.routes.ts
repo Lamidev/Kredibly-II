@@ -29,6 +29,7 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
       },
       include: {
         orders: {
+          where: { paymentStatus: "PAID" },
           orderBy: { createdAt: "desc" },
           select: {
             id: true,

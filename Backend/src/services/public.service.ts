@@ -147,6 +147,7 @@ export class PublicStoreService {
     const orders = await prisma.order.findMany({
       where: {
         storeId: store.id,
+        paymentStatus: "PAID",
         OR: [
           { orderNumber: { equals: cleanQuery, mode: "insensitive" } },
           ...(phoneVariants.length > 0

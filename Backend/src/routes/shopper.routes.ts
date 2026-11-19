@@ -482,6 +482,7 @@ router.get(
           state: true,
           createdAt: true,
           orders: {
+            where: { paymentStatus: "PAID" },
             orderBy: { createdAt: "desc" },
             include: { items: true },
           },

@@ -10,7 +10,7 @@ export class FulfillmentService {
     storeId: string,
     query?: { status?: string; search?: string }
   ) {
-    const whereClause: any = { storeId };
+    const whereClause: any = { storeId, paymentStatus: "PAID" };
 
     if (query?.status && query.status !== "ALL") {
       whereClause.orderStatus = query.status as OrderStatus;
