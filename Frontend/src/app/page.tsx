@@ -605,7 +605,6 @@ export default function HomePage() {
 
                 <div className="mt-6 pt-4 border-t border-[#F3F4EF] flex items-center justify-between text-xs font-mono text-[#525B6C]">
                   <span>Saves 4+ hours of manual chat every day</span>
-                  <span className="font-bold text-[#3b0764]">BROWSE EASILY →</span>
                 </div>
               </div>
 
@@ -633,7 +632,6 @@ export default function HomePage() {
 
                 <div className="mt-6 pt-4 border-t border-[#F3F4EF] flex items-center justify-between text-xs font-mono text-[#525B6C]">
                   <span>Zero fake transfer alert losses</span>
-                  <span className="font-bold text-[#3b0764]">100% AUTOMATED →</span>
                 </div>
               </div>
 
@@ -661,7 +659,6 @@ export default function HomePage() {
 
                 <div className="mt-6 pt-4 border-t border-[#F3F4EF] flex items-center justify-between text-xs font-mono text-[#525B6C]">
                   <span>No apps or passwords required</span>
-                  <span className="font-bold text-[#3b0764]">FAST CHECKOUT →</span>
                 </div>
               </div>
 
@@ -689,7 +686,6 @@ export default function HomePage() {
 
                 <div className="mt-6 pt-4 border-t border-[#F3F4EF] flex items-center justify-between text-xs font-mono text-[#525B6C]">
                   <span>Direct payout to any Nigerian bank</span>
-                  <span className="font-bold text-[#3b0764]">1-CLICK CASHOUT →</span>
                 </div>
               </div>
             </div>
@@ -956,11 +952,15 @@ export default function HomePage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span>Verified Storefront &amp; Order Tracking</span>
+                    <span>Instant Bank Transfer Checkout</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span>Instant Bank Transfer &amp; Card Checkout</span>
+                    <span>Sound &amp; WhatsApp Order Alerts</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
+                    <span>8:00 AM Auto T+1 &amp; Instant Payouts</span>
                   </li>
                   <li className="flex items-center gap-2 text-[#525B6C]">
                     <CheckCircle2 className="w-4 h-4 text-slate-400 shrink-0" />
@@ -1001,9 +1001,13 @@ export default function HomePage() {
                 </div>
 
                 <ul className="space-y-2.5 text-xs text-[#090D16] pt-4 border-t border-slate-100">
+                  <li className="flex items-center gap-2 font-semibold text-[#3b0764]">
+                    <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
+                    <span>Everything in Starter, plus:</span>
+                  </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span><strong>50 Products</strong> &amp; Unlimited Orders</span>
+                    <span>Up to <strong>50 Products</strong></span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
@@ -1011,7 +1015,7 @@ export default function HomePage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span>Choose who pays Nomba DVA fee</span>
+                    <span>Choose who covers payment processing fee</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
@@ -1019,11 +1023,7 @@ export default function HomePage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span>Sound &amp; WhatsApp Order Alerts</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span>Sales Record &amp; Customer CRM</span>
+                    <span>Customer Directory &amp; Sales Records</span>
                   </li>
                 </ul>
               </div>
@@ -1062,17 +1062,13 @@ export default function HomePage() {
                 </div>
 
                 <ul className="space-y-2.5 text-xs text-[#090D16] pt-4 border-t border-slate-100">
-                  <li className="flex items-center gap-2">
+                  <li className="flex items-center gap-2 font-semibold text-[#3b0764]">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span><strong>200 Products</strong> &amp; Unlimited Variants</span>
+                    <span>Everything in Starter Plus, plus:</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span><strong>0% Kredibly Commission</strong></span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span>Choose who pays Nomba DVA fee</span>
+                    <span>Up to <strong>200 Products</strong> &amp; Unlimited Variants</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
@@ -1080,11 +1076,7 @@ export default function HomePage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span>8:00 AM Auto T+1 &amp; Instant Payouts</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span>Customer Directory &amp; Order History</span>
+                    <span>Storefront Exclusive Offer Banner</span>
                   </li>
                 </ul>
               </div>
@@ -1121,6 +1113,10 @@ export default function HomePage() {
                 </div>
 
                 <ul className="space-y-2.5 text-xs text-[#090D16] pt-4 border-t border-slate-100">
+                  <li className="flex items-center gap-2 font-semibold text-[#3b0764]">
+                    <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
+                    <span>Everything in Deluxe (Pro), plus:</span>
+                  </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
                     <span><strong>1,000+ Products</strong> &amp; Department View</span>
@@ -1128,14 +1124,6 @@ export default function HomePage() {
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
                     <span><strong>Free .com.ng Domain</strong> (On Annual)</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span><strong>0% Kredibly Commission</strong></span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span>8:00 AM Auto T+1 &amp; Instant Payouts</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
