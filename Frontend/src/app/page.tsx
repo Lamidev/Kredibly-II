@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { CustomBuildSection } from "@/components/landing/CustomBuildSection";
 import {
   Accordion,
   AccordionContent,
@@ -391,10 +390,9 @@ export default function HomePage() {
             </div>
 
             {/* Display Headline */}
-            <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-[72px] font-display font-bold tracking-tight leading-[1.06] text-[#090D16]">
-              Put your products online.
-              <br />
-              <span className="text-[#3b0764]">Start taking orders.</span>
+            <h1 className="text-[clamp(1.5rem,6vw,4.5rem)] font-display font-bold tracking-tight leading-[1.08] text-[#090D16]">
+              <span className="block whitespace-nowrap">Put your products online.</span>
+              <span className="block whitespace-nowrap text-[#3b0764]">Start taking orders.</span>
             </h1>
 
             {/* Subhead */}
@@ -1204,7 +1202,8 @@ export default function HomePage() {
         </section>
 
         {/* 8. Final High-Converting CTA Section */}
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
+        <section className="py-16 sm:py-24 bg-gradient-to-b from-[#F7F4FC] to-[#EFE8FA] border-t border-[#DADDD4]">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="bg-white border border-[#DADDD4] rounded-2xl p-8 sm:p-16 text-center space-y-6 relative overflow-hidden shadow-[0_16px_40px_-12px_rgba(9,13,22,0.08)]">
             {/* Geometric Diagonal Lattice & Precision Dot Matrix (Same Pattern as Hero) */}
             <div
@@ -1243,11 +1242,11 @@ export default function HomePage() {
               </div>
 
               <h2 className="font-display text-2xl sm:text-4xl md:text-5xl font-bold text-[#090D16] max-w-2xl leading-tight">
-                Your competitors are still writing account numbers in Instagram DMs.
+                Stop writing account numbers in DMs.
               </h2>
 
               <p className="text-sm sm:text-base text-[#525B6C] max-w-xl leading-relaxed">
-                Give your business the official respect it deserves. Create your free online store with 20 products in under 2 minutes.
+                Give your business the official store it deserves. Create your free online store in under 2 minutes and sell across WhatsApp, Instagram, TikTok, and beyond.
               </p>
 
               <div className="pt-2 w-full sm:w-auto">
@@ -1261,11 +1260,9 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+          </div>
         </section>
       </main>
-
-      {/* Custom Website / E-commerce Inquiry Section */}
-      <CustomBuildSection />
 
       {/* 9. Minimalist VOÐE-Style Footer */}
       <footer className="border-t border-[#DADDD4] bg-[#F3F4EF] pt-12 pb-10 text-xs text-[#525B6C]">
@@ -1364,6 +1361,11 @@ export default function HomePage() {
                   </a>
                 </li>
                 <li>
+                  <Link href="/custom-builds" className="hover:text-[#090D16] transition-colors">
+                    Custom Websites
+                  </Link>
+                </li>
+                <li>
                   <a href="#pricing" className="hover:text-[#090D16] transition-colors">
                     Pricing Plans
                   </a>
@@ -1452,7 +1454,6 @@ export default function HomePage() {
           {/* Bottom Bar */}
           <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11.5px] text-[#525B6C]">
             <p>© {new Date().getFullYear()} Akinbyte Technologies Limited (RC: 9466327). All rights reserved.</p>
-            <span className="font-medium text-[#090D16]">Nigeria (NGN ₦)</span>
           </div>
 
           {/* Regulatory & Payment Partner Disclaimer */}
