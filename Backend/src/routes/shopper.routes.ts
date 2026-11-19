@@ -106,7 +106,7 @@ router.post(
         .parse(req.body);
 
       const cleanEmail = data.email.toLowerCase();
-      if (isDisposableEmail(cleanEmail)) {
+      if (await isDisposableEmail(cleanEmail)) {
         throw new AppError(
           "Temporary or disposable email addresses are not allowed. Please use a permanent email address.",
           400
