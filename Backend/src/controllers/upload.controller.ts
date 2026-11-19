@@ -51,6 +51,44 @@ export const upload = multer({
   },
 });
 
+function isValidImageMagicBytes(filePath: string): boolean {
+  const fd = fs.openSync(filePath, "r");
+  try {
+    const buf = Buffer.alloc(12);
+    const bytesRead = fs.readSync(fd, buf, 0, 12, 0);
+    if (bytesRead < 4) return false;
+
+    // JPEG: FF D8 FF
+    if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return true;
+    // PNG: 89 50 4E 47 0D 0A 1A 0A
+    if (
+      bytesRead >= 8 &&
+      buf[0] === 0x89 &&
+      buf[1] === 0x50 &&
+      buf[2] === 0x4e &&
+      buf[3] === 0x47 &&
+      buf[4] === 0x0d &&
+      buf[5] === 0x0a &&
+      buf[6] === 0x1a &&
+      buf[7] === 0x0a
+    ) {
+      return true;
+    }
+    // WebP: RIFF....WEBP
+    if (
+      bytesRead >= 12 &&
+      buf.toString("ascii", 0, 4) === "RIFF" &&
+      buf.toString("ascii", 8, 12) === "WEBP"
+    ) {
+      return true;
+    }
+
+    return false;
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
 export class UploadController {
   static async uploadImages(req: Request, res: Response, next: NextFunction) {
     try {
@@ -62,6 +100,18 @@ export class UploadController {
 
       if (files.length > 2) {
         throw new AppError("Maximum of 2 images allowed per product", 400);
+      }
+
+      for (const file of files) {
+        if (!isValidImageMagicBytes(file.path)) {
+          for (const f of files) {
+            if (fs.existsSync(f.path)) fs.unlinkSync(f.path);
+          }
+          throw new AppError(
+            "Invalid image file content. Only genuine JPG, PNG, and WebP images are allowed.",
+            400
+          );
+        }
       }
 
       const urls = files.map((file) => `/uploads/products/${file.filename}`);
