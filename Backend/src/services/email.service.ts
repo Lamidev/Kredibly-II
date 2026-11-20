@@ -200,8 +200,11 @@ export class EmailService {
         </div>
 
         <div style="margin: 24px 0;">
-          <a href="${dashboardUrl}" style="background-color: #2e1065; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; display: inline-block;">
+          <a href="${dashboardUrl}" style="background-color: #2e1065; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; display: inline-block; margin-right: 10px; margin-bottom: 10px;">
             Sign in to your dashboard &rarr;
+          </a>
+          <a href="https://chat.whatsapp.com/EO5f7wrZKLiFEz1VkFsWZc" style="background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; text-decoration: none; padding: 11px 18px; border-radius: 8px; font-size: 13.5px; font-weight: 600; display: inline-block; margin-bottom: 10px;" target="_blank">
+            Join Merchant WhatsApp Community &rarr;
           </a>
         </div>
 
@@ -218,7 +221,7 @@ export class EmailService {
       </div>
     `;
 
-    const text = `Welcome aboard, ${firstName}!\n\nHello ${firstName},\n\nWelcome to Kredibly, and thank you for launching ${data.storeName} with us.\n\nAt Kredibly, we believe selling online shouldn't require hiring a developer, repeating prices in DMs, or chasing fake transfer screenshots. Your storefront is live at ${storeUrl}.\n\nComplete your 5-step onboarding in your dashboard (${dashboardUrl}):\n1. Upload logo, hero cover & bio (Store Settings)\n2. Add support email, address & social links (Store Settings)\n3. Set your Exclusive Offer banner & delivery fees (Delivery & Offers)\n4. Add your products (Products)\n5. Link payout bank & verify NIN/BVN KYC (Wallet & Payouts) to unlock instant withdrawals & 8:00 AM Auto T+1 payouts\n\nIf you have any feedback, reply or email usekredibly@gmail.com.\n\nWarm regards,\nAkinyemi Oluwaseun\nFounder, Kredibly (Akinbyte Technologies Limited)`;
+    const text = `Welcome aboard, ${firstName}!\n\nHello ${firstName},\n\nWelcome to Kredibly, and thank you for launching ${data.storeName} with us.\n\nAt Kredibly, we believe selling online shouldn't require hiring a developer, repeating prices in DMs, or chasing fake transfer screenshots. Your storefront is live at ${storeUrl}.\n\nComplete your 5-step onboarding in your dashboard (${dashboardUrl}):\n1. Upload logo, hero cover & bio (Store Settings)\n2. Add support email, address & social links (Store Settings)\n3. Set your Exclusive Offer banner & delivery fees (Delivery & Offers)\n4. Add your products (Products)\n5. Link payout bank & verify NIN/BVN KYC (Wallet & Payouts) to unlock instant withdrawals & 8:00 AM Auto T+1 payouts\n\nJoin the Kredibly Merchant WhatsApp Community: https://chat.whatsapp.com/EO5f7wrZKLiFEz1VkFsWZc\n\nIf you have any feedback, reply or email usekredibly@gmail.com.\n\nWarm regards,\nAkinyemi Oluwaseun\nFounder, Kredibly (Akinbyte Technologies Limited)`;
 
     return this.send({
       to: data.to,
