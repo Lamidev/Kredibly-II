@@ -591,9 +591,14 @@ export class OrderService {
         }).catch((err) => console.error("Merchant alert dispatch failed:", err));
       }
 
+      const formattedOrderTotal = Number(result.order.totalAmount).toLocaleString("en-NG", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+
       PushService.sendStorePush(result.order.storeId, {
         title: `New Paid Order #${result.order.orderNumber}`,
-        body: `₦${Number(result.order.totalAmount).toLocaleString("en-NG")} from ${result.customer.fullName}`,
+        body: `${result.storeName} · ₦${formattedOrderTotal} from ${result.customer.fullName}`,
         url: "/dashboard/orders",
       }).catch((err) => console.error("Push notification failed:", err));
     }

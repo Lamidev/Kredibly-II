@@ -532,9 +532,18 @@ export class WalletService {
         data: { status: "COMPLETED" },
       });
 
+      const formattedNet = netPayout.toLocaleString("en-NG", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+      const maskedAcct =
+        store.accountNumber.length >= 6
+          ? `${store.accountNumber.slice(0, 2)}****${store.accountNumber.slice(-4)}`
+          : store.accountNumber;
+
       PushService.sendStorePush(storeId, {
         title: "Payout Sent to Bank",
-        body: `₦${netPayout.toLocaleString("en-NG")} sent to ${store.bankName} (${store.accountNumber})`,
+        body: `${store.name} · ₦${formattedNet} sent to ${store.bankName} (${maskedAcct})`,
         url: "/dashboard/wallet",
       }).catch((err) => console.error("Withdrawal push failed:", err));
 
@@ -705,9 +714,18 @@ export class WalletService {
               reference,
             }).catch((err) => console.error("Auto T+1 email failed:", err));
 
+            const formattedT1Net = netPayout.toLocaleString("en-NG", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            });
+            const maskedT1Acct =
+              store.accountNumber.length >= 6
+                ? `${store.accountNumber.slice(0, 2)}****${store.accountNumber.slice(-4)}`
+                : store.accountNumber;
+
             PushService.sendStorePush(store.id, {
               title: "Daily T+1 Settlement Sent",
-              body: `₦${netPayout.toLocaleString("en-NG")} settled to ${store.bankName} (${store.accountNumber})`,
+              body: `${store.name} · ₦${formattedT1Net} settled to ${store.bankName} (${maskedT1Acct})`,
               url: "/dashboard/wallet",
             }).catch((err) => console.error("Auto T+1 push failed:", err));
           } catch (transferErr: any) {
