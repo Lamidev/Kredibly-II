@@ -1599,7 +1599,7 @@ export default function ProductsPage() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={submitting || compressing}
+                  disabled={submitting || compressing || !isFormValid}
                   className="bg-[#2e1065] hover:bg-[#3b0764] text-white disabled:opacity-45 disabled:cursor-not-allowed"
                 >
                   {submitting ? (
