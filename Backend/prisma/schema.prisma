@@ -81,8 +81,9 @@ model Store {
   
   subscriptionTier  SubscriptionTier @default(STARTER)
   subscriptionEnd   DateTime?
-  isActive          Boolean          @default(true)
-  payFromWallet     Boolean          @default(true)
+  isActive            Boolean          @default(true)
+  allowSearchIndexing Boolean          @default(true)
+  payFromWallet       Boolean          @default(true)
   passFeeToCustomer Boolean          @default(false)
   shippingConfig    Json?            // { defaultFee, freeDeliveryEnabled, freeDeliveryScope, freeDeliveryStates, freeDeliveryMinOrder, stateRates }
   kycStatus         String           @default("UNVERIFIED") // UNVERIFIED | PENDING | VERIFIED | REJECTED

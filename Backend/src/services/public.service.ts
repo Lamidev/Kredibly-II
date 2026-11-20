@@ -1,6 +1,14 @@
 import { prisma } from "../config/db";
 import { AppError } from "../middleware/errorHandler";
 
+function hasAtLeastOneSocialLink(socialLinks: unknown): boolean {
+  if (!socialLinks || typeof socialLinks !== "object") return false;
+  const links = socialLinks as Record<string, unknown>;
+  return ["instagram", "tiktok", "facebook", "twitter"].some(
+    (key) => typeof links[key] === "string" && links[key].trim().length > 0
+  );
+}
+
 export class PublicStoreService {
   /**
    * Get public store profile, KredScore metrics, and active products by slug
@@ -27,6 +35,7 @@ export class PublicStoreService {
         currency: true,
         subscriptionTier: true,
         isActive: true,
+        allowSearchIndexing: true,
         passFeeToCustomer: true,
         shippingConfig: true,
         products: {
@@ -53,9 +62,23 @@ export class PublicStoreService {
       throw new AppError(`Store '${slug}' not found`, 404);
     }
 
+    const hasBio = Boolean(store.description?.trim() || store.aboutText?.trim());
+    const hasAddress = Boolean(store.address?.trim());
+    const hasSocial = hasAtLeastOneSocialLink(store.socialLinks);
+    const isSearchIndexable = Boolean(
+      store.isActive &&
+        store.allowSearchIndexing &&
+        store.logoUrl &&
+        hasBio &&
+        hasAddress &&
+        hasSocial &&
+        store.products.length >= 3
+    );
+
     return {
       ...store,
       verifiedOrdersCount: store._count.orders,
+      isSearchIndexable,
     };
   }
 
@@ -72,11 +95,23 @@ export class PublicStoreService {
         id: true,
         name: true,
         slug: true,
+        description: true,
+        aboutText: true,
+        address: true,
+        socialLinks: true,
         logoUrl: true,
         whatsappNumber: true,
         currency: true,
         isActive: true,
+        allowSearchIndexing: true,
         passFeeToCustomer: true,
+        _count: {
+          select: {
+            products: {
+              where: { isActive: true },
+            },
+          },
+        },
       },
     });
 
@@ -99,8 +134,24 @@ export class PublicStoreService {
       throw new AppError("Product not found", 404);
     }
 
+    const hasBio = Boolean(store.description?.trim() || store.aboutText?.trim());
+    const hasAddress = Boolean(store.address?.trim());
+    const hasSocial = hasAtLeastOneSocialLink(store.socialLinks);
+    const isSearchIndexable = Boolean(
+      store.isActive &&
+        store.allowSearchIndexing &&
+        store.logoUrl &&
+        hasBio &&
+        hasAddress &&
+        hasSocial &&
+        store._count.products >= 3
+    );
+
     return {
-      store,
+      store: {
+        ...store,
+        isSearchIndexable,
+      },
       product,
     };
   }

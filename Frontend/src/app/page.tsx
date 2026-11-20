@@ -16,6 +16,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   Store,
+  Check,
   CheckCircle2,
   Wallet,
   XCircle,
@@ -871,6 +872,75 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* 5.5. Google & AI Search Visibility (3-Step Guide) */}
+        <section className="py-20 sm:py-24 bg-white border-t border-[#DADDD4]">
+          <div className="px-4 sm:px-6 max-w-6xl mx-auto">
+            <div className="max-w-2xl mb-12 space-y-3">
+              <div className="inline-flex items-center gap-2.5">
+                <span className="w-5 h-[2px] bg-[#3b0764]" />
+                <span className="text-[11px] font-mono tracking-[0.2em] uppercase font-bold text-[#3b0764]">
+                  GET FOUND AUTOMATICALLY
+                </span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-display font-bold tracking-tight text-[#090D16]">
+                Show up on Google &amp; AI search.
+              </h2>
+              <p className="text-sm sm:text-base text-[#525B6C] leading-relaxed">
+                No tech skills needed. Finish your store setup in 2 minutes so buyers can find your business on Google, ChatGPT, and more.
+              </p>
+            </div>
+
+            <div className="relative">
+              {/* Dashed connector line on desktop */}
+              <div
+                aria-hidden="true"
+                className="hidden md:block absolute top-5 left-12 right-12 border-t-2 border-dashed border-[#2e1065]/30 z-0"
+              />
+
+              <div className="grid gap-6 md:grid-cols-3 relative z-10">
+                {[
+                  {
+                    step: "1",
+                    title: "Add your business details",
+                    desc: "Upload your logo, store bio, address, and at least one social media page so shoppers know your brand is real.",
+                    isDone: false,
+                  },
+                  {
+                    step: "2",
+                    title: "Post at least 3 products",
+                    desc: "Add your product photos, Naira prices, and details. Kredibly automatically prepares your store for Google and AI search.",
+                    isDone: false,
+                  },
+                  {
+                    step: "3",
+                    title: "Get found by new buyers",
+                    desc: "Your store goes live on Google and AI search—so people searching for your brand or products can find you and order directly.",
+                    isDone: true,
+                  },
+                ].map((item) => (
+                  <div key={item.title} className="space-y-4">
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm ring-4 ring-white ${
+                        item.isDone ? "bg-emerald-600" : "bg-[#2e1065]"
+                      }`}
+                    >
+                      {item.isDone ? <Check className="w-5 h-5" /> : item.step}
+                    </div>
+                    <div className="rounded-2xl border border-[#DADDD4] bg-[#FAF9F5] p-6 h-full">
+                      <h3 className="text-base font-display font-bold text-[#090D16]">
+                        {item.title}
+                      </h3>
+                      <p className="mt-2 text-sm text-[#525B6C] leading-relaxed">
+                        {item.desc}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* 6. Section 5: Subscription Plans (Kept UI/UX as requested) */}
         <section id="pricing" className="py-20 sm:py-28 bg-[#F7F4FC]">
           <div className="px-4 sm:px-6 max-w-6xl mx-auto">
@@ -1351,6 +1421,26 @@ export default function HomePage() {
                 <li>
                   <Link href="/custom-builds" className="hover:text-[#090D16] transition-colors">
                     Custom Websites
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/whatsapp-store-builder" className="hover:text-[#090D16] transition-colors">
+                    WhatsApp Store Builder
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/instagram-shop-builder" className="hover:text-[#090D16] transition-colors">
+                    Instagram Shop Builder
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/bumpa-alternative" className="hover:text-[#090D16] transition-colors">
+                    Bumpa Alternative
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/catlog-alternative" className="hover:text-[#090D16] transition-colors">
+                    Catlog Alternative
                   </Link>
                 </li>
                 <li>

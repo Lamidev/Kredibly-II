@@ -7,7 +7,18 @@ import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { getImageUrl } from "@/lib/utils";
 import { compressProductImage } from "@/lib/compressor";
-import { Save, Loader2, UploadCloud, Store, RotateCcw, Image as ImageIcon, X } from "lucide-react";
+import {
+  Save,
+  Loader2,
+  UploadCloud,
+  Store,
+  RotateCcw,
+  Image as ImageIcon,
+  X,
+  Globe,
+  CheckCircle2,
+  Circle,
+} from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -38,6 +49,7 @@ interface SettingsFormState {
   bannerUrl: string;
   themeColor: string;
   passFeeToCustomer: boolean;
+  allowSearchIndexing: boolean;
 }
 
 const EMPTY_SOCIAL: SocialLinksState = {
@@ -61,6 +73,7 @@ const EMPTY_FORM: SettingsFormState = {
   bannerUrl: "",
   themeColor: "#2e1065",
   passFeeToCustomer: false,
+  allowSearchIndexing: true,
 };
 
 export default function StoreSettingsPage() {
@@ -72,6 +85,7 @@ export default function StoreSettingsPage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [subscriptionTier, setSubscriptionTier] = useState<string>("STARTER");
+  const [activeProductsCount, setActiveProductsCount] = useState<number>(0);
 
   const [initialForm, setInitialForm] = useState<SettingsFormState>(EMPTY_FORM);
   const [form, setForm] = useState<SettingsFormState>(EMPTY_FORM);
@@ -101,8 +115,10 @@ export default function StoreSettingsPage() {
           bannerUrl: s.bannerUrl || "",
           themeColor: s.themeColor || "#2e1065",
           passFeeToCustomer: Boolean(s.passFeeToCustomer),
+          allowSearchIndexing: s.allowSearchIndexing !== false,
         };
         setSubscriptionTier(s.subscriptionTier || "STARTER");
+        setActiveProductsCount(Number(s.activeProductsCount || 0));
         setInitialForm(loaded);
         setForm(loaded);
       } catch (err: any) {
@@ -134,7 +150,8 @@ export default function StoreSettingsPage() {
     form.logoUrl !== initialForm.logoUrl ||
     form.bannerUrl !== initialForm.bannerUrl ||
     form.themeColor !== initialForm.themeColor ||
-    form.passFeeToCustomer !== initialForm.passFeeToCustomer;
+    form.passFeeToCustomer !== initialForm.passFeeToCustomer ||
+    form.allowSearchIndexing !== initialForm.allowSearchIndexing;
 
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -207,6 +224,7 @@ export default function StoreSettingsPage() {
         logoUrl: form.logoUrl || null,
         bannerUrl: form.bannerUrl || null,
         themeColor: form.themeColor,
+        allowSearchIndexing: form.allowSearchIndexing,
         ...(subscriptionTier !== "STARTER"
           ? { passFeeToCustomer: form.passFeeToCustomer }
           : {}),
@@ -231,6 +249,7 @@ export default function StoreSettingsPage() {
         },
         logoUrl: res.data.data.logoUrl || "",
         bannerUrl: res.data.data.bannerUrl || "",
+        allowSearchIndexing: res.data.data.allowSearchIndexing !== false,
       };
       setInitialForm(saved);
       setForm(saved);
@@ -572,6 +591,123 @@ export default function StoreSettingsPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Google & AI Search Visibility */}
+              {(() => {
+                const hasLogo = Boolean(form.logoUrl);
+                const hasBio = Boolean(
+                  form.description.trim() || form.aboutText.trim()
+                );
+                const hasAddress = Boolean(form.address.trim());
+                const hasSocial = Boolean(
+                  form.socialLinks.instagram.trim() ||
+                    form.socialLinks.tiktok.trim() ||
+                    form.socialLinks.facebook.trim() ||
+                    form.socialLinks.twitter.trim()
+                );
+                const hasProducts = activeProductsCount >= 3;
+                const meetsGoogleRequirements =
+                  hasLogo && hasBio && hasAddress && hasSocial && hasProducts;
+                const isLiveOnGoogle =
+                  meetsGoogleRequirements && form.allowSearchIndexing;
+
+                return (
+                  <div
+                    id="google-visibility"
+                    className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4 scroll-mt-24"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-start gap-2.5">
+                        <Globe className="w-4 h-4 text-[#2e1065] mt-0.5 shrink-0" />
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-xs font-bold text-[#0f172a]">
+                              Show My Store on Google &amp; AI Search
+                            </p>
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                isLiveOnGoogle
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : !form.allowSearchIndexing
+                                  ? "bg-slate-200 text-slate-700"
+                                  : "bg-amber-100 text-amber-800"
+                              }`}
+                            >
+                              {isLiveOnGoogle
+                                ? "Ready for Google"
+                                : !form.allowSearchIndexing
+                                ? "Hidden by you"
+                                : "Complete checklist"}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            Let shoppers find your store on Google, ChatGPT, and AI search automatically when your store meets all 5 requirements below. Your phone number, address, and social links also auto-update in your storefront footer.
+                          </p>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={form.allowSearchIndexing}
+                        onChange={(e) =>
+                          setForm({
+                            ...form,
+                            allowSearchIndexing: e.target.checked,
+                          })
+                        }
+                        aria-label="Show my store on Google and AI search"
+                        className="w-4 h-4 accent-[#2e1065] cursor-pointer shrink-0"
+                      />
+                    </div>
+
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 pt-1">
+                      {[
+                        {
+                          done: hasLogo,
+                          label: "Upload store logo",
+                        },
+                        {
+                          done: hasBio,
+                          label: "Add store bio or about text",
+                        },
+                        {
+                          done: hasAddress,
+                          label: "Add store address",
+                        },
+                        {
+                          done: hasSocial,
+                          label: "Add 1+ social media link",
+                        },
+                        {
+                          done: hasProducts,
+                          label: `Publish 3+ products (${Math.min(activeProductsCount, 3)}/3)`,
+                        },
+                      ].map((req) => (
+                        <div
+                          key={req.label}
+                          className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-medium ${
+                            req.done
+                              ? "border-emerald-200 bg-emerald-50/70 text-emerald-900"
+                              : "border-slate-200 bg-white text-slate-600"
+                          }`}
+                        >
+                          {req.done ? (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          ) : (
+                            <Circle className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          )}
+                          <span>{req.label}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {!form.allowSearchIndexing && (
+                      <p className="text-[11px] text-slate-500">
+                        Turning this off asks Google to remove your store on its next recrawl (usually a few days).
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Only shown for Pro / Business plans */}
               {isPaidPlan && (

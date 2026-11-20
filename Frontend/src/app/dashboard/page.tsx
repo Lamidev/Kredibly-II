@@ -230,6 +230,23 @@ export default function DashboardPage() {
       href: "/dashboard/products",
     },
     {
+      id: "google",
+      label: "Show My Business on Google",
+      desc: "Add logo, bio, address, 1+ social link & 3 products so buyers find you on Google.",
+      done: Boolean(
+        activeStore?.allowSearchIndexing !== false &&
+          activeStore?.logoUrl &&
+          (activeStore?.description || activeStore?.aboutText) &&
+          activeStore?.address &&
+          (activeStore?.socialLinks?.instagram ||
+            activeStore?.socialLinks?.tiktok ||
+            activeStore?.socialLinks?.facebook ||
+            activeStore?.socialLinks?.twitter) &&
+          totalProducts >= 3
+      ),
+      href: "/dashboard/settings#google-visibility",
+    },
+    {
       id: "bank",
       label: "Link Payout Bank Account",
       desc: "Verify your Nigerian bank account so you can receive payouts.",

@@ -1,0 +1,31 @@
+# Kredibly
+
+> Kredibly is an online store builder and social-commerce storefront platform for Nigerian merchants selling on WhatsApp, Instagram, and TikTok, operated by Akinbyte Technologies Limited.
+
+## Overview
+- Website: https://usekredibly.com
+- Support Email: support@usekredibly.com
+- Country & Currency: Nigeria (NGN / ₦)
+- Core Purpose: Help social media sellers launch an official online storefront in minutes, replace messy DM ordering with structured carts and instant checkout, track inventory, and receive payouts via Nomba.
+
+## Pricing Plans (NGN)
+- Starter (Free): ₦0/month — up to 20 products, 2.5% transaction fee on checkout orders.
+- Starter Plus: ₦5,000/month — up to 50 products, 0% Kredibly commission on orders.
+- Deluxe (Pro): ₦10,000/month — up to 200 products, 0% Kredibly commission, custom domain support, and advanced storefront features.
+- Ultimate (Scale): ₦20,000/month — 1,000+ products, 0% Kredibly commission, priority support, and full scale tooling.
+
+## Key Capabilities
+- Instant storefront URL (`usekredibly.com/your-store` or custom domain on higher plans)
+- Built-in online checkout and bank/card payments powered by Nomba
+- WhatsApp-ready product links, order receipts, and customer order tracking
+- Merchant dashboard for products, variants, inventory, orders, and payouts
+- Custom website builds for brands needing bespoke storefronts
+
+## Canonical Pages & Guides
+- Homepage: https://usekredibly.com/
+- WhatsApp Store Builder: https://usekredibly.com/whatsapp-store-builder
+- Instagram Shop Builder: https://usekredibly.com/instagram-shop-builder
+- Bumpa Alternative in Nigeria: https://usekredibly.com/bumpa-alternative
+- Catlog Alternative in Nigeria: https://usekredibly.com/catlog-alternative
+- Custom Website Builds: https://usekredibly.com/custom-builds
+- Start Free Store: https://usekredibly.com/register
