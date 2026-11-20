@@ -48,11 +48,19 @@
           │ Outputs: Verified real-time buyer/seller communication loops
           ▼
   ┌───────────────┐
-  │    STAGE 8    │  VPS Deployment, Nginx Caching & Cloudflare CDN
-  │               │  (PM2 cluster, Nginx direct static serving, edge caching)
+  │    STAGE 8    │  VPS Deployment, PWA Push, Subscriptions & Kredibly HQ
+  │               │  (PM2, Nginx, Web Push PWA, 4-Tier Billing, /admin HQ, Cleanup)
   └───────────────┘
             Outputs: Production live system with $0 cloud media overhead
 ```
+
+---
+
+## Live Shipped Milestones (Updated)
+- **Stage 1–4 (Core, Auth, Catalog, SSR Storefronts):** Live on `usekredibly.com` & `<slug>.kredibly.shop` with dynamic OpenGraph store/product previews, `Home · Categories · More ▾ · About` navigation, `/[storeSlug]/about` page, and mobile-responsive PWA views.
+- **Stage 5–6 (Checkout, Nomba DVA, T+1 & Payouts):** Live Nomba DVA transfer checkout, OTP-verified withdrawals, daily 8:00 AM WAT T+1 auto-settlement, and Prembly REST API KYC integration.
+- **Stage 7 (Notifications & PWA):** High-urgency (`urgency: "high"`, `TTL: 86400`) Web Push via `sw.js` for paid orders, manual payouts, T+1 settlements, and plan renewal reminders, plus Resend transactional emails & WhatsApp receipt loops.
+- **Stage 8 (Subscriptions, Storage & Kredibly HQ):** 4-tier subscription billing (`/dashboard/billing` via Wallet & Card), tiered product & image limits (`2 / 2 / 3 / 5`) with multi-select upload, daily DB-referenced orphan image cleanup (`CleanupService`), and Kredibly HQ (`/admin` & `/admin/subscriptions`).
 
 ---
 
