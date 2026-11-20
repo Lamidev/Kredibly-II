@@ -228,9 +228,9 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF9F5] text-[#090D16] font-sans selection:bg-[#3b0764] selection:text-white overflow-x-hidden">
-      {/* 1. Static/Sticky Top Navigation Bar (Flush to top, matching standard browser navigation) */}
-      <header className="sticky top-0 z-50 w-full border-b border-[#DADDD4] bg-[#FAF9F5]/95 backdrop-blur-md">
+    <div className="min-h-screen flex flex-col bg-[#FAF9F5] text-[#090D16] font-sans selection:bg-[#3b0764] selection:text-white">
+      {/* 1. Static/Sticky Top Navigation Bar (Flush to top, matching standard browser navigation & PWA notch-safe) */}
+      <header className="sticky top-0 z-50 w-full border-b border-[#DADDD4] bg-[#FAF9F5]/95 backdrop-blur-md pt-[env(safe-area-inset-top,0px)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
             <img

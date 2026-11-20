@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Check, CheckCircle2, Sparkles } from "lucide-react";
+import { ArrowRight, Check, CheckCircle2 } from "lucide-react";
 
 export interface SeoComparisonRow {
   feature: string;
@@ -131,7 +131,7 @@ export function SeoLandingPage({
       />
 
       {/* Top Navigation */}
-      <header className="sticky top-0 z-40 border-b border-[#DADDD4] bg-[#FAF9F5]/95 backdrop-blur-sm">
+      <header className="sticky top-0 z-40 border-b border-[#DADDD4] bg-[#FAF9F5]/95 backdrop-blur-sm pt-[env(safe-area-inset-top,0px)]">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2.5 group">
             <img
@@ -174,7 +174,6 @@ export function SeoLandingPage({
         {/* Hero */}
         <section className="mx-auto max-w-4xl px-4 pb-16 pt-14 text-center sm:px-6 sm:pt-20">
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#DADDD4] bg-white px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-[#2e1065]">
-            <Sparkles className="h-3.5 w-3.5" />
             {eyebrow}
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-[#090D16] sm:text-5xl sm:leading-[1.12]">
