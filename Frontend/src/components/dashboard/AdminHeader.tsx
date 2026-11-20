@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AlignJustify, ExternalLink, UserCircle, Bell, BellOff } from "lucide-react";
+import { AlignJustify, ExternalLink, UserCircle, Bell, BellOff, Globe } from "lucide-react";
 import { toast } from "sonner";
+import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { getImageUrl } from "@/lib/utils";
 import {
@@ -21,6 +22,38 @@ export function AdminHeader({ setOpen }: { setOpen: (val: boolean) => void }) {
   const resolvedLogo = getImageUrl(store?.logoUrl) || "/kredibly-k-icon.png";
   const [alertsOn, setAlertsOn] = useState(true);
   const [pushGranted, setPushGranted] = useState(true);
+  const [needsGoogleSetup, setNeedsGoogleSetup] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    api
+      .get("/store/settings")
+      .then((res) => {
+        if (!active) return;
+        const s = res.data?.data;
+        if (!s) return;
+        const sl = s.socialLinks || {};
+        const hasLogo = Boolean(s.logoUrl);
+        const hasBio = Boolean(s.description?.trim() || s.aboutText?.trim());
+        const hasAddress = Boolean(s.address?.trim());
+        const hasSocial = Boolean(
+          sl.instagram?.trim() ||
+            sl.tiktok?.trim() ||
+            sl.facebook?.trim() ||
+            sl.twitter?.trim()
+        );
+        const hasProducts = Number(s.activeProductsCount || 0) >= 3;
+        setNeedsGoogleSetup(
+          !(hasLogo && hasBio && hasAddress && hasSocial && hasProducts)
+        );
+      })
+      .catch(() => {
+        // ignore silently
+      });
+    return () => {
+      active = false;
+    };
+  }, [store?.logoUrl, store?.name]);
 
   useEffect(() => {
     setAlertsOn(areSaleAlertsEnabled());
@@ -114,6 +147,16 @@ export function AdminHeader({ setOpen }: { setOpen: (val: boolean) => void }) {
       </div>
 
       <div className="flex items-center gap-3 sm:gap-4">
+        {needsGoogleSetup && (
+          <Link
+            href="/dashboard/settings#google-visibility"
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-[#f3e8ff] border border-[#2e1065]/15 px-3 py-1.5 text-[11px] font-bold text-[#2e1065] hover:bg-[#e9d5ff] transition"
+          >
+            <Globe className="w-3.5 h-3.5 shrink-0" />
+            <span>Show on Google</span>
+          </Link>
+        )}
+
         <button
           type="button"
           onClick={handleToggleAlerts}

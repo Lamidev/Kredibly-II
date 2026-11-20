@@ -612,7 +612,10 @@ export default function StoreSettingsPage() {
                   meetsGoogleRequirements && form.allowSearchIndexing;
 
                 return (
-                  <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+                  <div
+                    id="google-visibility"
+                    className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4 scroll-mt-24"
+                  >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex items-start gap-2.5">
                         <Globe className="w-4 h-4 text-[#2e1065] mt-0.5 shrink-0" />
