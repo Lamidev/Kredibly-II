@@ -329,6 +329,17 @@ export default function AdminSubscriptionsPage() {
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {data.plans.map((p) => {
             const draft = editingPlans[p.tier] || p;
+            const isDirty =
+              draft.monthlyPrice !== p.monthlyPrice ||
+              draft.annualPrice !== p.annualPrice ||
+              draft.maxProducts !== p.maxProducts ||
+              draft.maxImagesPerProduct !== p.maxImagesPerProduct ||
+              draft.platformFeePercent !== p.platformFeePercent ||
+              draft.allowPassFee !== p.allowPassFee ||
+              draft.allowPromoCodes !== p.allowPromoCodes ||
+              draft.allowOfferBanner !== p.allowOfferBanner ||
+              draft.allowCustomDomain !== p.allowCustomDomain;
+
             return (
               <div
                 key={p.tier}
@@ -339,21 +350,23 @@ export default function AdminSubscriptionsPage() {
                     <p className="font-bold text-sm text-[#0f172a]">{draft.name}</p>
                     <p className="text-[11px] font-mono text-slate-500">{p.tier}</p>
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={() => handleSavePlan(p.tier)}
-                    disabled={savingTier === p.tier}
-                    className="bg-[#2e1065] hover:bg-[#3b0764] text-white h-8 text-xs"
-                  >
-                    {savingTier === p.tier ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <>
-                        <Save className="w-3.5 h-3.5 mr-1" />
-                        Save
-                      </>
-                    )}
-                  </Button>
+                  {isDirty && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleSavePlan(p.tier)}
+                      disabled={savingTier === p.tier}
+                      className="bg-[#2e1065] hover:bg-[#3b0764] text-white h-8 text-xs"
+                    >
+                      {savingTier === p.tier ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <>
+                          <Save className="w-3.5 h-3.5 mr-1" />
+                          Save
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-2.5 text-xs">
