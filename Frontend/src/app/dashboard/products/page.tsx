@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
   formatCurrency,
@@ -448,7 +449,12 @@ export default function ProductsPage() {
         await api.put(`/products/${editingProduct.id}`, payload);
         toast.success("Product updated successfully!");
       } else {
+        const isFirstProduct = products.length === 0;
         await api.post("/products", payload);
+        if (isFirstProduct) {
+          trackEvent("first_product_added");
+        }
+        trackEvent("product_created", { is_first: isFirstProduct });
         toast.success("Product published to your store!");
       }
 

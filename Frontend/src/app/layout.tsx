@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Toaster } from "@/components/ui/sonner";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -121,6 +122,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased selection:bg-brand-500 selection:text-white">
+        <GoogleAnalytics />
         {children}
         <Toaster />
       </body>

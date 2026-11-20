@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
 import { formatCurrency } from "@/lib/utils";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -107,6 +108,11 @@ export default function MerchantBillingPage() {
         billingCycle,
       });
       toast.success(res.data?.message || "Plan upgraded!");
+      trackEvent("paid_plan_upgraded", {
+        tier,
+        method: "wallet",
+        billing_cycle: billingCycle,
+      });
       updateStore({ subscriptionTier: tier });
       await fetchOverview();
     } catch (err: any) {
@@ -123,6 +129,10 @@ export default function MerchantBillingPage() {
       const res = await api.post("/subscription/upgrade-transfer", {
         tier,
         billingCycle,
+      });
+      trackEvent("paid_plan_checkout_started", {
+        tier,
+        billing_cycle: billingCycle,
       });
       setTransferModal(res.data.data);
     } catch (err: any) {
@@ -141,6 +151,11 @@ export default function MerchantBillingPage() {
       });
       toast.success(res.data?.message || "Transfer confirmed and plan activated!");
       if (res.data?.data?.tier) {
+        trackEvent("paid_plan_upgraded", {
+          tier: res.data.data.tier,
+          method: "transfer",
+          billing_cycle: billingCycle,
+        });
         updateStore({ subscriptionTier: res.data.data.tier });
       }
       setTransferModal(null);

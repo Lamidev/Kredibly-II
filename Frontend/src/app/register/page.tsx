@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
   PasswordStrengthHint,
@@ -125,6 +126,7 @@ function RegisterFormContent() {
     const fullName = `${firstName} ${lastName}`.trim() || firstName.trim();
 
     try {
+      trackEvent("sign_up_started");
       const res = await api.post("/auth/register", {
         ...formData,
         fullName,
@@ -140,6 +142,7 @@ function RegisterFormContent() {
       }
 
       const { token, user, store } = data;
+      trackEvent("sign_up", { method: "email", store_slug: store?.slug });
       setAuth(token, user, store);
       toast.success("Your store is live! Welcome to Kredibly.");
       router.push("/dashboard");
@@ -166,6 +169,7 @@ function RegisterFormContent() {
         code: verificationCode.trim(),
       });
       const { token, user, store } = res.data.data;
+      trackEvent("sign_up", { method: "email", store_slug: store?.slug });
       setAuth(token, user, store);
       toast.success("Email verified! Welcome to Kredibly.");
       router.push("/dashboard");
