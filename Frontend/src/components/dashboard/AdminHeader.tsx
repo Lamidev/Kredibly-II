@@ -76,6 +76,19 @@ export function AdminHeader({ setOpen }: { setOpen: (val: boolean) => void }) {
       "Notification" in window &&
       Notification.permission !== "granted"
     ) {
+      const ua = window.navigator.userAgent || "";
+      const isIos = /iPad|iPhone|iPod/.test(ua);
+      const isStandalone =
+        window.matchMedia?.("(display-mode: standalone)").matches ||
+        (window.navigator as any).standalone === true;
+
+      if (isIos && !isStandalone) {
+        toast.error(
+          "On iPhone, open Kredibly from your Home Screen app icon to enable push notifications."
+        );
+        return;
+      }
+
       try {
         const perm = await Notification.requestPermission();
         setPushGranted(perm === "granted");
@@ -89,7 +102,9 @@ export function AdminHeader({ setOpen }: { setOpen: (val: boolean) => void }) {
         }
         if (perm === "denied") {
           toast.error(
-            "Notifications are blocked in your browser settings. Enable them in site settings to get order alerts."
+            isIos
+              ? "Notifications blocked in iPhone Settings. Go to Settings > Notifications > Kredibly to allow them."
+              : "Notifications are blocked in your browser settings. Enable them in site settings to get order alerts."
           );
           return;
         }
