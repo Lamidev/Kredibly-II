@@ -8,6 +8,7 @@ import { errorHandler } from "./middleware/errorHandler";
 import { WalletService } from "./services/wallet.service";
 import { SubscriptionService } from "./services/subscription.service";
 import { CleanupService } from "./services/cleanup.service";
+import { PushService } from "./services/push.service";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -67,10 +68,17 @@ function scheduleDailyAutoT1() {
     }
     const delayMs = nextRun.getTime() - now.getTime();
     setTimeout(async () => {
+      let settledT1Count = 0;
       try {
-        await WalletService.processAutoT1Settlements();
+        const res = await WalletService.processAutoT1Settlements();
+        settledT1Count = res?.settledCount || 0;
       } catch (err) {
         console.error("[Auto T+1] Scheduled run failed:", err);
+      }
+      try {
+        await PushService.sendDailyAdminSummary(settledT1Count);
+      } catch (err) {
+        console.error("[Admin Summary] Daily push failed:", err);
       }
       try {
         await SubscriptionService.processSubscriptionLifecycle();

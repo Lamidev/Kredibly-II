@@ -35,10 +35,18 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const targetUrl = (event.notification.data && event.notification.data.url) || "/dashboard/orders";
 
+  const isAdminTarget = targetUrl.startsWith("/admin");
+
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
       for (const client of windowClients) {
-        if (client.url.includes("/dashboard") && "focus" in client) {
+        if (
+          (isAdminTarget ? client.url.includes("/admin") : client.url.includes("/dashboard")) &&
+          "focus" in client
+        ) {
+          if ("navigate" in client && client.url !== targetUrl) {
+            client.navigate(targetUrl).catch(() => {});
+          }
           return client.focus();
         }
       }

@@ -13,7 +13,7 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 
-export async function subscribeMerchantPush() {
+async function subscribePushEndpoint(apiPath: string) {
   if (
     typeof window === "undefined" ||
     !("serviceWorker" in navigator) ||
@@ -37,7 +37,7 @@ export async function subscribeMerchantPush() {
     }
     const json = sub.toJSON();
     if (json.endpoint && json.keys?.p256dh && json.keys?.auth) {
-      await api.post("/store/push-subscribe", {
+      await api.post(apiPath, {
         endpoint: json.endpoint,
         keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
       });
@@ -47,13 +47,13 @@ export async function subscribeMerchantPush() {
   }
 }
 
-export async function unsubscribeMerchantPush() {
+async function unsubscribePushEndpoint(apiPath: string) {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
   try {
     const reg = await navigator.serviceWorker.getRegistration("/sw.js");
     const sub = await reg?.pushManager.getSubscription();
     if (sub) {
-      await api.delete("/store/push-subscribe", {
+      await api.delete(apiPath, {
         data: { endpoint: sub.endpoint },
       });
       await sub.unsubscribe();
@@ -61,6 +61,22 @@ export async function unsubscribeMerchantPush() {
   } catch {
     // ignore
   }
+}
+
+export async function subscribeMerchantPush() {
+  return subscribePushEndpoint("/store/push-subscribe");
+}
+
+export async function unsubscribeMerchantPush() {
+  return unsubscribePushEndpoint("/store/push-subscribe");
+}
+
+export async function subscribeAdminPush() {
+  return subscribePushEndpoint("/admin/push-subscribe");
+}
+
+export async function unsubscribeAdminPush() {
+  return unsubscribePushEndpoint("/admin/push-subscribe");
 }
 
 export function areSaleAlertsEnabled(): boolean {

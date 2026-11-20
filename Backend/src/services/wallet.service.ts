@@ -387,6 +387,14 @@ export class WalletService {
       },
     });
 
+    if (nextStatus === "PENDING") {
+      PushService.sendAdminPush({
+        title: `KYC Review Needed: ${store.name}`,
+        body: `Name mismatch (${result.fullName}) — review in KYC Queue.`,
+        url: "/admin/kyc",
+      }).catch(() => {});
+    }
+
     return {
       status: updated.kycStatus,
       idType: updated.kycIdType,
@@ -556,6 +564,15 @@ export class WalletService {
       };
     } catch (err: any) {
       console.error("Nomba Payout Transfer Failed:", err.message);
+
+      PushService.sendAdminPush({
+        title: `Payout Failed: ${store.name}`,
+        body: `₦${netPayout.toLocaleString("en-NG", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })} withdrawal failed: ${err.message}`,
+        url: "/admin/payouts",
+      }).catch(() => {});
 
       // Revert funds back to wallet if transfer failed immediately
       await prisma.$transaction(async (tx) => {
@@ -730,6 +747,14 @@ export class WalletService {
             }).catch((err) => console.error("Auto T+1 push failed:", err));
           } catch (transferErr: any) {
             console.error(`Auto T+1 transfer failed for ${store.slug}:`, transferErr.message);
+            PushService.sendAdminPush({
+              title: `T+1 Payout Failed: ${store.name}`,
+              body: `₦${netPayout.toLocaleString("en-NG", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })} auto-settlement failed`,
+              url: "/admin/payouts",
+            }).catch(() => {});
             await prisma.$transaction(async (tx) => {
               await tx.wallet.update({
                 where: { id: wallet.id },
