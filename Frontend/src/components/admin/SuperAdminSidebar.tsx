@@ -86,14 +86,9 @@ export function SuperAdminSidebar({
             alt="Kredibly HQ"
             className="h-7 w-auto object-contain"
           />
-          <div className="min-w-0">
-            <p className="font-display text-xs font-bold text-[#2e1065] tracking-tight truncate">
-              Kredibly HQ
-            </p>
-            <p className="text-[11px] text-slate-500 truncate">
-              {user?.email || "Platform Control"}
-            </p>
-          </div>
+          <p className="text-[11px] text-slate-500 truncate">
+            {user?.email || "Platform Control"}
+          </p>
         </div>
 
         {/* Navigation */}
