@@ -24,20 +24,21 @@ The platform allows any seller to set up an online storefront in under 2 minutes
 
 ## 2. Business & Monetization Architecture
 
-### Pricing Strategy (Monthly SaaS + Transaction Margin)
+### Pricing Strategy (4-Tier SaaS + Free-Tier Transaction Fee)
 
-To avoid high churn while maintaining recurring revenue (MRR), Kredibly II operates on a **Value-First Subscription Model**:
+Kredibly II operates on a **4-Tier Value-First Model** with Pay-from-Wallet and Card billing (`/dashboard/billing`):
 
-| Tier | Price | Product Limit | Transaction Fee | Core Capabilities |
-| :--- | :--- | :--- | :--- | :--- |
-| **Starter (Trial)** | **Free** | Up to 5 Products | 2.5% + Gateway | Standard store link (`kred.shop/handle`), 2 images/product, basic analytics, automated receipts |
-| **Growth / Pro** | **₦3,500 – ₦4,500 / mo** | Unlimited | 1.5% + Gateway | Unlimited products, WhatsApp automated receipts, pay subscription from wallet balance, inventory alerts |
-| **Business / Scale** | **₦10,000 / mo** | Unlimited | 1.0% + Gateway | Custom domain integration (`brand.com`), multiple staff accounts, priority settlement & support |
+| Tier | Monthly Price | Product Limit | Images / Product | Transaction Fee | Core Capabilities |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Starter (Free)** | **₦0** (up to ₦200k sales) | 20 Products | 2 | 2.5% (incl. processing) | Official `name.kredibly.shop`, instant bank transfer checkout, PWA push & WhatsApp alerts, 8:00 AM Auto T+1 & instant payouts |
+| **Starter Plus** | **₦5,000 / mo** | 50 Products | 2 | 0% Kredibly commission | Everything in Starter, plus 0% commission, choose who covers processing fee, custom category pills, customer directory |
+| **Deluxe (Pro)** | **₦10,000 / mo** | 200 Products | 3 | 0% Kredibly commission | Everything in Starter Plus, plus unlimited variants, discount slash & coupon codes, storefront exclusive offer banner |
+| **Ultimate (Scale)** | **₦20,000 / mo** | 1,000+ Products | 5 | 0% Kredibly commission | Everything in Deluxe, plus free `.com.ng` domain on annual billing and priority support |
 
-### The Unfair Monetization Edges:
-1. **Pay-From-Wallet Deduction:** Merchants can opt to have their monthly renewal automatically deducted from their sale proceeds instead of relying on failed ATM card auto-debits.
-2. **"Taste of Sales" Free Gateway:** The Starter plan remains free until the merchant makes their first **₦50,000 or 5 sales**. Once they make money, upgrading is frictionless.
-3. **Zero-Sales Assurance:** If an active merchant makes 0 sales in a 30-day billing period, their next month receives a 50% discount or renewal credit.
+### Billing, Retention & Lifecycle Rules:
+1. **Pay-From-Wallet & Card Checkout:** Merchants can upgrade or renew monthly/annually (2 months free on annual) directly from their Kredibly Wallet `availableBalance` or via card checkout.
+2. **Automated Renewal Reminders & Grace Period:** Daily lifecycle cron sends Email + PWA Push reminders at **3 days** and **1 day** before expiry, followed by a **3-day grace period** before downgrading back to `STARTER` (without deleting existing products).
+3. **Kredibly HQ Monitoring (`/admin/subscriptions`):** Tracks paid plan revenue per tier, Free Plan (2.5%) profit, active paid subscriptions, and per-store days-remaining countdowns, with live tier pricing/limit configuration.
 
 ---
 
@@ -84,14 +85,13 @@ The entire platform is architected to run leanly on an existing **Contabo VPS** 
 * **Frontend & Storefront:** Next.js (App Router) + TypeScript + Tailwind CSS + Lucide Icons + Framer Motion.
 * **Backend API & Queue:** Node.js + TypeScript (Express or Fastify) with BullMQ / In-Memory job processing for webhooks and notifications.
 * **Database & ORM:** PostgreSQL 16 + Prisma ORM (Strict relational integrity, atomic inventory transactions).
-* **Image Pipeline:**
-  * Client-side compression before upload (max 1080px width, WebP format, ~80KB per image).
-  * Hard limit of **2 images per product**.
-  * Stored on VPS SSD disk (`/var/www/kredibly/uploads/`) and served directly by Nginx with aggressive caching.
-  * Proxied through Cloudflare CDN for edge delivery.
-  * **Cost:** $0 Cloudinary bills.
-* **Payment Gateways:** Paystack / Monnify / Flutterwave (Card, Bank Transfer, USSD, Virtual Accounts) with idempotent webhook processing.
-* **Process Manager:** PM2 (Cluster mode).
+* **Image Pipeline & Auto-Cleanup:**
+  * Client-side compression before upload (max 1080px width, WebP format, ~100KB per image).
+  * Tiered multi-image upload per product (**2** on Starter / Starter Plus, **3** on Deluxe Pro, **5** on Ultimate Scale) with multi-select support.
+  * Stored on VPS SSD disk (`Backend/uploads/`) and served via Nginx/Express, with a daily DB-referenced orphan cleanup (`CleanupService`) that removes unreferenced files older than 24 hours.
+  * **Cost:** $0 cloud media bills.
+* **Payment, Payout & KYC Gateways:** Nomba DVA instant bank transfer checkout & transfers (8:00 AM WAT Auto T+1 + instant OTP-verified withdrawals), Paystack subscription billing, Resend transactional emails, Prembly REST API NIN/BVN KYC, and VAPID Web Push (`sw.js`) for iOS/Android PWA notifications.
+* **Kredibly HQ Super Admin (`/admin`):** Role-gated (`ADMIN`) read-only monitoring for platform GMV, stores, orders, payouts, KYC queue, and `/admin/subscriptions`.
 
 ---
 
