@@ -108,11 +108,12 @@ export default function BlogArticlePage({
 
       <header className="sticky top-0 z-40 border-b border-[#DADDD4] bg-[#FAF9F5]/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link
-            href="/"
-            className="text-xl font-extrabold tracking-tight text-[#2e1065]"
-          >
-            Kredibly
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <img
+              src="/krediblyrevamped.png"
+              alt="Kredibly"
+              className="h-6 sm:h-7 w-auto object-contain"
+            />
           </Link>
           <nav className="flex items-center gap-5 text-sm font-medium text-[#5A6577]">
             <Link href="/blog" className="hover:text-[#090D16]">
