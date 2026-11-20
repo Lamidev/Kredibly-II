@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { BLOG_POSTS, getBlogPostBySlug } from "@/data/blogPosts";
+import { EditorialCtaBanner } from "@/components/seo/EditorialCtaBanner";
 
 export function generateStaticParams() {
   return BLOG_POSTS.map((post) => ({ slug: post.slug }));
@@ -178,28 +179,14 @@ export default function BlogArticlePage({
           </div>
         </article>
 
-        <div className="mt-12 rounded-3xl bg-[#2e1065] p-8 text-white">
-          <h2 className="text-xl font-bold">
-            Put this into practice in 2 minutes
-          </h2>
-          <p className="mt-2 text-sm text-purple-100">
-            Create your free Kredibly storefront, upload 3 products, and start accepting online orders via Nomba.
-          </p>
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-bold text-[#2e1065] hover:bg-purple-50 transition-colors"
-            >
-              Start Your Free Store
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              href={post.relatedGuideHref}
-              className="inline-flex items-center rounded-full border border-purple-300/40 px-5 py-2.5 text-xs font-semibold text-white hover:bg-white/10 transition-colors"
-            >
-              {post.relatedGuideLabel}
-            </Link>
-          </div>
+        <div className="mt-12">
+          <EditorialCtaBanner
+            heading="Put this into practice in 2 minutes."
+            description="Create your free Kredibly storefront, upload 3 products, and start accepting online orders via Nomba."
+            ctaLabel="Start Your Free Store"
+            secondaryHref={post.relatedGuideHref}
+            secondaryLabel={post.relatedGuideLabel}
+          />
         </div>
 
         <section className="mt-14 border-t border-[#DADDD4] pt-10">
