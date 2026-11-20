@@ -16,6 +16,7 @@ import {
   StoreData,
   StoreProduct,
   extractStoreCategories,
+  normalizeCategoryKey,
   getFreeDeliveryBannerText,
   getStorefrontBannerText,
 } from "@/types/storefront";
@@ -116,7 +117,7 @@ export function StorefrontClient({ store }: { store: StoreData }) {
     if (filters.category !== "all") {
       list = list.filter(
         (p) =>
-          p.category && p.category.trim().toLowerCase() === filters.category
+          p.category && normalizeCategoryKey(p.category) === filters.category
       );
     }
 
@@ -213,34 +214,35 @@ export function StorefrontClient({ store }: { store: StoreData }) {
 
       {/* Store Hero Section */}
       {store.bannerUrl ? (
-        <section className="relative w-full border-b border-[#daddd4] bg-[#FAF9F5] overflow-hidden">
-          {/* Crisp, Full-Resolution Cover Banner (No dark overlay or opacity tint) */}
-          <div className="relative w-full h-44 sm:h-64 md:h-80 bg-slate-100 overflow-hidden">
-            <img
-              src={getImageUrl(store.bannerUrl)}
-              alt={store.name}
-              className="w-full h-full object-cover"
-            />
-          </div>
+        <section className="relative w-full border-b border-[#daddd4] min-h-[380px] sm:min-h-[440px] flex items-center justify-center overflow-hidden py-10 sm:py-16 px-4">
+          {/* 1. Full-Resolution Banner beneath texts (No dull 55% opacity) */}
+          <img
+            src={getImageUrl(store.bannerUrl)}
+            alt={store.name}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
 
-          {/* Store Brand Identity & Bio cleanly positioned under the banner */}
-          <div className="relative mx-auto w-[min(1180px,calc(100%-32px))] md:w-[min(1180px,calc(100%-48px))] py-8 sm:py-10 text-center max-w-2xl space-y-3">
-            <h1 className="font-display text-[clamp(24px,3.5vw,36px)] leading-[1.2] tracking-tight font-bold text-[#090D16] m-0">
+          {/* 2. Subtle Cinematic Light Ambient (keeps photo vivid while softening harsh glare) */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/20 to-black/30 pointer-events-none" />
+
+          {/* 3. Luminous Frosted Glass Capsule (keeps text 100% legible & in sync with any banner) */}
+          <div className="relative z-10 w-full max-w-xl mx-auto rounded-2xl bg-black/45 backdrop-blur-md border border-white/20 p-6 sm:p-8 text-center space-y-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.35)]">
+            <h1 className="font-display text-[clamp(24px,4vw,38px)] leading-[1.15] font-bold text-white m-0 tracking-tight drop-shadow-sm">
               {store.name}
             </h1>
-            <p className="text-xs sm:text-sm text-[#525B6C] leading-relaxed max-w-xl mx-auto">
+            <p className="text-xs sm:text-sm text-white/90 leading-relaxed max-w-lg mx-auto">
               {store.description ||
                 `Browse and shop directly from ${store.name}.`}
             </p>
             <div className="pt-1.5 flex items-center justify-center">
               <Link
                 href={`/${store.slug}/products`}
-                className="px-5 py-2.5 rounded-[8px] bg-[#2e1065] hover:bg-[#3b0764] text-white font-display font-bold text-xs sm:text-sm inline-flex items-center transition shadow-xs hover:-translate-y-0.5 cursor-pointer"
+                className="px-6 py-2.5 rounded-[8px] bg-white hover:bg-slate-100 text-[#090D16] font-display font-bold text-xs sm:text-sm inline-flex items-center transition shadow-md hover:-translate-y-0.5 cursor-pointer"
               >
                 Browse Products
               </Link>
             </div>
-            <p className="text-[11px] text-[#525B6C] flex items-center justify-center gap-2 pt-0.5">
+            <p className="text-[11px] text-white/80 flex items-center justify-center gap-2 pt-0.5 font-medium flex-wrap">
               <span>
                 {freeDeliveryBanner ? "Free Delivery Available" : "Fast Delivery"}
               </span>
