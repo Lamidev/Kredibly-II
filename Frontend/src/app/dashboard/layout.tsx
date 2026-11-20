@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
@@ -21,6 +22,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { isAuthenticated, user, initialize, updateStore } = useAuthStore();
   const [openSidebar, setOpenSidebar] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -120,6 +122,28 @@ export default function DashboardLayout({
       <div className="flex flex-1 flex-col min-w-0">
         <AdminHeader setOpen={setOpenSidebar} />
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto overflow-x-hidden">
+          {pathname !== "/dashboard" && (
+            <div className="mb-4">
+              <Link
+                href="/dashboard"
+                onClick={(e) => {
+                  if (
+                    pathname === "/dashboard/settings" &&
+                    typeof window !== "undefined" &&
+                    (window as unknown as { __krediblyUnsavedSettings?: boolean })
+                      .__krediblyUnsavedSettings
+                  ) {
+                    e.preventDefault();
+                    window.dispatchEvent(new Event("kredibly-confirm-leave-settings"));
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-[#2e1065] transition-colors"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Return to Overview</span>
+              </Link>
+            </div>
+          )}
           {children}
         </main>
       </div>
