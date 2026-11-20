@@ -1400,8 +1400,8 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Clean Link Columns (2 Cols on Mobile, 4 Cols on Desktop) */}
-          <div className="py-8 grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 border-b border-[#DADDD4]">
+          {/* Clean Link Columns (2 Cols on Mobile, 5 Cols on Desktop) */}
+          <div className="py-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 sm:gap-8 border-b border-[#DADDD4]">
             {/* Col 1: Explore */}
             <div className="space-y-3">
               <h4 className="font-display font-bold text-[#090D16] uppercase tracking-wider text-[11px]">
@@ -1419,33 +1419,8 @@ export default function HomePage() {
                   </a>
                 </li>
                 <li>
-                  <Link href="/blog" className="hover:text-[#090D16] transition-colors">
-                    Blog &amp; Guides
-                  </Link>
-                </li>
-                <li>
                   <Link href="/custom-builds" className="hover:text-[#090D16] transition-colors">
                     Custom Websites
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/whatsapp-store-builder" className="hover:text-[#090D16] transition-colors">
-                    WhatsApp Store Builder
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/instagram-shop-builder" className="hover:text-[#090D16] transition-colors">
-                    Instagram Shop Builder
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/bumpa-alternative" className="hover:text-[#090D16] transition-colors">
-                    Bumpa Alternative
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/catlog-alternative" className="hover:text-[#090D16] transition-colors">
-                    Catlog Alternative
                   </Link>
                 </li>
                 <li>
@@ -1457,6 +1432,40 @@ export default function HomePage() {
                   <a href="#faq" className="hover:text-[#090D16] transition-colors">
                     Merchant FAQs
                   </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Col 2: Guides */}
+            <div className="space-y-3">
+              <h4 className="font-display font-bold text-[#090D16] uppercase tracking-wider text-[11px]">
+                Guides
+              </h4>
+              <ul className="space-y-2 text-xs">
+                <li>
+                  <Link href="/blog" className="hover:text-[#090D16] transition-colors">
+                    Blog &amp; Guides
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/whatsapp-store-builder" className="hover:text-[#090D16] transition-colors">
+                    WhatsApp Store
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/instagram-shop-builder" className="hover:text-[#090D16] transition-colors">
+                    Instagram Shop
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/bumpa-alternative" className="hover:text-[#090D16] transition-colors">
+                    Bumpa Alternative
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/catlog-alternative" className="hover:text-[#090D16] transition-colors">
+                    Catlog Alternative
+                  </Link>
                 </li>
               </ul>
             </div>
