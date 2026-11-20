@@ -473,7 +473,11 @@ export class EmailService {
     });
     const cleanPhone = (data.ownerPhone || "").replace(/[^0-9]/g, "");
     const waDigits = cleanPhone.startsWith("0") ? `234${cleanPhone.slice(1)}` : cleanPhone;
-    const waUrl = waDigits ? `https://wa.me/${waDigits}` : "";
+    const ownerFirstName = (data.ownerName || "").trim().split(" ")[0] || "there";
+    const waText = encodeURIComponent(
+      `Hi ${ownerFirstName}, welcome to Kredibly! Congrats on launching ${data.storeName} (${storeUrl}). Need any help setting up your products, logo, or payouts?`
+    );
+    const waUrl = waDigits ? `https://wa.me/${waDigits}?text=${waText}` : "";
 
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #0f172a; border: 1px solid #e2e8f0; border-radius: 12px;">
