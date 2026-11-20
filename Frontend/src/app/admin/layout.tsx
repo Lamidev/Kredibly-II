@@ -85,6 +85,20 @@ export default function SuperAdminLayout({
 
   const handleEnableAdminPush = async () => {
     if (typeof window === "undefined" || !("Notification" in window)) return;
+    const ua = window.navigator.userAgent || "";
+    const isIos = /iPad|iPhone|iPod/.test(ua);
+    const isStandalone =
+      window.matchMedia?.("(display-mode: standalone)").matches ||
+      (window.navigator as any).standalone === true;
+
+    if (isIos && !isStandalone) {
+      toast.error(
+        "On iPhone, open Kredibly from your Home Screen app icon to enable push notifications."
+      );
+      setPushBannerMode("ios_pwa");
+      return;
+    }
+
     try {
       if (Notification.permission === "granted") {
         await unsubscribeAdminPush();
@@ -100,7 +114,11 @@ export default function SuperAdminLayout({
         toast.success("Kredibly HQ push alerts enabled!");
       } else if (perm === "denied") {
         setPushBannerMode("hidden");
-        toast.error("Notifications are blocked in your browser settings.");
+        toast.error(
+          isIos
+            ? "Notifications blocked in iPhone Settings. Go to Settings > Notifications > Kredibly to allow them."
+            : "Notifications are blocked in your browser settings. Enable them in site settings to get HQ alerts."
+        );
       }
     } catch {
       // ignore
