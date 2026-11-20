@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BookOpen } from "lucide-react";
 import { BLOG_POSTS } from "@/data/blogPosts";
+import { EditorialCtaBanner } from "@/components/seo/EditorialCtaBanner";
 
 export const metadata: Metadata = {
   title: "Kredibly Blog — Social Commerce & Online Store Guides for Nigeria",
@@ -113,22 +114,8 @@ export default function BlogIndexPage() {
           ))}
         </div>
 
-        <div className="mt-16 rounded-3xl bg-[#2e1065] px-6 py-10 text-center text-white sm:px-10">
-          <h2 className="text-2xl font-bold tracking-tight">
-            Ready to launch your official store?
-          </h2>
-          <p className="mx-auto mt-2 max-w-xl text-sm text-purple-100">
-            Start free on Kredibly (₦0/month), upload your first 3 products, and get found on WhatsApp, Instagram, and Google.
-          </p>
-          <div className="mt-6">
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-bold text-[#2e1065] hover:bg-purple-50 transition-colors"
-            >
-              Create Your Free Store
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
+        <div className="mt-16">
+          <EditorialCtaBanner />
         </div>
       </main>
     </div>
