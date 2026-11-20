@@ -1081,7 +1081,7 @@ export default function ProductsPage() {
 
       {/* Slide-Over Product Sheet (Full-screen on mobile, right sheet on desktop) */}
       {modalOpen && (
-        <div className="fixed inset-0 !mt-0 z-50 flex justify-end overflow-hidden">
+        <div className="fixed inset-0 !mt-0 z-50 flex justify-end overflow-hidden touch-manipulation">
           {/* Backdrop */}
           <div
             onClick={() => !submitting && setModalOpen(false)}
@@ -1089,9 +1089,9 @@ export default function ProductsPage() {
           />
 
           {/* Sheet Panel */}
-          <div className="relative z-10 w-screen sm:w-full sm:max-w-lg h-[100dvh] sm:h-full bg-white sm:border-l border-slate-200 shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
+          <div className="relative z-10 w-full sm:max-w-lg h-full bg-white sm:border-l border-slate-200 shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
             {/* Sticky Header */}
-            <div className="px-5 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+            <div className="px-5 sm:px-6 pt-[max(1rem,env(safe-area-inset-top))] pb-4 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
               <div>
                 <h3 className="font-display text-lg font-bold text-[#0f172a] tracking-tight">
                   {editingProduct ? "Edit Product" : "Add New Product"}
@@ -1588,7 +1588,7 @@ export default function ProductsPage() {
               </div>
 
               {/* Sticky Footer */}
-              <div className="px-5 sm:px-6 py-4 border-t border-slate-100 bg-white flex items-center justify-end gap-3 shrink-0">
+              <div className="px-5 sm:px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-slate-100 bg-white flex items-center justify-end gap-3 shrink-0">
                 <Button
                   type="button"
                   variant="outline"
