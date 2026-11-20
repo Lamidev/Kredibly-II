@@ -6,6 +6,7 @@ interface EditorialCtaBannerProps {
   heading?: string;
   description?: string;
   ctaLabel?: string;
+  ctaHref?: string;
   secondaryHref?: string;
   secondaryLabel?: string;
 }
@@ -18,6 +19,7 @@ export function EditorialCtaBanner({
   heading = "Ready to launch your official store?",
   description = "Start free on Kredibly (₦0/month), upload your first 3 products, and get found on WhatsApp, Instagram, and Google.",
   ctaLabel = "Create Your Free Store",
+  ctaHref = "/register",
   secondaryHref,
   secondaryLabel,
 }: EditorialCtaBannerProps) {
@@ -69,7 +71,7 @@ export function EditorialCtaBanner({
 
         <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
           <Link
-            href="https://usekredibly.com/register"
+            href={ctaHref}
             className="w-full sm:w-auto px-8 py-4 bg-[#2e1065] hover:bg-[#3b0764] text-white font-display font-bold rounded-[8px] transition flex items-center justify-center gap-2 text-sm shadow-md hover:-translate-y-0.5 cursor-pointer"
           >
             <span>{ctaLabel}</span>

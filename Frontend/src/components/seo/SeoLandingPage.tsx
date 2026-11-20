@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, Check, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, CheckCircle2 } from "lucide-react";
+import { EditorialCtaBanner } from "./EditorialCtaBanner";
 
 export interface SeoComparisonRow {
   feature: string;
@@ -133,13 +134,22 @@ export function SeoLandingPage({
       {/* Top Navigation */}
       <header className="sticky top-0 z-40 border-b border-[#DADDD4] bg-[#FAF9F5]/95 backdrop-blur-sm pt-[env(safe-area-inset-top,0px)]">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <img
-              src="/krediblyrevamped.png"
-              alt="Kredibly"
-              className="h-6 sm:h-7 w-auto object-contain"
-            />
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <img
+                src="/krediblyrevamped.png"
+                alt="Kredibly"
+                className="h-6 sm:h-7 w-auto object-contain"
+              />
+            </Link>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#5A6577] hover:text-[#090D16] transition-colors px-2 py-1 rounded-md hover:bg-black/5"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Home</span>
+            </Link>
+          </div>
           <nav className="flex items-center gap-5 text-sm font-medium text-[#5A6577]">
             <Link
               href="/#pricing"
@@ -171,6 +181,17 @@ export function SeoLandingPage({
       </header>
 
       <main>
+        {/* Return to Home Bar */}
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 pt-5">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#5A6577] hover:text-[#090D16] transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>← Return to Home</span>
+          </Link>
+        </div>
+
         {/* Hero */}
         <section className="mx-auto max-w-4xl px-4 pb-16 pt-14 text-center sm:px-6 sm:pt-20">
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#DADDD4] bg-white px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-[#2e1065]">
@@ -311,31 +332,18 @@ export function SeoLandingPage({
           </div>
         </section>
 
-        {/* Bottom CTA */}
-        <section className="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
-          <div className="rounded-3xl bg-[#2e1065] px-6 py-12 text-center text-white sm:px-12">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              Ready to launch your official Kredibly store?
-            </h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm text-purple-100 sm:text-base">
-              Start free on the Starter plan (₦0/month), add your first products in
-              minutes, and share your link on WhatsApp, Instagram, and TikTok.
-            </p>
-            <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link
-                href="/register"
-                className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-[#2e1065] transition-colors hover:bg-purple-50"
-              >
-                {ctaLabel}
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/"
-                className="inline-flex items-center rounded-full border border-purple-300/40 px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
-              >
-                Explore Kredibly Home
-              </Link>
-            </div>
+        {/* Bottom CTA - Matching Main Landing Page Architectural UI/UX */}
+        <section className="py-16 sm:py-24 bg-gradient-to-b from-[#F7F4FC] to-[#EFE8FA] border-t border-[#DADDD4]">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            <EditorialCtaBanner
+              eyebrow="START SELLING TODAY"
+              heading="Ready to launch your official store?"
+              description="Start free on Kredibly (₦0/month), upload your first 3 products, and get found on WhatsApp, Instagram, and Google."
+              ctaLabel={ctaLabel}
+              ctaHref="/register"
+              secondaryHref="/"
+              secondaryLabel="Explore Kredibly Home"
+            />
           </div>
         </section>
 

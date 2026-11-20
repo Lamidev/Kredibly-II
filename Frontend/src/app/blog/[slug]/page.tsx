@@ -108,13 +108,22 @@ export default function BlogArticlePage({
 
       <header className="sticky top-0 z-40 border-b border-[#DADDD4] bg-[#FAF9F5]/95 backdrop-blur-sm pt-[env(safe-area-inset-top,0px)]">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <img
-              src="/krediblyrevamped.png"
-              alt="Kredibly"
-              className="h-6 sm:h-7 w-auto object-contain"
-            />
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <img
+                src="/krediblyrevamped.png"
+                alt="Kredibly"
+                className="h-6 sm:h-7 w-auto object-contain"
+              />
+            </Link>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#5A6577] hover:text-[#090D16] transition-colors px-2 py-1 rounded-md hover:bg-black/5"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Home</span>
+            </Link>
+          </div>
           <nav className="flex items-center gap-5 text-sm font-medium text-[#5A6577]">
             <Link href="/blog" className="hover:text-[#090D16]">
               All Guides
@@ -130,14 +139,25 @@ export default function BlogArticlePage({
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
-        <Link
-          href="/blog"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#5A6577] hover:text-[#2e1065] transition-colors"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          <span>Back to Kredibly Blog</span>
-        </Link>
+      <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-16">
+        <div className="flex items-center gap-2 text-xs font-semibold text-[#5A6577] mb-6">
+          <Link
+            href="/"
+            className="hover:text-[#090D16] transition-colors inline-flex items-center gap-1"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Home</span>
+          </Link>
+          <span className="text-[#DADDD4]">/</span>
+          <Link
+            href="/blog"
+            className="hover:text-[#090D16] transition-colors"
+          >
+            Guides
+          </Link>
+          <span className="text-[#DADDD4]">/</span>
+          <span className="text-[#090D16] truncate max-w-[160px] sm:max-w-xs">{post.title}</span>
+        </div>
 
         <article className="mt-6">
           <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wider text-[#2e1065]">
