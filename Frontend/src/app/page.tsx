@@ -229,9 +229,9 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FAF9F5] text-[#090D16] font-sans selection:bg-[#3b0764] selection:text-white overflow-x-hidden">
-      {/* 1. Sticky Top Navigation Bar */}
-      <header className="sticky top-4 z-50 px-4 sm:px-6 w-full max-w-6xl mx-auto">
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3 bg-white/95 backdrop-blur-md border border-[#DADDD4] rounded-xl shadow-[0_4px_20px_-4px_rgba(9,13,22,0.06)]">
+      {/* 1. Static/Sticky Top Navigation Bar (Flush to top, matching standard browser navigation) */}
+      <header className="sticky top-0 z-50 w-full border-b border-[#DADDD4] bg-[#FAF9F5]/95 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
             <img
               src="/krediblyrevamped.png"
@@ -300,7 +300,7 @@ export default function HomePage() {
         </div>
 
         {mobileMenuOpen && (
-          <div className="md:hidden mt-2 p-5 bg-white border border-[#DADDD4] rounded-xl shadow-xl space-y-4">
+          <div className="md:hidden border-t border-[#DADDD4] bg-[#FAF9F5] px-4 py-5 shadow-lg space-y-4">
             <nav className="flex flex-col gap-3">
               <a
                 href="#features"
@@ -341,7 +341,7 @@ export default function HomePage() {
             <div className="grid grid-cols-2 gap-2 pt-2">
               <Link
                 href="/login"
-                className="py-2.5 text-center text-xs font-semibold border border-slate-200 rounded-[8px] text-[#090D16]"
+                className="py-2.5 text-center text-xs font-semibold border border-slate-200 rounded-[8px] text-[#090D16] bg-white"
               >
                 Sign In
               </Link>
@@ -358,7 +358,7 @@ export default function HomePage() {
 
       <main className="flex-1">
         {/* 2. Hero Section — Bespoke Kredibly Diagonal Prism & Architectural Crosshair Canvas */}
-        <section className="relative pt-14 sm:pt-22 pb-18 sm:pb-26 px-4 sm:px-6 max-w-6xl mx-auto overflow-hidden mt-2">
+        <section className="relative pt-10 sm:pt-18 pb-16 sm:pb-24 px-4 sm:px-6 max-w-6xl mx-auto overflow-hidden">
           {/* Bespoke Kredibly Geometric Diagonal Lattice & Precision Dot Matrix (Zero Arches) */}
           <div
             className="absolute inset-0 pointer-events-none opacity-65"
