@@ -87,6 +87,7 @@ export default function StoreSettingsPage() {
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [subscriptionTier, setSubscriptionTier] = useState<string>("STARTER");
   const [activeProductsCount, setActiveProductsCount] = useState<number>(0);
+  const [leavePromptOpen, setLeavePromptOpen] = useState(false);
 
   const [initialForm, setInitialForm] = useState<SettingsFormState>(EMPTY_FORM);
   const [form, setForm] = useState<SettingsFormState>(EMPTY_FORM);
@@ -153,6 +154,40 @@ export default function StoreSettingsPage() {
     form.themeColor !== initialForm.themeColor ||
     form.passFeeToCustomer !== initialForm.passFeeToCustomer ||
     form.allowSearchIndexing !== initialForm.allowSearchIndexing;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    (
+      window as unknown as { __krediblyUnsavedSettings?: boolean }
+    ).__krediblyUnsavedSettings = hasChanges;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!hasChanges) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+
+    const handleConfirmLeave = () => {
+      if (hasChanges) {
+        setLeavePromptOpen(true);
+      } else {
+        router.push("/dashboard");
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("kredibly-confirm-leave-settings", handleConfirmLeave);
+    return () => {
+      (
+        window as unknown as { __krediblyUnsavedSettings?: boolean }
+      ).__krediblyUnsavedSettings = false;
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener(
+        "kredibly-confirm-leave-settings",
+        handleConfirmLeave
+      );
+    };
+  }, [hasChanges, router]);
 
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -748,10 +783,10 @@ export default function StoreSettingsPage() {
                 </div>
               )}
 
-              {/* Action Bar — Only active when unsaved changes exist */}
+              {/* Sticky Action Bar — Always visible at bottom when unsaved changes exist */}
               {hasChanges && (
-                <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
-                  <p className="text-xs font-medium text-slate-600">
+                <div className="sticky bottom-3 z-30 rounded-2xl border border-[#2e1065]/20 bg-white/95 backdrop-blur-sm p-3.5 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
+                  <p className="text-xs font-semibold text-[#0f172a]">
                     You have unsaved changes.
                   </p>
                   <div className="flex items-center gap-2">
@@ -779,6 +814,65 @@ export default function StoreSettingsPage() {
             </form>
           </CardContent>
         </Card>
+      )}
+
+      {/* Unsaved Changes Modal when clicking Return to Overview */}
+      {leavePromptOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-[2px] p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 p-6 shadow-2xl space-y-4">
+            <div>
+              <h3 className="text-base font-bold text-[#0f172a]">
+                Save your changes before leaving?
+              </h3>
+              <p className="text-xs text-slate-600 mt-1">
+                You made updates to your store settings that haven&apos;t been saved yet.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setLeavePromptOpen(false)}
+                disabled={saving}
+              >
+                Keep Editing
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  handleDiscard();
+                  setLeavePromptOpen(false);
+                  router.push("/dashboard");
+                }}
+                disabled={saving}
+              >
+                Discard &amp; Leave
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={saving}
+                onClick={async () => {
+                  await handleSubmit({
+                    preventDefault: () => {},
+                  } as React.FormEvent);
+                  setLeavePromptOpen(false);
+                  router.push("/dashboard");
+                }}
+              >
+                {saving ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Save className="w-3.5 h-3.5" />
+                )}
+                <span>Save &amp; Go Back</span>
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
