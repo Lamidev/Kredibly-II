@@ -22,10 +22,27 @@ const RESERVED_PATHS = new Set([
   "/privacy",
   "/refund-policy",
   "/policies",
+  "/pricing",
+  "/about",
+  "/waitlist",
+  "/invoice",
+  "/solution",
+  "/product",
+  "/auth",
   "/favicon.ico",
   "/krediblyrevamped.png",
   "/kredibly-k-icon.png",
 ]);
+
+const LEGACY_URL_REDIRECTS: Record<string, string> = {
+  "/pricing": "/#pricing",
+  "/about": "/",
+  "/waitlist": "/register",
+  "/invoice": "/",
+  "/solution": "/#features",
+  "/product": "/#features",
+  "/auth": "/login",
+};
 
 const PLATFORM_REDIRECT_PREFIXES = [
   "/dashboard",
@@ -117,10 +134,20 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // 3. usekredibly.com/<slug> -> <slug>.kredibly.shop
+  // 3. usekredibly.com/<slug> -> <slug>.kredibly.shop (or 301 legacy redirects)
   const isUseKredibly =
     host === "usekredibly.com" || host === "www.usekredibly.com";
   const firstSegment = "/" + (pathname.split("/")[1] || "");
+
+  if (isUseKredibly) {
+    const legacyTarget = LEGACY_URL_REDIRECTS[firstSegment];
+    if (legacyTarget) {
+      return NextResponse.redirect(
+        new URL(`https://usekredibly.com${legacyTarget}${search}`, request.url),
+        301 // Permanent Redirect (SEO 301): consolidates link equity & permanently drops stale URLs from Google
+      );
+    }
+  }
 
   if (
     isUseKredibly &&
