@@ -31,7 +31,7 @@ interface AuthState {
   user: User | null;
   store: Store | null;
   isAuthenticated: boolean;
-  setAuth: (token: string, user: User, store: Store) => void;
+  setAuth: (token: string, user: User, store?: Store | null) => void;
   updateUser: (user: Partial<User>) => void;
   updateStore: (store: Partial<Store>) => void;
   logout: () => void;
@@ -48,9 +48,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (typeof window !== "undefined") {
       localStorage.setItem("kredibly_auth_token", token);
       localStorage.setItem("kredibly_user", JSON.stringify(user));
-      localStorage.setItem("kredibly_store", JSON.stringify(store));
+      if (store) {
+        localStorage.setItem("kredibly_store", JSON.stringify(store));
+      } else {
+        localStorage.removeItem("kredibly_store");
+      }
     }
-    set({ token, user, store, isAuthenticated: true });
+    set({ token, user, store: store || null, isAuthenticated: true });
   },
 
   updateUser: (updatedFields) => {
@@ -90,10 +94,13 @@ export const useAuthStore = create<AuthState>((set) => ({
       const userStr = localStorage.getItem("kredibly_user");
       const storeStr = localStorage.getItem("kredibly_store");
 
-      if (token && userStr && storeStr) {
+      if (token && userStr) {
         try {
           const user = JSON.parse(userStr);
-          const store = JSON.parse(storeStr);
+          const store =
+            storeStr && storeStr !== "undefined" && storeStr !== "null"
+              ? JSON.parse(storeStr)
+              : null;
           set({ token, user, store, isAuthenticated: true });
         } catch {
           localStorage.removeItem("kredibly_auth_token");
