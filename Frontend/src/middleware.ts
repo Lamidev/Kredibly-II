@@ -12,6 +12,12 @@ const RESERVED_PATHS = new Set([
   "/dashboard",
   "/admin",
   "/api",
+  "/blog",
+  "/whatsapp-store-builder",
+  "/instagram-shop-builder",
+  "/bumpa-alternative",
+  "/catlog-alternative",
+  "/custom-builds",
   "/terms",
   "/privacy",
   "/refund-policy",
@@ -20,6 +26,19 @@ const RESERVED_PATHS = new Set([
   "/krediblyrevamped.png",
   "/kredibly-k-icon.png",
 ]);
+
+const PLATFORM_REDIRECT_PREFIXES = [
+  "/dashboard",
+  "/admin",
+  "/login",
+  "/register",
+  "/blog",
+  "/whatsapp-store-builder",
+  "/instagram-shop-builder",
+  "/bumpa-alternative",
+  "/catlog-alternative",
+  "/custom-builds",
+];
 
 export function middleware(request: NextRequest) {
   const host = (request.headers.get("host") || "").split(":")[0].toLowerCase();
@@ -43,15 +62,17 @@ export function middleware(request: NextRequest) {
   if (isSubdomainStore) {
     const slug = host.slice(0, -".kredibly.shop".length);
 
-    // Keep merchant dashboard & auth on usekredibly.com
-    if (
-      pathname.startsWith("/dashboard") ||
-      pathname.startsWith("/admin") ||
-      pathname.startsWith("/login") ||
-      pathname.startsWith("/register")
-    ) {
+    // Keep merchant dashboard, auth, blog & marketing pages on usekredibly.com
+    if (PLATFORM_REDIRECT_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
       return NextResponse.redirect(
         new URL(`https://usekredibly.com${pathname}${search}`, request.url)
+      );
+    }
+
+    if (slug === "blog") {
+      const targetPath = pathname === "/" ? "/blog" : `/blog${pathname}`;
+      return NextResponse.redirect(
+        new URL(`https://usekredibly.com${targetPath}${search}`, request.url)
       );
     }
 
@@ -79,12 +100,7 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("https://usekredibly.com", request.url));
     }
 
-    if (
-      pathname.startsWith("/dashboard") ||
-      pathname.startsWith("/admin") ||
-      pathname.startsWith("/login") ||
-      pathname.startsWith("/register")
-    ) {
+    if (PLATFORM_REDIRECT_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
       return NextResponse.redirect(
         new URL(`https://usekredibly.com${pathname}${search}`, request.url)
       );
