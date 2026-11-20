@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAuth, requireAdmin } from "../middleware/auth";
 import { prisma } from "../config/db";
 import { AppError } from "../middleware/errorHandler";
+import { SubscriptionService } from "../services/subscription.service";
 
 const router = Router();
 router.use(requireAuth, requireAdmin);
@@ -544,6 +545,85 @@ router.patch("/kyc/:storeId", async (req: Request, res: Response, next: NextFunc
     });
 
     return res.status(200).json({ success: true, data: updated });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/admin/subscriptions
+ */
+router.get("/subscriptions", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const data = await SubscriptionService.getAdminOverview();
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * PUT /api/admin/subscriptions/plans/:tier
+ */
+router.put("/subscriptions/plans/:tier", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tier = z
+      .enum(["STARTER", "STARTER_PLUS", "PRO", "BUSINESS"])
+      .parse(req.params.tier);
+
+    const body = z
+      .object({
+        name: z.string().min(2).optional(),
+        tagline: z.string().max(250).optional().nullable(),
+        monthlyPrice: z.coerce.number().min(0).optional(),
+        annualPrice: z.coerce.number().min(0).optional(),
+        maxProducts: z.coerce.number().int().min(1).optional(),
+        maxImagesPerProduct: z.coerce.number().int().min(1).max(10).optional(),
+        platformFeePercent: z.coerce.number().min(0).max(20).optional(),
+        allowPassFee: z.boolean().optional(),
+        allowPromoCodes: z.boolean().optional(),
+        allowOfferBanner: z.boolean().optional(),
+        allowCustomDomain: z.boolean().optional(),
+        isActive: z.boolean().optional(),
+      })
+      .parse(req.body);
+
+    const updated = await SubscriptionService.updatePlanConfig(tier, body);
+    return res.status(200).json({
+      success: true,
+      message: `${updated.name} configuration updated`,
+      data: updated,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/admin/subscriptions/stores/:storeId
+ */
+router.post("/subscriptions/stores/:storeId", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const body = z
+      .object({
+        tier: z.enum(["STARTER", "STARTER_PLUS", "PRO", "BUSINESS"]),
+        durationDays: z.coerce.number().int().min(1).max(3650).default(30),
+        amountPaid: z.coerce.number().min(0).default(0),
+      })
+      .parse(req.body);
+
+    const updated = await SubscriptionService.adminUpdateStoreSubscription(
+      req.params.storeId,
+      body.tier,
+      body.durationDays,
+      body.amountPaid
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: `Store subscription updated to ${body.tier}`,
+      data: updated,
+    });
   } catch (error) {
     next(error);
   }

@@ -85,6 +85,7 @@ export default function ProductsPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [maxImages, setMaxImages] = useState(2);
 
   // Form State
   const [title, setTitle] = useState("");
@@ -145,14 +146,22 @@ export default function ProductsPage() {
 
   useEffect(() => {
     fetchProducts();
+    api
+      .get("/subscription/overview")
+      .then((res) => {
+        const limit = Number(res.data?.data?.maxImagesPerProduct);
+        if (limit >= 1) setMaxImages(limit);
+      })
+      .catch(() => {});
   }, []);
 
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    if (imagePreviews.length + files.length > 2) {
-      setErrorMsg("Maximum 2 images allowed per product.");
+    if (imagePreviews.length + files.length > maxImages) {
+      setErrorMsg(`Maximum ${maxImages} images allowed per product on your current plan.`);
+      e.target.value = "";
       return;
     }
 
@@ -162,7 +171,7 @@ export default function ProductsPage() {
     const newFiles: File[] = [...selectedFiles];
     const newPreviews: string[] = [...imagePreviews];
 
-    for (let i = 0; i < files.length && newPreviews.length < 2; i++) {
+    for (let i = 0; i < files.length && newPreviews.length < maxImages; i++) {
       const result = await compressProductImage(files[i]);
       newFiles.push(result.file);
       newPreviews.push(result.previewUrl);
@@ -399,7 +408,7 @@ export default function ProductsPage() {
         uploadedUrls = uploadRes.data.urls;
       }
 
-      const finalImages = [...existingImages, ...uploadedUrls].slice(0, 2);
+      const finalImages = [...existingImages, ...uploadedUrls].slice(0, maxImages);
 
       const cleanedAttributes = attributes
         .map((a) => ({ label: a.label.trim(), value: a.value.trim() }))
@@ -1075,19 +1084,19 @@ export default function ProductsPage() {
                 </div>
               )}
 
-              {/* 1. Product Images (Max 2) */}
+              {/* 1. Product Images (Tier-based limit) */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                    Product Images (Max 2)
+                    Product Images (Max {maxImages})
                   </label>
                   <span className="text-[11px] text-slate-400 font-medium">
-                    {imagePreviews.length}/2 Uploaded
+                    {imagePreviews.length}/{maxImages} Uploaded
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 mb-2.5">
-                  {[0, 1].map((slotIdx) => {
+                <div className={`grid gap-3 mb-2.5 ${maxImages > 2 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2"}`}>
+                  {Array.from({ length: maxImages }, (_, slotIdx) => {
                     const preview = imagePreviews[slotIdx];
                     return preview ? (
                       <div
@@ -1102,6 +1111,7 @@ export default function ProductsPage() {
                         <button
                           type="button"
                           onClick={() => removeImage(slotIdx)}
+                          aria-label={`Remove image ${slotIdx + 1}`}
                           className="absolute top-2 right-2 h-6 w-6 rounded-full bg-slate-900/80 text-white flex items-center justify-center hover:bg-red-600 transition cursor-pointer"
                         >
                           <X className="w-3.5 h-3.5" />
@@ -1114,25 +1124,27 @@ export default function ProductsPage() {
                       >
                         <Package className="w-4 h-4 text-slate-300 mb-1" />
                         <span className="text-[11px] font-medium text-slate-400">
-                          {slotIdx === 0 ? "Slot 1 (Main)" : "Slot 2"}
+                          {slotIdx === 0 ? "Slot 1 (Main)" : `Slot ${slotIdx + 1}`}
                         </span>
                       </div>
                     );
                   })}
                 </div>
 
-                {imagePreviews.length < 2 && (
+                {imagePreviews.length < maxImages && (
                   <label className="w-full rounded-xl border border-dashed border-slate-300 hover:border-[#2e1065] bg-slate-50/60 hover:bg-slate-50 flex flex-col items-center justify-center gap-1 py-4 px-3 cursor-pointer transition text-center">
                     <UploadCloud className="w-5 h-5 text-[#2e1065]" />
                     <span className="text-xs font-semibold text-[#0f172a]">
                       {compressing
                         ? "Optimizing images..."
                         : imagePreviews.length === 0
-                        ? "Upload Images (Up to 2 at once)"
-                        : "Add 1 More Image (Slot 2)"}
+                        ? `Upload Images (Up to ${maxImages} at once)`
+                        : `Add More Images (${maxImages - imagePreviews.length} ${
+                            maxImages - imagePreviews.length === 1 ? "slot" : "slots"
+                          } left)`}
                     </span>
                     <span className="text-[11px] text-slate-400">
-                      Select 1 or 2 photos (PNG, JPG, WebP)
+                      Select 1 or up to {maxImages - imagePreviews.length} photos at once (PNG, JPG, WebP)
                     </span>
                     <input
                       type="file"

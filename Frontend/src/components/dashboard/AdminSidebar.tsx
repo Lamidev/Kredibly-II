@@ -13,6 +13,7 @@ import {
   Users,
   Truck,
   Wallet,
+  CreditCard,
   Settings,
   Copy,
   LogOut,
@@ -66,6 +67,12 @@ const MENU_ITEMS = [
     label: "Wallet & Payouts",
     path: "/dashboard/wallet",
     icon: Wallet,
+  },
+  {
+    id: "billing",
+    label: "Billing & Plans",
+    path: "/dashboard/billing",
+    icon: CreditCard,
   },
   {
     id: "settings",

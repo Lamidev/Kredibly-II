@@ -24,7 +24,7 @@ export const createProductSchema = z.object({
   attributes: z.array(attributeSchema).max(10).optional().nullable(),
   basePrice: z.coerce.number().min(100, "Base price must be at least ₦100"),
   comparePrice: z.coerce.number().optional().nullable(),
-  images: z.array(z.string()).max(2, "Maximum 2 images allowed per product"),
+  images: z.array(z.string()).max(10, "Maximum 10 images allowed per product"),
   stockQuantity: z.coerce.number().int().min(0).default(1),
   isFeatured: z.boolean().default(false),
   hasVariants: z.boolean().default(false),

@@ -691,7 +691,7 @@ export class EmailService {
     });
   }
 
-  private static escapeHtml(str: string): string {
+  static escapeHtml(str: string): string {
     return str
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")

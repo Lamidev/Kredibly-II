@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../config/db";
 import { AppError } from "../middleware/errorHandler";
 import { sanitizeSlug } from "../utils/slug";
+import { SubscriptionService } from "./subscription.service";
 import {
   CreateProductInput,
   UpdateProductInput,
@@ -23,20 +24,21 @@ export class ProductService {
       throw new AppError("Store not found", 404);
     }
 
-    const currentProductCount = await prisma.product.count({
-      where: { storeId },
-    });
+    const [currentProductCount, plan] = await Promise.all([
+      prisma.product.count({ where: { storeId } }),
+      SubscriptionService.getPlanForTier(store.subscriptionTier),
+    ]);
 
-    if (store.subscriptionTier === "STARTER" && currentProductCount >= 20) {
+    if (plan.maxProducts > 0 && currentProductCount >= plan.maxProducts) {
       throw new AppError(
-        "Starter plan limit reached (max 20 products). Upgrade to Pro for up to 300 products.",
+        `${plan.name} limit reached (max ${plan.maxProducts} products). Upgrade your plan in Billing & Plans to add more.`,
         403
       );
     }
 
-    if (store.subscriptionTier === "PRO" && currentProductCount >= 300) {
+    if (data.images && data.images.length > plan.maxImagesPerProduct) {
       throw new AppError(
-        "Pro plan limit reached (max 300 products). Upgrade to Business Scale for unlimited products.",
+        `${plan.name} allows up to ${plan.maxImagesPerProduct} images per product. Upgrade your plan to upload more.`,
         403
       );
     }
@@ -174,6 +176,22 @@ export class ProductService {
 
     if (!existing) {
       throw new AppError("Product not found", 404);
+    }
+
+    if (data.images) {
+      const store = await prisma.store.findUnique({
+        where: { id: storeId },
+        select: { subscriptionTier: true },
+      });
+      if (store) {
+        const plan = await SubscriptionService.getPlanForTier(store.subscriptionTier);
+        if (data.images.length > plan.maxImagesPerProduct) {
+          throw new AppError(
+            `${plan.name} allows up to ${plan.maxImagesPerProduct} images per product. Upgrade your plan to upload more.`,
+            403
+          );
+        }
+      }
     }
 
     return await prisma.$transaction(async (tx) => {
