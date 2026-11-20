@@ -4,6 +4,7 @@ import { ENV } from "../config/env";
 import { AppError } from "../middleware/errorHandler";
 import { PushService } from "./push.service";
 import { EmailService } from "./email.service";
+import { NombaService } from "./nomba.service";
 
 export const DEFAULT_PLANS: Array<{
   tier: SubscriptionTier;
@@ -273,28 +274,57 @@ export class SubscriptionService {
     };
   }
 
-  static async initializePaystackUpgrade(
+  static async initializeNombaTransferUpgrade(
     storeId: string,
     tier: SubscriptionTier,
     billingCycle: "MONTHLY" | "ANNUAL",
     email: string
   ) {
-    if (!ENV.PAYSTACK_SECRET_KEY) {
-      throw new AppError(
-        "Card payment is not configured yet. Please pay using your Kredibly Wallet balance.",
-        400
-      );
-    }
     if (tier === "STARTER") {
       throw new AppError("Starter is already free.", 400);
     }
 
     const plan = await this.getPlanForTier(tier);
     const amount = billingCycle === "ANNUAL" ? plan.annualPrice : plan.monthlyPrice;
-    const reference = `SUB-PS-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    if (amount <= 0) {
+      throw new AppError("Invalid plan pricing configuration", 400);
+    }
+
+    const store = await prisma.store.findUnique({
+      where: { id: storeId },
+      select: { name: true },
+    });
+    if (!store) throw new AppError("Store not found", 404);
+
+    const reference = `SUB-NB-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const now = new Date();
     const durationDays = billingCycle === "ANNUAL" ? 365 : 30;
     const periodEnd = new Date(now.getTime() + durationDays * DAY_MS);
+
+    let dva: {
+      accountNumber: string;
+      bankName: string;
+      accountName: string;
+      reference: string;
+      expiresAt: string;
+    };
+
+    if (ENV.NOMBA_CLIENT_ID && ENV.NOMBA_PRIVATE_KEY && ENV.NOMBA_ACCOUNT_ID) {
+      dva = await NombaService.createDynamicVirtualAccount({
+        amount,
+        orderNumber: reference,
+        merchantName: `Kredibly - ${store.name}`,
+        customerEmail: email,
+      });
+    } else {
+      dva = {
+        accountNumber: "9001234567",
+        bankName: "Nomba MFB (Dev)",
+        accountName: `KREDIBLY / ${store.name.toUpperCase()}`,
+        reference,
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+      };
+    }
 
     await prisma.subscriptionPayment.create({
       data: {
@@ -302,7 +332,7 @@ export class SubscriptionService {
         tier,
         billingCycle,
         amount,
-        paymentMethod: "PAYSTACK",
+        paymentMethod: "NOMBA_TRANSFER",
         reference,
         status: "PENDING",
         periodStart: now,
@@ -310,37 +340,18 @@ export class SubscriptionService {
       },
     });
 
-    const resp = await fetch("https://api.paystack.co/transaction/initialize", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${ENV.PAYSTACK_SECRET_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        amount: Math.round(amount * 100),
-        reference,
-        callback_url: `${ENV.FRONTEND_URL}/dashboard/billing?verify=${reference}`,
-        metadata: { storeId, tier, billingCycle },
-      }),
-    });
-
-    const json = (await resp.json().catch(() => ({}))) as any;
-    if (!resp.ok || !json?.status || !json?.data?.authorization_url) {
-      await prisma.subscriptionPayment.update({
-        where: { reference },
-        data: { status: "FAILED" },
-      });
-      throw new AppError(json?.message || "Could not initialize card payment.", 502);
-    }
-
     return {
-      authorizationUrl: json.data.authorization_url as string,
       reference,
+      amount,
+      planName: plan.name,
+      accountNumber: dva.accountNumber,
+      bankName: dva.bankName,
+      accountName: dva.accountName,
+      expiresAt: dva.expiresAt,
     };
   }
 
-  static async verifyPaystackUpgrade(storeId: string, reference: string) {
+  static async verifyNombaTransferUpgrade(storeId: string, reference: string) {
     const payment = await prisma.subscriptionPayment.findFirst({
       where: { reference, storeId },
     });
@@ -353,19 +364,17 @@ export class SubscriptionService {
       return { alreadyProcessed: true, ...store };
     }
 
-    if (!ENV.PAYSTACK_SECRET_KEY) {
-      throw new AppError("Paystack key not configured", 500);
-    }
-
-    const resp = await fetch(
-      `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
-      {
-        headers: { Authorization: `Bearer ${ENV.PAYSTACK_SECRET_KEY}` },
+    if (ENV.NOMBA_CLIENT_ID && ENV.NOMBA_PRIVATE_KEY && ENV.NOMBA_ACCOUNT_ID) {
+      const paid = await NombaService.verifyVirtualAccountPayment(
+        reference,
+        Number(payment.amount)
+      );
+      if (!paid) {
+        throw new AppError(
+          "Transfer not confirmed yet. Please wait a few seconds after sending and click again.",
+          400
+        );
       }
-    );
-    const json = (await resp.json().catch(() => ({}))) as any;
-    if (!resp.ok || !json?.status || json?.data?.status !== "success") {
-      throw new AppError("Payment has not been completed yet.", 400);
     }
 
     const durationDays = payment.billingCycle === "ANNUAL" ? 365 : 30;
@@ -403,12 +412,21 @@ export class SubscriptionService {
     });
 
     const plan = await this.getPlanForTier(updated.subscriptionTier);
+    PushService.sendStorePush(storeId, {
+      title: `${plan.name} Activated`,
+      body: `${updated.name} · ₦${Number(payment.amount).toLocaleString("en-NG", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })} (${payment.billingCycle === "ANNUAL" ? "1 Year" : "30 Days"})`,
+      url: "/dashboard/billing",
+    }).catch(() => {});
+
     PushService.sendAdminPush({
       title: `New Paid Plan: ${plan.name}`,
       body: `${updated.name} · ₦${Number(payment.amount).toLocaleString("en-NG", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
-      })} via Card`,
+      })} via Nomba Transfer`,
       url: "/admin/subscriptions",
     }).catch(() => {});
 
@@ -416,6 +434,15 @@ export class SubscriptionService {
       tier: updated.subscriptionTier,
       subscriptionEnd: updated.subscriptionEnd,
     };
+  }
+
+  static async completeNombaWebhook(reference: string) {
+    const payment = await prisma.subscriptionPayment.findUnique({
+      where: { reference },
+      select: { storeId: true },
+    });
+    if (!payment) return null;
+    return this.verifyNombaTransferUpgrade(payment.storeId, reference);
   }
 
   static async getAdminOverview() {

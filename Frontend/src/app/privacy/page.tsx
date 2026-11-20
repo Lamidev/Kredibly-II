@@ -72,7 +72,7 @@ export default function PrivacyPage() {
             Kredibly does not store or process your credit/debit card numbers or CVV codes directly on our servers.
           </p>
           <p className="mt-3 text-sm leading-relaxed text-[#525B6C]">
-            All card transactions and instant virtual bank account generations are handled directly by Central Bank of Nigeria (CBN)-licensed and PCI-DSS Level 1 certified payment switches (such as Paystack and Monnify). Your payment details are encrypted in transit using 256-bit TLS/SSL encryption.
+            All card transactions and instant virtual bank account generations are handled directly by Central Bank of Nigeria (CBN)-licensed and PCI-DSS Level 1 certified payment switches (such as Nomba). Your payment details are encrypted in transit using 256-bit TLS/SSL encryption.
           </p>
         </div>
 

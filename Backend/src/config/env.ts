@@ -7,8 +7,6 @@ export const ENV = {
   DATABASE_URL: process.env.DATABASE_URL || "",
   JWT_SECRET: process.env.JWT_SECRET || "kredibly_dev_super_secret_jwt_key_2026",
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "7d",
-  PAYSTACK_SECRET_KEY: process.env.PAYSTACK_SECRET_KEY || "",
-  PAYSTACK_PUBLIC_KEY: process.env.PAYSTACK_PUBLIC_KEY || "",
   FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:3000",
   UPLOAD_DIR: process.env.UPLOAD_DIR || "./uploads",
   RESEND_API_KEY: process.env.RESEND_API_KEY || "",
