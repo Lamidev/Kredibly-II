@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
 import { useAuthStore } from "@/store/useAuthStore";
 import { getImageUrl } from "@/lib/utils";
 import { compressProductImage } from "@/lib/compressor";
@@ -253,6 +254,22 @@ export default function StoreSettingsPage() {
       };
       setInitialForm(saved);
       setForm(saved);
+      const hasSocialSaved = Boolean(
+        saved.socialLinks.instagram.trim() ||
+          saved.socialLinks.tiktok.trim() ||
+          saved.socialLinks.facebook.trim() ||
+          saved.socialLinks.twitter.trim()
+      );
+      if (
+        saved.allowSearchIndexing &&
+        saved.logoUrl &&
+        (saved.description.trim() || saved.aboutText.trim()) &&
+        saved.address.trim() &&
+        hasSocialSaved &&
+        activeProductsCount >= 3
+      ) {
+        trackEvent("google_visibility_ready", { store_slug: saved.slug });
+      }
       toast.success("Store settings saved successfully!");
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to save settings.");
