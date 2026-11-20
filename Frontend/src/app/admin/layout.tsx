@@ -78,7 +78,7 @@ export default function SuperAdminLayout({
             <Menu className="w-5 h-5" />
           </button>
           <span className="font-display text-sm font-bold text-[#0f172a]">
-            Kredibly Super Admin
+            Kredibly HQ
           </span>
           <div className="w-9" />
         </header>
