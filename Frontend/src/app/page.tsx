@@ -561,7 +561,7 @@ export default function HomePage() {
         {/* 3. Section 2: Capabilities — Built For Every Industry on #F3F4EF */}
         <section
           id="features"
-          className="py-20 sm:py-28 bg-[#F3F4EF] border-y border-[#DADDD4]"
+          className="py-20 sm:py-28 bg-[#F7F4FC] border-y border-[#DADDD4]"
         >
           <div className="px-4 sm:px-6 max-w-6xl mx-auto">
             {/* Keep Header & Sub-header text and positioning */}
@@ -694,7 +694,7 @@ export default function HomePage() {
         </section>
 
         {/* 4. Section 3: How It Works — Minimalist Editorial Timeline on Very Light Purple */}
-        <section id="how-it-works" className="py-20 sm:py-28 bg-[#F7F4FC]">
+        <section id="how-it-works" className="py-20 sm:py-28 bg-[#FAF9F5]">
           <div className="px-4 sm:px-6 max-w-6xl mx-auto">
             {/* Keep Header & Sub-header text and positioning */}
             <div className="space-y-4 mb-16 sm:mb-20">
@@ -773,7 +773,7 @@ export default function HomePage() {
         {/* 5. Section 4: Why Switch — White Canvas, Left Editorial Photo + Right Accordion */}
         <section
           id="competitive-edge"
-          className="py-20 sm:py-28 bg-white border-y border-[#DADDD4]"
+          className="py-20 sm:py-28 bg-[#F7F4FC] border-y border-[#DADDD4]"
         >
           <div className="px-4 sm:px-6 max-w-6xl mx-auto">
             {/* Keep Header & Sub-header text and positioning */}
