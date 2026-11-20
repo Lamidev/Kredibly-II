@@ -1419,6 +1419,11 @@ export default function HomePage() {
                   </a>
                 </li>
                 <li>
+                  <Link href="/blog" className="hover:text-[#090D16] transition-colors">
+                    Blog &amp; Guides
+                  </Link>
+                </li>
+                <li>
                   <Link href="/custom-builds" className="hover:text-[#090D16] transition-colors">
                     Custom Websites
                   </Link>
