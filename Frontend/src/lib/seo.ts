@@ -3,6 +3,13 @@ export interface StoreSeoInput {
   slug?: string;
   description?: string | null;
   aboutText?: string | null;
+  address?: string | null;
+  socialLinks?: {
+    instagram?: string | null;
+    tiktok?: string | null;
+    facebook?: string | null;
+    twitter?: string | null;
+  } | null;
   logoUrl?: string | null;
   isActive?: boolean;
   allowSearchIndexing?: boolean;
@@ -55,6 +62,14 @@ export function isStoreIndexable(store: StoreSeoInput | null | undefined): boole
   }
 
   const hasBio = Boolean(store.description?.trim() || store.aboutText?.trim());
+  const hasAddress = Boolean(store.address?.trim());
+  const hasSocial = Boolean(
+    store.socialLinks &&
+      ["instagram", "tiktok", "facebook", "twitter"].some((k) => {
+        const val = store.socialLinks?.[k as keyof typeof store.socialLinks];
+        return typeof val === "string" && val.trim().length > 0;
+      })
+  );
   const productCount = store.products?.length ?? 0;
 
   return Boolean(
@@ -62,6 +77,8 @@ export function isStoreIndexable(store: StoreSeoInput | null | undefined): boole
       store.allowSearchIndexing !== false &&
       store.logoUrl &&
       hasBio &&
+      hasAddress &&
+      hasSocial &&
       productCount >= 3
   );
 }

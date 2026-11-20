@@ -598,8 +598,16 @@ export default function StoreSettingsPage() {
                 const hasBio = Boolean(
                   form.description.trim() || form.aboutText.trim()
                 );
+                const hasAddress = Boolean(form.address.trim());
+                const hasSocial = Boolean(
+                  form.socialLinks.instagram.trim() ||
+                    form.socialLinks.tiktok.trim() ||
+                    form.socialLinks.facebook.trim() ||
+                    form.socialLinks.twitter.trim()
+                );
                 const hasProducts = activeProductsCount >= 3;
-                const meetsGoogleRequirements = hasLogo && hasBio && hasProducts;
+                const meetsGoogleRequirements =
+                  hasLogo && hasBio && hasAddress && hasSocial && hasProducts;
                 const isLiveOnGoogle =
                   meetsGoogleRequirements && form.allowSearchIndexing;
 
@@ -630,7 +638,7 @@ export default function StoreSettingsPage() {
                             </span>
                           </div>
                           <p className="text-[11px] text-slate-500 mt-0.5">
-                            Let shoppers find your store on Google, ChatGPT, and AI search automatically when your store meets all 3 requirements below.
+                            Let shoppers find your store on Google, ChatGPT, and AI search automatically when your store meets all 5 requirements below. Your phone number, address, and social links also auto-update in your storefront footer.
                           </p>
                         </div>
                       </div>
@@ -648,7 +656,7 @@ export default function StoreSettingsPage() {
                       />
                     </div>
 
-                    <div className="grid gap-2 sm:grid-cols-3 pt-1">
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 pt-1">
                       {[
                         {
                           done: hasLogo,
@@ -657,6 +665,14 @@ export default function StoreSettingsPage() {
                         {
                           done: hasBio,
                           label: "Add store bio or about text",
+                        },
+                        {
+                          done: hasAddress,
+                          label: "Add store address",
+                        },
+                        {
+                          done: hasSocial,
+                          label: "Add 1+ social media link",
                         },
                         {
                           done: hasProducts,
