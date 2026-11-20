@@ -15,7 +15,7 @@
 - Ultimate (Scale): ₦20,000/month — 1,000+ products, 0% Kredibly commission, priority support, and full scale tooling.
 
 ## Key Capabilities
-- Instant storefront URL (`usekredibly.com/your-store` or custom domain on higher plans)
+- Instant storefront URL (`yourstore.kredibly.shop` or custom domain on higher plans)
 - Built-in online checkout and bank/card payments powered by Nomba
 - WhatsApp-ready product links, order receipts, and customer order tracking
 - Merchant dashboard for products, variants, inventory, orders, and payouts
