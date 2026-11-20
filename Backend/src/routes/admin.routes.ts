@@ -599,34 +599,4 @@ router.put("/subscriptions/plans/:tier", async (req: Request, res: Response, nex
   }
 });
 
-/**
- * POST /api/admin/subscriptions/stores/:storeId
- */
-router.post("/subscriptions/stores/:storeId", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const body = z
-      .object({
-        tier: z.enum(["STARTER", "STARTER_PLUS", "PRO", "BUSINESS"]),
-        durationDays: z.coerce.number().int().min(1).max(3650).default(30),
-        amountPaid: z.coerce.number().min(0).default(0),
-      })
-      .parse(req.body);
-
-    const updated = await SubscriptionService.adminUpdateStoreSubscription(
-      req.params.storeId,
-      body.tier,
-      body.durationDays,
-      body.amountPaid
-    );
-
-    return res.status(200).json({
-      success: true,
-      message: `Store subscription updated to ${body.tier}`,
-      data: updated,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
 export default router;

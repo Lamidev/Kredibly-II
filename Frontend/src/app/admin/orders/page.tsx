@@ -43,18 +43,6 @@ export default function AdminOrdersPage() {
     fetchOrders();
   }, [statusFilter]);
 
-  const handleStatusChange = async (orderId: string, orderStatus: string) => {
-    try {
-      await api.patch(`/admin/orders/${orderId}/status`, { orderStatus });
-      setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, orderStatus } : o))
-      );
-      toast.success("Order status updated.");
-    } catch {
-      toast.error("Failed to update order status.");
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -63,7 +51,7 @@ export default function AdminOrdersPage() {
             All Platform Orders
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            Monitor orders across all storefronts and update fulfillment statuses.
+            Monitor orders and fulfillment statuses across all storefronts.
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchOrders}>
@@ -161,26 +149,17 @@ export default function AdminOrdersPage() {
                       </Badge>
                     </td>
                     <td className="px-5 py-3.5">
-                      <select
-                        value={ord.orderStatus}
-                        onChange={(e) =>
-                          handleStatusChange(ord.id, e.target.value)
+                      <Badge
+                        variant={
+                          ord.orderStatus === "DELIVERED"
+                            ? "success"
+                            : ord.orderStatus === "CANCELLED"
+                            ? "destructive"
+                            : "secondary"
                         }
-                        className="px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs font-semibold text-[#0f172a]"
                       >
-                        {[
-                          "PENDING",
-                          "PAID",
-                          "PROCESSING",
-                          "SHIPPED",
-                          "DELIVERED",
-                          "CANCELLED",
-                        ].map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
-                      </select>
+                        {ord.orderStatus}
+                      </Badge>
                     </td>
                     <td className="px-5 py-3.5 text-right font-bold text-[#0f172a]">
                       {formatCurrency(ord.totalAmount)}

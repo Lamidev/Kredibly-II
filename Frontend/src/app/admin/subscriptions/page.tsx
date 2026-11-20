@@ -8,14 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
   CreditCard,
   TrendingUp,
   Users,
@@ -145,12 +137,6 @@ export default function AdminSubscriptionsPage() {
   const [editingPlans, setEditingPlans] = useState<Record<string, PlanConfig>>({});
   const [savingTier, setSavingTier] = useState<string | null>(null);
 
-  const [manageStore, setManageStore] = useState<StoreSubRow | null>(null);
-  const [grantTier, setGrantTier] = useState<TierKey>("PRO");
-  const [grantDays, setGrantDays] = useState("30");
-  const [grantAmount, setGrantAmount] = useState("0");
-  const [grantSaving, setGrantSaving] = useState(false);
-
   const loadData = async () => {
     try {
       const res = await api.get("/admin/subscriptions");
@@ -222,33 +208,6 @@ export default function AdminSubscriptionsPage() {
       toast.error(err.response?.data?.message || "Failed to update plan.");
     } finally {
       setSavingTier(null);
-    }
-  };
-
-  const handleOpenManage = (store: StoreSubRow) => {
-    setManageStore(store);
-    setGrantTier(store.subscriptionTier === "STARTER" ? "STARTER_PLUS" : store.subscriptionTier);
-    setGrantDays("30");
-    setGrantAmount("0");
-  };
-
-  const handleGrantSubscription = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!manageStore) return;
-    setGrantSaving(true);
-    try {
-      await api.post(`/admin/subscriptions/stores/${manageStore.id}`, {
-        tier: grantTier,
-        durationDays: Number(grantDays) || 30,
-        amountPaid: Number(grantAmount) || 0,
-      });
-      toast.success(`Updated ${manageStore.name} to ${TIER_LABELS[grantTier]}.`);
-      setManageStore(null);
-      await loadData();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to update store plan.");
-    } finally {
-      setGrantSaving(false);
     }
   };
 
@@ -530,7 +489,7 @@ export default function AdminSubscriptionsPage() {
                 Store Accounts &amp; Subscription Countdown
               </CardTitle>
               <CardDescription className="text-xs">
-                Track days remaining on every merchant account or manually grant/extend a plan.
+                Track days remaining on every merchant account across all tiers.
               </CardDescription>
             </div>
             <div className="relative w-full sm:w-64">
@@ -594,14 +553,6 @@ export default function AdminSubscriptionsPage() {
                     Paid: {formatCurrency(s.totalPaid)}
                   </span>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleOpenManage(s)}
-                  className="w-full h-8 text-xs"
-                >
-                  Manage Plan
-                </Button>
               </div>
             ))}
           </div>
@@ -615,8 +566,7 @@ export default function AdminSubscriptionsPage() {
                   <th className="py-3 px-4 font-semibold">Owner</th>
                   <th className="py-3 px-4 font-semibold">Plan</th>
                   <th className="py-3 px-4 font-semibold">Countdown</th>
-                  <th className="py-3 px-4 font-semibold">Total Paid</th>
-                  <th className="py-3 px-4 font-semibold text-right">Action</th>
+                  <th className="py-3 px-4 font-semibold text-right">Total Paid</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -647,18 +597,8 @@ export default function AdminSubscriptionsPage() {
                         </p>
                       )}
                     </td>
-                    <td className="py-3 px-4 font-mono font-bold text-[#0f172a]">
+                    <td className="py-3 px-4 text-right font-mono font-bold text-[#0f172a]">
                       {formatCurrency(s.totalPaid)}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleOpenManage(s)}
-                        className="h-8 text-xs"
-                      >
-                        Manage
-                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -667,78 +607,6 @@ export default function AdminSubscriptionsPage() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Manage Store Subscription Modal */}
-      <Dialog open={Boolean(manageStore)} onOpenChange={(v) => !v && setManageStore(null)}>
-        <DialogContent className="sm:max-w-md bg-white">
-          <DialogHeader>
-            <DialogTitle>Manage Subscription — {manageStore?.name}</DialogTitle>
-            <DialogDescription>
-              Upgrade, extend, or downgrade this store&apos;s plan manually.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleGrantSubscription} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-[#0f172a] mb-1">
-                Plan Tier
-              </label>
-              <select
-                value={grantTier}
-                onChange={(e) => setGrantTier(e.target.value as TierKey)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white"
-              >
-                <option value="STARTER">Starter (Free)</option>
-                <option value="STARTER_PLUS">Starter Plus (₦5,000/mo)</option>
-                <option value="PRO">Deluxe (Pro — ₦10,000/mo)</option>
-                <option value="BUSINESS">Ultimate (Scale — ₦20,000/mo)</option>
-              </select>
-            </div>
-
-            {grantTier !== "STARTER" && (
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-[#0f172a] mb-1">
-                    Duration (Days)
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={3650}
-                    value={grantDays}
-                    onChange={(e) => setGrantDays(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[#0f172a] mb-1">
-                    Amount Recorded (₦)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={grantAmount}
-                    onChange={(e) => setGrantAmount(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm font-mono"
-                  />
-                </div>
-              </div>
-            )}
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setManageStore(null)}>
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={grantSaving}
-                className="bg-[#2e1065] hover:bg-[#3b0764] text-white"
-              >
-                {grantSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply Plan"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
