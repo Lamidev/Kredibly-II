@@ -8,6 +8,7 @@ import { RegisterInput, LoginInput, BankDetailsInput } from "../validators/auth.
 import { sanitizeSlug, isValidSlug, RESERVED_SLUGS } from "../utils/slug";
 import { isDisposableEmail } from "../utils/disposableEmail";
 import { EmailService } from "./email.service";
+import { PushService } from "./push.service";
 import { WalletService } from "./wallet.service";
 
 export class AuthService {
@@ -192,6 +193,12 @@ export class AuthService {
         ownerEmail: user.email,
         ownerPhone: user.phoneNumber,
       }).catch((err) => console.error("Admin new store alert failed:", err));
+
+      PushService.sendAdminPush({
+        title: `New Store: ${primaryStore.name}`,
+        body: `${user.fullName} launched ${primaryStore.slug}.kredibly.shop`,
+        url: "/admin/stores",
+      }).catch(() => {});
     }
 
     const token = jwt.sign(

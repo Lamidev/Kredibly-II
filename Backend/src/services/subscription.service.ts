@@ -257,6 +257,15 @@ export class SubscriptionService {
       url: "/dashboard/billing",
     }).catch(() => {});
 
+    PushService.sendAdminPush({
+      title: `New Paid Plan: ${plan.name}`,
+      body: `${result.storeName} · ₦${amount.toLocaleString("en-NG", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })} via Wallet`,
+      url: "/admin/subscriptions",
+    }).catch(() => {});
+
     return {
       tier: result.updatedStore.subscriptionTier,
       subscriptionEnd: result.updatedStore.subscriptionEnd,
@@ -392,6 +401,16 @@ export class SubscriptionService {
         },
       });
     });
+
+    const plan = await this.getPlanForTier(updated.subscriptionTier);
+    PushService.sendAdminPush({
+      title: `New Paid Plan: ${plan.name}`,
+      body: `${updated.name} · ₦${Number(payment.amount).toLocaleString("en-NG", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })} via Card`,
+      url: "/admin/subscriptions",
+    }).catch(() => {});
 
     return {
       tier: updated.subscriptionTier,

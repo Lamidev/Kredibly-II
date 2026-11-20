@@ -13,22 +13,17 @@ if (ENV.VAPID_PUBLIC_KEY && ENV.VAPID_PRIVATE_KEY) {
 }
 
 export class PushService {
-  static async sendStorePush(
-    storeId: string,
-    payload: { title: string; body: string; url?: string }
+  private static async sendToSubscriptions(
+    subs: Array<{ id: string; endpoint: string; p256dh: string; auth: string }>,
+    payload: { title: string; body: string; url?: string },
+    defaultUrl: string
   ) {
-    if (!vapidConfigured) return;
-
-    const subs = await prisma.pushSubscription.findMany({
-      where: { storeId },
-    });
-
-    if (subs.length === 0) return;
+    if (!vapidConfigured || subs.length === 0) return;
 
     const message = JSON.stringify({
       title: payload.title,
       body: payload.body,
-      url: payload.url || "/dashboard/orders",
+      url: payload.url || defaultUrl,
     });
 
     await Promise.all(
@@ -46,7 +41,6 @@ export class PushService {
             }
           );
         } catch (err: any) {
-          // Remove expired or unsubscribed endpoints cleanly
           if (err?.statusCode === 404 || err?.statusCode === 410) {
             await prisma.pushSubscription
               .delete({ where: { id: sub.id } })
@@ -60,5 +54,47 @@ export class PushService {
         }
       })
     );
+  }
+
+  static async sendStorePush(
+    storeId: string,
+    payload: { title: string; body: string; url?: string }
+  ) {
+    if (!vapidConfigured) return;
+    const subs = await prisma.pushSubscription.findMany({
+      where: { storeId },
+    });
+    await this.sendToSubscriptions(subs, payload, "/dashboard/orders");
+  }
+
+  static async sendAdminPush(payload: { title: string; body: string; url?: string }) {
+    if (!vapidConfigured) return;
+    const subs = await prisma.pushSubscription.findMany({
+      where: { isAdmin: true },
+    });
+    await this.sendToSubscriptions(subs, payload, "/admin");
+  }
+
+  static async sendDailyAdminSummary(settledT1Count: number) {
+    if (!vapidConfigured) return;
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const agg = await prisma.order.aggregate({
+      where: {
+        paymentStatus: "PAID",
+        createdAt: { gte: since },
+      },
+      _count: { id: true },
+      _sum: { totalAmount: true },
+    });
+    const orderCount = agg._count.id || 0;
+    const gmv = Number(agg._sum.totalAmount || 0).toLocaleString("en-NG", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    await this.sendAdminPush({
+      title: "Daily 8:00 AM Kredibly HQ Summary",
+      body: `${orderCount} paid orders · ₦${gmv} GMV · ${settledT1Count} T+1 payouts settled`,
+      url: "/admin",
+    });
   }
 }

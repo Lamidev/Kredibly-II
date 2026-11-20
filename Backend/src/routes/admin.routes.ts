@@ -599,4 +599,57 @@ router.put("/subscriptions/plans/:tier", async (req: Request, res: Response, nex
   }
 });
 
+/**
+ * POST /api/admin/push-subscribe
+ */
+router.post("/push-subscribe", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const body = z
+      .object({
+        endpoint: z.string().url(),
+        keys: z.object({
+          p256dh: z.string().min(1),
+          auth: z.string().min(1),
+        }),
+      })
+      .parse(req.body);
+
+    await prisma.pushSubscription.upsert({
+      where: { endpoint: body.endpoint },
+      update: {
+        isAdmin: true,
+        storeId: null,
+        p256dh: body.keys.p256dh,
+        auth: body.keys.auth,
+      },
+      create: {
+        isAdmin: true,
+        storeId: null,
+        endpoint: body.endpoint,
+        p256dh: body.keys.p256dh,
+        auth: body.keys.auth,
+      },
+    });
+
+    return res.status(201).json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * DELETE /api/admin/push-subscribe
+ */
+router.delete("/push-subscribe", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { endpoint } = z.object({ endpoint: z.string().url() }).parse(req.body);
+    await prisma.pushSubscription.deleteMany({
+      where: { endpoint, isAdmin: true },
+    });
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
