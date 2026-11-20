@@ -214,35 +214,35 @@ export function StorefrontClient({ store }: { store: StoreData }) {
 
       {/* Store Hero Section */}
       {store.bannerUrl ? (
-        <section className="relative w-full border-b border-[#daddd4] min-h-[380px] sm:min-h-[440px] flex items-center justify-center overflow-hidden py-10 sm:py-16 px-4">
-          {/* 1. Full-Resolution Banner beneath texts (No dull 55% opacity) */}
+        <section className="relative w-full border-b border-[#daddd4] overflow-hidden min-h-[340px] sm:min-h-[420px] flex items-center justify-center">
+          {/* 1. Full-Resolution Banner Image as Background (No box/border, full width) */}
           <img
             src={getImageUrl(store.bannerUrl)}
             alt={store.name}
             className="absolute inset-0 w-full h-full object-cover"
           />
 
-          {/* 2. Subtle Cinematic Light Ambient (keeps photo vivid while softening harsh glare) */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/20 to-black/30 pointer-events-none" />
+          {/* 2. Soft Ambient Scrim (Ensures crisp white text readability over any photo) */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/40 to-black/35 pointer-events-none" />
 
-          {/* 3. Luminous Frosted Glass Capsule (keeps text 100% legible & in sync with any banner) */}
-          <div className="relative z-10 w-full max-w-xl mx-auto rounded-2xl bg-black/45 backdrop-blur-md border border-white/20 p-6 sm:p-8 text-center space-y-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.35)]">
-            <h1 className="font-display text-[clamp(24px,4vw,38px)] leading-[1.15] font-bold text-white m-0 tracking-tight drop-shadow-sm">
+          {/* 3. Text directly on the banner image (No box, no border) */}
+          <div className="relative z-10 mx-auto w-[min(1180px,calc(100%-32px))] md:w-[min(1180px,calc(100%-48px))] py-12 sm:py-20 text-center max-w-2xl space-y-4">
+            <h1 className="font-display text-[clamp(28px,4.2vw,46px)] leading-[1.12] tracking-tight font-bold text-white m-0 drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
               {store.name}
             </h1>
-            <p className="text-xs sm:text-sm text-white/90 leading-relaxed max-w-lg mx-auto">
+            <p className="text-sm sm:text-base text-slate-100 leading-relaxed max-w-xl mx-auto drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]">
               {store.description ||
                 `Browse and shop directly from ${store.name}.`}
             </p>
-            <div className="pt-1.5 flex items-center justify-center">
+            <div className="pt-2 flex items-center justify-center">
               <Link
                 href={`/${store.slug}/products`}
-                className="px-6 py-2.5 rounded-[8px] bg-white hover:bg-slate-100 text-[#090D16] font-display font-bold text-xs sm:text-sm inline-flex items-center transition shadow-md hover:-translate-y-0.5 cursor-pointer"
+                className="px-6 py-2.5 rounded-[8px] bg-white hover:bg-slate-100 text-[#0f172a] font-display font-bold text-xs sm:text-sm inline-flex items-center transition shadow-lg hover:-translate-y-0.5 cursor-pointer"
               >
                 Browse Products
               </Link>
             </div>
-            <p className="text-[11px] text-white/80 flex items-center justify-center gap-2 pt-0.5 font-medium flex-wrap">
+            <p className="text-[11px] text-slate-200 flex items-center justify-center gap-2 pt-1 drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)] flex-wrap">
               <span>
                 {freeDeliveryBanner ? "Free Delivery Available" : "Fast Delivery"}
               </span>
