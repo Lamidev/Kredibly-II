@@ -21,7 +21,6 @@ import {
   Check,
   Landmark,
   Loader2,
-  Sparkles,
   Wallet,
   Clock,
   Copy,
@@ -294,8 +293,8 @@ export default function MerchantBillingPage() {
                 <div className="flex items-center justify-between gap-2">
                   <CardTitle className="text-base">{plan.name}</CardTitle>
                   {plan.tier === "PRO" && (
-                    <span className="px-2 py-0.5 rounded-full bg-[#2e1065] text-white text-[10px] font-bold inline-flex items-center gap-1">
-                      <Sparkles className="w-3 h-3" /> Popular
+                    <span className="px-2 py-0.5 rounded-full bg-[#2e1065] text-white text-[10px] font-bold uppercase tracking-wider">
+                      Popular
                     </span>
                   )}
                 </div>
