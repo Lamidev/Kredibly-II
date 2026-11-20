@@ -46,6 +46,7 @@ const storeSettingsSchema = z.object({
   bannerUrl: z.string().optional().nullable(),
   themeColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color").optional(),
   passFeeToCustomer: z.boolean().optional(),
+  allowSearchIndexing: z.boolean().optional(),
   shippingConfig: shippingConfigSchema,
 });
 
@@ -66,6 +67,7 @@ const settingsSelect = {
   currency: true,
   subscriptionTier: true,
   passFeeToCustomer: true,
+  allowSearchIndexing: true,
   shippingConfig: true,
 } as const;
 
@@ -75,10 +77,15 @@ const settingsSelect = {
 router.get("/settings", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const storeId = req.storeId!;
-    const store = await prisma.store.findUnique({
-      where: { id: storeId },
-      select: settingsSelect,
-    });
+    const [store, activeProductsCount] = await Promise.all([
+      prisma.store.findUnique({
+        where: { id: storeId },
+        select: settingsSelect,
+      }),
+      prisma.product.count({
+        where: { storeId, isActive: true },
+      }),
+    ]);
 
     if (!store) {
       throw new AppError("Store not found", 404);
@@ -86,7 +93,10 @@ router.get("/settings", async (req: Request, res: Response, next: NextFunction) 
 
     return res.status(200).json({
       success: true,
-      data: store,
+      data: {
+        ...store,
+        activeProductsCount,
+      },
     });
   } catch (error) {
     next(error);
@@ -139,6 +149,9 @@ router.put("/settings", async (req: Request, res: Response, next: NextFunction) 
         ...(validated.themeColor !== undefined ? { themeColor: validated.themeColor } : {}),
         ...(canPassFee && validated.passFeeToCustomer !== undefined
           ? { passFeeToCustomer: validated.passFeeToCustomer }
+          : {}),
+        ...(validated.allowSearchIndexing !== undefined
+          ? { allowSearchIndexing: validated.allowSearchIndexing }
           : {}),
         ...(validated.shippingConfig !== undefined
           ? {

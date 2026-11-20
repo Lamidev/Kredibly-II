@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductDetailClient } from "./ProductDetailClient";
+import { isStoreIndexable } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +64,9 @@ export async function generateMetadata({
   return {
     title,
     description,
+    robots: isStoreIndexable(store)
+      ? { index: true, follow: true }
+      : { index: false, follow: false },
     alternates: {
       canonical: `https://${params.storeSlug}.kredibly.shop/p/${params.productSlug}`,
     },

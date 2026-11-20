@@ -1354,6 +1354,26 @@ export default function HomePage() {
                   </Link>
                 </li>
                 <li>
+                  <Link href="/whatsapp-store-builder" className="hover:text-[#090D16] transition-colors">
+                    WhatsApp Store Builder
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/instagram-shop-builder" className="hover:text-[#090D16] transition-colors">
+                    Instagram Shop Builder
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/bumpa-alternative" className="hover:text-[#090D16] transition-colors">
+                    Bumpa Alternative
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/catlog-alternative" className="hover:text-[#090D16] transition-colors">
+                    Catlog Alternative
+                  </Link>
+                </li>
+                <li>
                   <a href="#pricing" className="hover:text-[#090D16] transition-colors">
                     Pricing Plans
                   </a>

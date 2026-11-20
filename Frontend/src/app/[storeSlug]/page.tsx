@@ -2,6 +2,11 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { StorefrontClient } from "./StorefrontClient";
 import { getImageUrl } from "@/lib/utils";
+import {
+  buildStoreMetaDescription,
+  buildStoreMetaTitle,
+  isStoreIndexable,
+} from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -32,13 +37,13 @@ export async function generateMetadata({
     return {
       title: "Store Not Found — Kredibly",
       description: "The store you are looking for does not exist on Kredibly.",
+      robots: { index: false, follow: false },
     };
   }
 
-  const title = `${store.name} — ${params.storeSlug}.kredibly.shop`;
-  const description =
-    store.description ||
-    `Browse authentic products from ${store.name}. Enjoy instant checkout and fast delivery on Kredibly.`;
+  const title = buildStoreMetaTitle(store.name);
+  const description = buildStoreMetaDescription(store);
+  const indexable = isStoreIndexable(store);
   const ogImage = store.logoUrl
     ? getImageUrl(store.logoUrl)
     : "https://usekredibly.com/krediblyoriginal.jpeg";
@@ -46,6 +51,9 @@ export async function generateMetadata({
   return {
     title,
     description,
+    robots: indexable
+      ? { index: true, follow: true }
+      : { index: false, follow: false },
     ...(store.logoUrl
       ? {
           icons: {
@@ -98,10 +106,15 @@ export default async function StorePage({
     "@type": "OnlineStore",
     name: store.name,
     url: `https://${store.slug}.kredibly.shop`,
-    description: store.description || `Official online store for ${store.name}`,
-    image: store.logoUrl || undefined,
+    description: buildStoreMetaDescription(store),
+    image: store.logoUrl ? getImageUrl(store.logoUrl) : undefined,
     currenciesAccepted: store.currency || "NGN",
     paymentAccepted: "Debit Card, Instant Bank Transfer",
+    brand: {
+      "@type": "Organization",
+      name: "Kredibly",
+      url: "https://usekredibly.com",
+    },
   };
 
   return (

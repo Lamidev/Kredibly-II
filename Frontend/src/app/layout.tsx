@@ -11,6 +11,9 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://usekredibly.com"),
+  alternates: {
+    canonical: "https://usekredibly.com",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -79,21 +82,35 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    name: "Kredibly",
-    applicationCategory: "BusinessApplication",
-    operatingSystem: "Web, iOS, Android",
-    url: "https://usekredibly.com",
-    description:
-      "The simple online store builder for social media sellers in Nigeria. Add products, share your store link on WhatsApp and Instagram, and accept direct payments.",
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "NGN",
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "Kredibly",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web, iOS, Android",
+      url: "https://usekredibly.com",
+      description:
+        "The simple online store builder for social media sellers in Nigeria. Add products, share your store link on WhatsApp and Instagram, and accept direct payments.",
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "NGN",
+      },
     },
-  };
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "Kredibly",
+      legalName: "Akinbyte Technologies Limited",
+      url: "https://usekredibly.com",
+      email: "support@usekredibly.com",
+      areaServed: {
+        "@type": "Country",
+        name: "Nigeria",
+      },
+    },
+  ];
 
   return (
     <html lang="en">
