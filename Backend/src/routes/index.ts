@@ -12,6 +12,7 @@ import customerRouter from "./customer.routes";
 import storeRouter from "./store.routes";
 import adminRouter from "./admin.routes";
 import shopperRouter from "./shopper.routes";
+import subscriptionRouter from "./subscription.routes";
 
 const router = Router();
 
@@ -55,5 +56,8 @@ router.use("/admin", adminRouter);
 
 // Storefront Optional Shopper Accounts & Profiles
 router.use("/shopper", shopperRouter);
+
+// Merchant Subscriptions & Plan Billing (authenticated)
+router.use("/subscription", subscriptionRouter);
 
 export default router;

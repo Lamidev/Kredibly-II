@@ -6,6 +6,8 @@ import { ENV } from "./config/env";
 import apiRoutes from "./routes";
 import { errorHandler } from "./middleware/errorHandler";
 import { WalletService } from "./services/wallet.service";
+import { SubscriptionService } from "./services/subscription.service";
+import { CleanupService } from "./services/cleanup.service";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -69,9 +71,18 @@ function scheduleDailyAutoT1() {
         await WalletService.processAutoT1Settlements();
       } catch (err) {
         console.error("[Auto T+1] Scheduled run failed:", err);
-      } finally {
-        scheduleNext();
       }
+      try {
+        await SubscriptionService.processSubscriptionLifecycle();
+      } catch (err) {
+        console.error("[Subscriptions] Lifecycle check failed:", err);
+      }
+      try {
+        await CleanupService.cleanupOrphanUploads();
+      } catch (err) {
+        console.error("[Cleanup] Orphan upload sweep failed:", err);
+      }
+      scheduleNext();
     }, delayMs);
   };
 

@@ -10,6 +10,7 @@ import {
   BadgeCheck,
   Wallet,
   ShieldCheck,
+  CreditCard,
   LogOut,
   ArrowLeft,
 } from "lucide-react";
@@ -33,6 +34,12 @@ const ADMIN_ITEMS = [
     label: "Stores & Merchants",
     path: "/admin/stores",
     icon: Store,
+  },
+  {
+    id: "subscriptions",
+    label: "Subscriptions",
+    path: "/admin/subscriptions",
+    icon: CreditCard,
   },
   {
     id: "orders",
