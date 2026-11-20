@@ -464,7 +464,16 @@ export class EmailService {
     ownerPhone?: string | null;
   }) {
     const storeUrl = `https://${data.storeSlug}.kredibly.shop`;
+    const adminStoresUrl = `${ENV.FRONTEND_URL}/admin/stores`;
     const recipients = Array.from(new Set([ENV.ADMIN_EMAIL, "usekredibly@gmail.com"].filter(Boolean)));
+    const launchedAt = new Date().toLocaleString("en-NG", {
+      timeZone: "Africa/Lagos",
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+    const cleanPhone = (data.ownerPhone || "").replace(/[^0-9]/g, "");
+    const waDigits = cleanPhone.startsWith("0") ? `234${cleanPhone.slice(1)}` : cleanPhone;
+    const waUrl = waDigits ? `https://wa.me/${waDigits}` : "";
 
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #0f172a; border: 1px solid #e2e8f0; border-radius: 12px;">
@@ -476,6 +485,11 @@ export class EmailService {
           <p style="margin: 0;"><strong>Owner:</strong> ${this.escapeHtml(data.ownerName)}</p>
           <p style="margin: 0;"><strong>Email:</strong> ${this.escapeHtml(data.ownerEmail)}</p>
           ${data.ownerPhone ? `<p style="margin: 0;"><strong>Phone:</strong> ${this.escapeHtml(data.ownerPhone)}</p>` : ""}
+          <p style="margin: 0;"><strong>Launched:</strong> ${launchedAt} WAT</p>
+        </div>
+        <div style="margin-top: 16px;">
+          <a href="${adminStoresUrl}" style="display: inline-block; background: #2e1065; color: #ffffff; text-decoration: none; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; margin-right: 8px;">View in Admin &rarr;</a>
+          ${waUrl ? `<a href="${waUrl}" style="display: inline-block; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; text-decoration: none; padding: 9px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;">Chat Owner on WhatsApp</a>` : ""}
         </div>
       </div>
     `;
