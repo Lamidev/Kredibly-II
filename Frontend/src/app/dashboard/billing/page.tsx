@@ -8,7 +8,23 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, CreditCard, Loader2, Sparkles, Wallet, Clock } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Check,
+  Landmark,
+  Loader2,
+  Sparkles,
+  Wallet,
+  Clock,
+  Copy,
+} from "lucide-react";
 
 type TierKey = "STARTER" | "STARTER_PLUS" | "PRO" | "BUSINESS";
 
@@ -47,12 +63,25 @@ interface BillingOverview {
   }>;
 }
 
+interface NombaTransferModalState {
+  reference: string;
+  amount: number;
+  planName: string;
+  accountNumber: string;
+  bankName: string;
+  accountName: string;
+  expiresAt: string;
+}
+
 export default function MerchantBillingPage() {
   const { updateStore } = useAuthStore();
   const [data, setData] = useState<BillingOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [billingCycle, setBillingCycle] = useState<"MONTHLY" | "ANNUAL">("MONTHLY");
   const [processingTier, setProcessingTier] = useState<string | null>(null);
+
+  const [transferModal, setTransferModal] = useState<NombaTransferModalState | null>(null);
+  const [verifyingTransfer, setVerifyingTransfer] = useState(false);
 
   const fetchOverview = async () => {
     try {
@@ -66,25 +95,8 @@ export default function MerchantBillingPage() {
   };
 
   useEffect(() => {
-    const params =
-      typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-    const verifyRef = params?.get("verify") || params?.get("reference");
-
-    if (verifyRef) {
-      api
-        .post("/subscription/verify-card", { reference: verifyRef })
-        .then((res) => {
-          toast.success("Plan activated!");
-          if (res.data?.data?.tier) {
-            updateStore({ subscriptionTier: res.data.data.tier });
-          }
-        })
-        .catch(() => {})
-        .finally(() => fetchOverview());
-    } else {
-      fetchOverview();
-    }
-  }, [updateStore]);
+    fetchOverview();
+  }, []);
 
   const handleWalletUpgrade = async (tier: TierKey) => {
     if (tier === "STARTER") return;
@@ -104,21 +116,42 @@ export default function MerchantBillingPage() {
     }
   };
 
-  const handleCardUpgrade = async (tier: TierKey) => {
+  const handleTransferUpgrade = async (tier: TierKey) => {
     if (tier === "STARTER") return;
-    setProcessingTier(`${tier}-card`);
+    setProcessingTier(`${tier}-transfer`);
     try {
-      const res = await api.post("/subscription/upgrade-card", {
+      const res = await api.post("/subscription/upgrade-transfer", {
         tier,
         billingCycle,
       });
-      const url = res.data?.data?.authorizationUrl;
-      if (url) {
-        window.location.href = url;
-      }
+      setTransferModal(res.data.data);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Card checkout unavailable.");
+      toast.error(err.response?.data?.message || "Could not generate transfer account.");
+    } finally {
       setProcessingTier(null);
+    }
+  };
+
+  const handleVerifyTransfer = async () => {
+    if (!transferModal) return;
+    setVerifyingTransfer(true);
+    try {
+      const res = await api.post("/subscription/verify-transfer", {
+        reference: transferModal.reference,
+      });
+      toast.success(res.data?.message || "Transfer confirmed and plan activated!");
+      if (res.data?.data?.tier) {
+        updateStore({ subscriptionTier: res.data.data.tier });
+      }
+      setTransferModal(null);
+      await fetchOverview();
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.message ||
+          "Transfer not confirmed yet. Wait a moment and try again."
+      );
+    } finally {
+      setVerifyingTransfer(false);
     }
   };
 
@@ -174,7 +207,7 @@ export default function MerchantBillingPage() {
       <Card className="border-slate-200 bg-white">
         <CardContent className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-bold uppercase tracking-wider text-[#2e1065]">
                 Current Plan
               </span>
@@ -301,15 +334,15 @@ export default function MerchantBillingPage() {
                       type="button"
                       variant="outline"
                       disabled={processingTier !== null}
-                      onClick={() => handleCardUpgrade(plan.tier)}
+                      onClick={() => handleTransferUpgrade(plan.tier)}
                       className="w-full text-xs"
                     >
-                      {processingTier === `${plan.tier}-card` ? (
+                      {processingTier === `${plan.tier}-transfer` ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : (
                         <>
-                          <CreditCard className="w-3.5 h-3.5 mr-1.5" />
-                          Pay with Card
+                          <Landmark className="w-3.5 h-3.5 mr-1.5" />
+                          Pay via Bank Transfer
                         </>
                       )}
                     </Button>
@@ -350,6 +383,78 @@ export default function MerchantBillingPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Nomba Bank Transfer Modal */}
+      <Dialog open={Boolean(transferModal)} onOpenChange={(v) => !v && setTransferModal(null)}>
+        <DialogContent className="sm:max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle>Activate {transferModal?.planName}</DialogTitle>
+            <DialogDescription>
+              Transfer the exact amount below to activate your plan immediately.
+            </DialogDescription>
+          </DialogHeader>
+          {transferModal && (
+            <div className="space-y-4">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Amount to Transfer</span>
+                  <span className="font-mono text-base font-extrabold text-[#2e1065]">
+                    {formatCurrency(transferModal.amount)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Bank Name</span>
+                  <span className="font-semibold text-[#0f172a]">
+                    {transferModal.bankName}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Account Number</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(transferModal.accountNumber);
+                      toast.success("Account number copied!");
+                    }}
+                    className="inline-flex items-center gap-1.5 font-mono text-sm font-bold text-[#0f172a] hover:text-[#2e1065] cursor-pointer"
+                  >
+                    <span>{transferModal.accountNumber}</span>
+                    <Copy className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Account Name</span>
+                  <span className="font-semibold text-[#0f172a] text-right">
+                    {transferModal.accountName}
+                  </span>
+                </div>
+              </div>
+
+              <DialogFooter className="gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setTransferModal(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  disabled={verifyingTransfer}
+                  onClick={handleVerifyTransfer}
+                  className="bg-[#2e1065] hover:bg-[#3b0764] text-white"
+                >
+                  {verifyingTransfer ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "I Have Transferred — Activate Plan"
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

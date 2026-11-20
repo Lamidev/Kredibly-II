@@ -80,7 +80,7 @@ export default function TermsPage() {
           </p>
           <ul className="list-disc pl-5 mt-3 space-y-2 text-sm text-[#525B6C]">
             <li>
-              <strong>0% Platform Commission:</strong> Kredibly does not take a percentage fee from your sales. Merchants keep 100% of their product margins, subject only to third-party payment gateway processing fees (e.g., Paystack/Monnify card and transfer fees).
+              <strong>0% Platform Commission:</strong> Kredibly does not take a percentage fee from your sales on paid plans. Merchants keep 100% of their product margins, subject only to third-party payment gateway processing fees (e.g., Nomba transfer fees).
             </li>
             <li>
               <strong>Wallet Deduction Option:</strong> For merchant convenience, renewal fees may be deducted directly from your verified Kredibly sales wallet balance upon your authorized opt-in.

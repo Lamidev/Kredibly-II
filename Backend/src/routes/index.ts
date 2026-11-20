@@ -25,7 +25,7 @@ router.use("/public", publicRouter);
 // 1-Step Checkout Engine
 router.use("/checkout", checkoutRouter);
 
-// Automated Webhook Receivers (Nomba & Paystack — supports both /webhooks/* and /payments/webhook/*)
+// Automated Webhook Receivers (Nomba — supports both /webhooks/* and /payments/webhook/*)
 router.use("/webhooks", webhookRouter);
 router.use("/payments/webhook", webhookRouter);
 router.use("/payments/webhooks", webhookRouter);

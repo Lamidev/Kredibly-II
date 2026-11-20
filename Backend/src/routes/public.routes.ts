@@ -16,10 +16,16 @@ const inquiryLimiter = createRateLimiter({
   message: "Too many requests. Please try again in a few minutes.",
 });
 
+const publicReadLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  max: 120,
+  message: "Too many requests. Please slow down and try again shortly.",
+});
+
 // Public routes (no authentication required)
-router.get("/stores/:storeSlug", PublicController.getStore);
+router.get("/stores/:storeSlug", publicReadLimiter, PublicController.getStore);
 router.get("/stores/:storeSlug/track", trackLimiter, PublicController.trackOrders);
-router.get("/stores/:storeSlug/products/:productSlug", PublicController.getProduct);
+router.get("/stores/:storeSlug/products/:productSlug", publicReadLimiter, PublicController.getProduct);
 router.post("/custom-inquiry", inquiryLimiter, PublicController.submitCustomInquiry);
 router.post("/newsletter", inquiryLimiter, PublicController.subscribeNewsletter);
 

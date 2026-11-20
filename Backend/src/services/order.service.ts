@@ -1,4 +1,3 @@
-import axios from "axios";
 import crypto from "crypto";
 import { prisma } from "../config/db";
 import { ENV } from "../config/env";
@@ -62,7 +61,7 @@ export class OrderService {
     };
   }
   /**
-   * Initialize a checkout order and request Paystack authorization
+   * Initialize a checkout order and request Nomba payment authorization
    */
   static async initializeCheckout(input: InitializeCheckoutInput) {
     // 1. Resolve store and wallet
@@ -313,7 +312,7 @@ export class OrderService {
       };
     }
 
-    // 8. Card Checkout (Nomba Hosted Checkout or Paystack fallback)
+    // 8. Checkout Authorization (Nomba Hosted Checkout)
     let authorizationUrl = "";
 
     if (ENV.NOMBA_CLIENT_ID && ENV.NOMBA_PRIVATE_KEY && ENV.NOMBA_ACCOUNT_ID) {
@@ -326,47 +325,12 @@ export class OrderService {
           callbackUrl: `${ENV.FRONTEND_URL}/${store.slug}/orders/${orderNumber}`,
         });
       } catch (err: any) {
-        console.warn("Nomba checkout initialization error, checking Paystack:", err.message);
+        console.error("Nomba checkout initialization error:", err.message);
+        throw new AppError("Payment gateway initialization failed. Try again.", 502);
       }
-    }
-
-    if (!authorizationUrl) {
-      if (
-        ENV.PAYSTACK_SECRET_KEY &&
-        !ENV.PAYSTACK_SECRET_KEY.includes("placeholder")
-      ) {
-        try {
-          const paystackRes = await axios.post(
-            "https://api.paystack.co/transaction/initialize",
-            {
-              amount: Math.round(totalAmount * 100), // in kobo
-              email: customerEmail,
-              reference: paymentRef,
-              callback_url: `${ENV.FRONTEND_URL}/${store.slug}/orders/${orderNumber}`,
-              metadata: {
-                orderId: order.id,
-                orderNumber,
-                storeId: store.id,
-                customerPhone: cleanPhone,
-              },
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${ENV.PAYSTACK_SECRET_KEY}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-
-          authorizationUrl = paystackRes.data.data.authorization_url;
-        } catch (err: any) {
-          console.error("Paystack Initialize Error:", err.response?.data || err.message);
-          throw new AppError("Payment gateway initialization failed. Try again.", 502);
-        }
-      } else {
-        // Development simulated fallback URL
-        authorizationUrl = `${ENV.FRONTEND_URL}/${store.slug}/orders/${orderNumber}?simulated=true&ref=${paymentRef}`;
-      }
+    } else {
+      // Development simulated fallback URL
+      authorizationUrl = `${ENV.FRONTEND_URL}/${store.slug}/orders/${orderNumber}?simulated=true&ref=${paymentRef}`;
     }
 
     return {
@@ -380,7 +344,7 @@ export class OrderService {
   }
 
   /**
-   * Complete payment (used by Nomba / Paystack webhooks & dev simulator)
+   * Complete payment (used by Nomba webhook & dev simulator)
    */
   static async completePayment(paymentReference: string) {
     const result = await prisma.$transaction(async (tx) => {
