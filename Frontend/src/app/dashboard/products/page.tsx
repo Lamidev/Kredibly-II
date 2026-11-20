@@ -387,8 +387,43 @@ export default function ProductsPage() {
     e.preventDefault();
     setErrorMsg("");
 
-    if (description.trim().length < 5) {
+    if (!isTitleValid) {
+      const msg = "Please enter a valid product title (at least 2 letters).";
+      setErrorMsg(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (!isDescValid) {
       const msg = "Please add a short product description (at least 5 characters).";
+      setErrorMsg(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (!isActualPriceValid) {
+      const msg = "Please enter an Actual Price of at least ₦100.";
+      setErrorMsg(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (!isDiscountValid) {
+      const msg = "Discount Price must be at least ₦100 and lower than Actual Price.";
+      setErrorMsg(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (!isStockValid) {
+      const msg = "Please enter a valid stock quantity (0 or more).";
+      setErrorMsg(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (!areVariantsValid) {
+      const msg = "Each variant needs a valid name and a price of at least ₦50.";
       setErrorMsg(msg);
       toast.error(msg);
       return;
@@ -1077,12 +1112,14 @@ export default function ProductsPage() {
               </button>
             </div>
 
-            {/* Scrollable Form Body */}
+            {/* Form Body + Sticky Footer */}
             <form
               id="product-sheet-form"
+              noValidate
               onSubmit={handleCreateProduct}
-              className="flex-1 overflow-y-auto px-5 sm:px-6 py-5 space-y-5"
+              className="flex-1 min-h-0 flex flex-col"
             >
+              <div className="flex-1 overflow-y-auto px-5 sm:px-6 py-5 space-y-5">
               {errorMsg && (
                 <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
@@ -1548,36 +1585,36 @@ export default function ProductsPage() {
                   </div>
                 )}
               </div>
-            </form>
+              </div>
 
-            {/* Sticky Footer */}
-            <div className="px-5 sm:px-6 py-4 border-t border-slate-100 bg-white flex items-center justify-end gap-3 shrink-0">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setModalOpen(false)}
-                disabled={submitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                form="product-sheet-form"
-                disabled={submitting || compressing || !isFormValid}
-                className="bg-[#2e1065] hover:bg-[#3b0764] text-white disabled:opacity-45 disabled:cursor-not-allowed"
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : editingProduct ? (
-                  "Save Changes"
-                ) : (
-                  "Add Product"
-                )}
-              </Button>
-            </div>
+              {/* Sticky Footer */}
+              <div className="px-5 sm:px-6 py-4 border-t border-slate-100 bg-white flex items-center justify-end gap-3 shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setModalOpen(false)}
+                  disabled={submitting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={submitting || compressing}
+                  className="bg-[#2e1065] hover:bg-[#3b0764] text-white disabled:opacity-45 disabled:cursor-not-allowed"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : editingProduct ? (
+                    "Save Changes"
+                  ) : (
+                    "Add Product"
+                  )}
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}
