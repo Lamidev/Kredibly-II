@@ -159,21 +159,37 @@ export function toSocialUrl(
   return bases[platform];
 }
 
+export function normalizeCategoryKey(raw?: string | null): string {
+  if (!raw) return "";
+  const key = raw.trim().toLowerCase();
+  // Strip trailing 's' if word > 3 chars and not double 'ss' (e.g. 'smartphones' -> 'smartphone', but 'glass' -> 'glass')
+  if (key.length > 3 && key.endsWith("s") && !key.endsWith("ss")) {
+    return key.slice(0, -1);
+  }
+  return key;
+}
+
 export function extractStoreCategories(products: StoreProduct[] = []) {
-  const map = new Map<string, { label: string; count: number }>();
+  const map = new Map<string, { canonicalKey: string; label: string; count: number }>();
   products.forEach((p) => {
     if (p.category && p.category.trim()) {
-      const key = p.category.trim().toLowerCase();
-      const existing = map.get(key);
+      const raw = p.category.trim();
+      const canonical = normalizeCategoryKey(raw);
+      const existing = map.get(canonical);
       if (existing) {
         existing.count += 1;
+        // Prefer plural/richer label if available (e.g. 'Smartphones' over 'Smartphone')
+        if (raw.endsWith("s") && !existing.label.endsWith("s")) {
+          existing.label = raw;
+        }
       } else {
-        map.set(key, { label: p.category.trim(), count: 1 });
+        map.set(canonical, { canonicalKey: canonical, label: raw, count: 1 });
       }
     }
   });
-  return Array.from(map.entries()).map(([key, { label, count }]) => ({
-    key,
+
+  return Array.from(map.values()).map(({ canonicalKey, label, count }) => ({
+    key: canonicalKey,
     label,
     count,
   }));

@@ -14,6 +14,7 @@ import {
   StoreData,
   StoreProduct,
   extractStoreCategories,
+  normalizeCategoryKey,
 } from "@/types/storefront";
 import { SlidersHorizontal, ChevronDown, Package, X } from "lucide-react";
 
@@ -111,7 +112,7 @@ export function AllProductsClient({
     if (filters.category !== "all") {
       list = list.filter(
         (p) =>
-          p.category && p.category.trim().toLowerCase() === filters.category
+          p.category && normalizeCategoryKey(p.category) === filters.category
       );
     }
 
