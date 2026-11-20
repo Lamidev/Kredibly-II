@@ -213,30 +213,34 @@ export function StorefrontClient({ store }: { store: StoreData }) {
 
       {/* Store Hero Section */}
       {store.bannerUrl ? (
-        <section className="relative w-full border-b border-[#daddd4] overflow-hidden bg-slate-950">
-          <img
-            src={getImageUrl(store.bannerUrl)}
-            alt={store.name}
-            className="absolute inset-0 w-full h-full object-cover opacity-55"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/55 to-slate-950/35" />
-          <div className="relative mx-auto w-[min(1180px,calc(100%-32px))] md:w-[min(1180px,calc(100%-48px))] py-12 sm:py-20 text-center max-w-2xl space-y-4">
-            <h1 className="font-display text-[clamp(28px,4.2vw,46px)] leading-[1.12] tracking-[-1.2px] font-bold text-white m-0">
+        <section className="relative w-full border-b border-[#daddd4] bg-[#FAF9F5] overflow-hidden">
+          {/* Crisp, Full-Resolution Cover Banner (No dark overlay or opacity tint) */}
+          <div className="relative w-full h-44 sm:h-64 md:h-80 bg-slate-100 overflow-hidden">
+            <img
+              src={getImageUrl(store.bannerUrl)}
+              alt={store.name}
+              className="w-full h-full object-cover"
+            />
+          </div>
+
+          {/* Store Brand Identity & Bio cleanly positioned under the banner */}
+          <div className="relative mx-auto w-[min(1180px,calc(100%-32px))] md:w-[min(1180px,calc(100%-48px))] py-8 sm:py-10 text-center max-w-2xl space-y-3">
+            <h1 className="font-display text-[clamp(24px,3.5vw,36px)] leading-[1.2] tracking-tight font-bold text-[#090D16] m-0">
               {store.name}
             </h1>
-            <p className="text-sm sm:text-base text-slate-200 leading-relaxed max-w-xl mx-auto">
+            <p className="text-xs sm:text-sm text-[#525B6C] leading-relaxed max-w-xl mx-auto">
               {store.description ||
                 `Browse and shop directly from ${store.name}.`}
             </p>
-            <div className="pt-2 flex items-center justify-center">
+            <div className="pt-1.5 flex items-center justify-center">
               <Link
                 href={`/${store.slug}/products`}
-                className="px-5 py-2.5 rounded-[6px] bg-white hover:bg-slate-100 text-[#0f172a] font-display font-bold text-xs sm:text-sm inline-flex items-center transition"
+                className="px-5 py-2.5 rounded-[8px] bg-[#2e1065] hover:bg-[#3b0764] text-white font-display font-bold text-xs sm:text-sm inline-flex items-center transition shadow-xs hover:-translate-y-0.5 cursor-pointer"
               >
                 Browse Products
               </Link>
             </div>
-            <p className="text-[11px] text-slate-300 flex items-center justify-center gap-2 pt-1">
+            <p className="text-[11px] text-[#525B6C] flex items-center justify-center gap-2 pt-0.5">
               <span>
                 {freeDeliveryBanner ? "Free Delivery Available" : "Fast Delivery"}
               </span>
