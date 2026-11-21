@@ -51,17 +51,20 @@ export async function generateMetadata({
   return {
     title,
     description,
+    applicationName: store.name,
     robots: indexable
       ? { index: true, follow: true }
       : { index: false, follow: false },
-    ...(store.logoUrl
-      ? {
-          icons: {
-            icon: ogImage,
-            apple: ogImage,
-          },
-        }
-      : {}),
+    icons: {
+      icon: [
+        { url: ogImage },
+        { url: ogImage, sizes: "192x192" },
+      ],
+      apple: [
+        { url: ogImage, sizes: "180x180" },
+      ],
+      shortcut: [{ url: ogImage }],
+    },
     alternates: {
       canonical: `https://${params.storeSlug}.kredibly.shop`,
     },
@@ -101,27 +104,52 @@ export default async function StorePage({
     notFound();
   }
 
-  const storeJsonLd = {
+  const storeUrl = `https://${store.slug}.kredibly.shop`;
+  const logoImage = store.logoUrl ? getImageUrl(store.logoUrl) : undefined;
+
+  // Google Site Names requires @type: "WebSite" to display the merchant's store name
+  // at the top of Google search results instead of defaulting to the apex domain ("kredibly.shop").
+  const structuredData = {
     "@context": "https://schema.org",
-    "@type": "OnlineStore",
-    name: store.name,
-    url: `https://${store.slug}.kredibly.shop`,
-    description: buildStoreMetaDescription(store),
-    image: store.logoUrl ? getImageUrl(store.logoUrl) : undefined,
-    currenciesAccepted: store.currency || "NGN",
-    paymentAccepted: "Debit Card, Instant Bank Transfer",
-    brand: {
-      "@type": "Organization",
-      name: "Kredibly",
-      url: "https://usekredibly.com",
-    },
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": `${storeUrl}/#website`,
+        name: store.name,
+        alternateName: [store.slug],
+        url: `${storeUrl}/`,
+        publisher: {
+          "@type": "Organization",
+          name: "Kredibly",
+          url: "https://usekredibly.com",
+        },
+      },
+      {
+        "@type": "OnlineStore",
+        "@id": `${storeUrl}/#store`,
+        name: store.name,
+        url: storeUrl,
+        description: buildStoreMetaDescription(store),
+        image: logoImage,
+        currenciesAccepted: store.currency || "NGN",
+        paymentAccepted: "Debit Card, Instant Bank Transfer",
+        isPartOf: {
+          "@id": `${storeUrl}/#website`,
+        },
+        parentOrganization: {
+          "@type": "Organization",
+          name: "Kredibly",
+          url: "https://usekredibly.com",
+        },
+      },
+    ],
   };
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(storeJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
       <StorefrontClient store={store} />
     </>
