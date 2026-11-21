@@ -19,9 +19,18 @@ export interface StoreSeoInput {
 
 /**
  * Builds the Google/social title for a merchant storefront.
+ * Kept strictly under 52 characters so Google desktop & mobile SERP
+ * displays the full title on a single line without '...' truncation.
  */
 export function buildStoreMetaTitle(storeName: string): string {
-  return `${storeName} — Official Online Store | Powered by Kredibly`;
+  const cleanName = storeName.trim();
+  if (cleanName.length <= 26) {
+    return `${cleanName} — Official Store | Kredibly`;
+  }
+  if (cleanName.length <= 36) {
+    return `${cleanName} | Store — Kredibly`;
+  }
+  return `${cleanName} — Kredibly`;
 }
 
 /**
