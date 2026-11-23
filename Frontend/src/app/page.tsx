@@ -891,12 +891,6 @@ export default function HomePage() {
             </div>
 
             <div className="relative">
-              {/* Dashed connector line on desktop */}
-              <div
-                aria-hidden="true"
-                className="hidden md:block absolute top-5 left-12 right-12 border-t-2 border-dashed border-[#2e1065]/30 z-0"
-              />
-
               <div className="grid gap-6 md:grid-cols-3 relative z-10">
                 {[
                   {
@@ -918,21 +912,30 @@ export default function HomePage() {
                     isDone: true,
                   },
                 ].map((item) => (
-                  <div key={item.title} className="space-y-4">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm ring-4 ring-white ${
-                        item.isDone ? "bg-emerald-600" : "bg-[#2e1065]"
-                      }`}
-                    >
-                      {item.isDone ? <Check className="w-5 h-5" /> : item.step}
-                    </div>
-                    <div className="rounded-2xl border border-[#DADDD4] bg-[#FAF9F5] p-6 h-full">
-                      <h3 className="text-base font-display font-bold text-[#090D16]">
-                        {item.title}
-                      </h3>
-                      <p className="mt-2 text-sm text-[#525B6C] leading-relaxed">
-                        {item.desc}
-                      </p>
+                  <div key={item.title} className="relative">
+                    <div className="rounded-2xl border border-[#DADDD4] bg-[#FAF9F5] p-6 h-full space-y-4 flex flex-col justify-between">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div
+                            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold text-white shadow-xs ${
+                              item.isDone ? "bg-emerald-600" : "bg-[#2e1065]"
+                            }`}
+                          >
+                            {item.isDone ? <Check className="w-4 h-4 sm:w-5 sm:h-5" /> : item.step}
+                          </div>
+                          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#3b0764] px-2 py-0.5 rounded-sm bg-[#3b0764]/10">
+                            STEP 0{item.step}
+                          </span>
+                        </div>
+                        <div>
+                          <h3 className="text-base font-display font-bold text-[#090D16]">
+                            {item.title}
+                          </h3>
+                          <p className="mt-2 text-sm text-[#525B6C] leading-relaxed">
+                            {item.desc}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
