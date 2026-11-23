@@ -191,6 +191,19 @@ export function CheckoutDrawer({
     }
   }, [isOpen, storeSlug, shopperStoreSlug, shopperProfile, loadShopper]);
 
+  // Prefetch order confirmation page as soon as transfer details are created
+  // so the post-payment transition is instantaneous and butter-smooth
+  useEffect(() => {
+    if (!transferDetails?.orderNumber) return;
+    try {
+      router.prefetch(
+        getStorePath(storeSlug, `/orders/${transferDetails.orderNumber}?confirmed=1`)
+      );
+    } catch {
+      // ignore
+    }
+  }, [transferDetails?.orderNumber, storeSlug, router]);
+
   // Poll for Bank Transfer completion
   useEffect(() => {
     if (!transferDetails || paymentConfirmed) return;
@@ -204,11 +217,13 @@ export function CheckoutDrawer({
           setPaymentConfirmed(true);
           clearInterval(interval);
           setTimeout(() => {
-            onClose();
             router.push(
               getStorePath(storeSlug, `/orders/${transferDetails.orderNumber}?confirmed=1`)
             );
-          }, 1200);
+            setTimeout(() => {
+              onClose();
+            }, 300);
+          }, 1000);
         }
       } catch {
         // silent poll
@@ -346,11 +361,13 @@ export function CheckoutDrawer({
       if (res.data.data?.paymentStatus === "PAID") {
         setPaymentConfirmed(true);
         setTimeout(() => {
-          onClose();
           router.push(
             getStorePath(storeSlug, `/orders/${transferDetails.orderNumber}?confirmed=1`)
           );
-        }, 1200);
+          setTimeout(() => {
+            onClose();
+          }, 300);
+        }, 1000);
       } else {
         setCheckStatusMsg(
           "Payment not confirmed yet. Transfers usually confirm within 10–30 seconds — keep this open."
