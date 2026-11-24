@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -27,12 +27,20 @@ import {
   Eye,
   EyeOff,
   Search,
+  SlidersHorizontal,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { FilterDrawer, FilterState } from "@/components/storefront/FilterDrawer";
+import {
+  extractStoreAttributes,
+  normalizeCategoryKey,
+  normalizeAttributeLabel,
+  normalizeAttributeValue,
+} from "@/types/storefront";
 
 interface Variant {
   name: string;
@@ -80,6 +88,15 @@ export default function ProductsPage() {
   const [sortBy, setSortBy] = useState<
     "newest" | "price-asc" | "price-desc" | "low-stock"
   >("newest");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({
+    minPrice: "",
+    maxPrice: "",
+    inStockOnly: false,
+    onSaleOnly: false,
+    category: "all",
+    attributes: {},
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 12;
   const [loading, setLoading] = useState(true);
@@ -574,6 +591,36 @@ export default function ProductsPage() {
 
   const getFullImageUrl = (path: string) => getImageUrl(path);
 
+  const resetFilters = () => {
+    setFilters({
+      minPrice: "",
+      maxPrice: "",
+      inStockOnly: false,
+      onSaleOnly: false,
+      category: "all",
+      attributes: {},
+    });
+    setCurrentPage(1);
+  };
+
+  const activeFilterCount =
+    (filters.minPrice ? 1 : 0) +
+    (filters.maxPrice ? 1 : 0) +
+    (filters.inStockOnly ? 1 : 0) +
+    (filters.onSaleOnly ? 1 : 0) +
+    (filters.category !== "all" ? 1 : 0) +
+    Object.values(filters.attributes).reduce((acc, v) => acc + v.length, 0);
+
+  // Deduplicated existing attribute values per label for 1-tap autocomplete (prevents typos & repetitions)
+  const existingAttrSuggestions = useMemo(() => {
+    const groups = extractStoreAttributes(products as any);
+    const map = new Map<string, string[]>();
+    groups.forEach((g) => {
+      map.set(normalizeAttributeLabel(g.label), g.values);
+    });
+    return map;
+  }, [products]);
+
   const publishedCount = products.filter((p) => p.isActive).length;
   const draftCount = products.filter((p) => !p.isActive).length;
   const displayedProducts = products
@@ -590,6 +637,57 @@ export default function ProductsPage() {
         (p.category || "").toLowerCase().includes(q) ||
         (p.brand || "").toLowerCase().includes(q)
       );
+    })
+    .filter((p) => {
+      if (filters.category !== "all") {
+        if (
+          normalizeCategoryKey(p.category) !==
+          normalizeCategoryKey(filters.category)
+        ) {
+          return false;
+        }
+      }
+      const price = Number(p.basePrice || 0);
+      if (filters.minPrice) {
+        const min = Number(filters.minPrice);
+        if (!Number.isNaN(min) && price < min) return false;
+      }
+      if (filters.maxPrice) {
+        const max = Number(filters.maxPrice);
+        if (!Number.isNaN(max) && price > max) return false;
+      }
+      if (filters.inStockOnly && p.stockQuantity <= 0) return false;
+      if (
+        filters.onSaleOnly &&
+        !(p.comparePrice && Number(p.comparePrice) > price)
+      ) {
+        return false;
+      }
+
+      const attrEntries = Object.entries(filters.attributes);
+      if (attrEntries.length > 0) {
+        const matchesAttrs = attrEntries.every(([label, allowedValues]) => {
+          if (allowedValues.length === 0) return true;
+          const targetLabelKey = normalizeAttributeLabel(label);
+          const allowedKeys = allowedValues.map((v) =>
+            normalizeAttributeValue(v)
+          );
+          if (Array.isArray(p.attributes) && p.attributes.length > 0) {
+            return p.attributes.some(
+              (a) =>
+                normalizeAttributeLabel(a.label) === targetLabelKey &&
+                allowedKeys.includes(normalizeAttributeValue(a.value))
+            );
+          }
+          if (targetLabelKey === "brand" && p.brand) {
+            return allowedKeys.includes(normalizeAttributeValue(p.brand));
+          }
+          return false;
+        });
+        if (!matchesAttrs) return false;
+      }
+
+      return true;
     })
     .sort((a, b) => {
       if (sortBy === "price-asc") {
@@ -713,17 +811,37 @@ export default function ProductsPage() {
               </button>
             </div>
 
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              aria-label="Sort products"
-              className="px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-semibold text-[#0f172a] focus:outline-none focus:border-[#2e1065] cursor-pointer"
-            >
-              <option value="newest">Sort: Newest</option>
-              <option value="price-asc">Price: Low to High</option>
-              <option value="price-desc">Price: High to Low</option>
-              <option value="low-stock">Stock: Low to High</option>
-            </select>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setFilterOpen(true)}
+                className={`px-3 py-1.5 rounded-lg border text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer ${
+                  activeFilterCount > 0
+                    ? "bg-[#2e1065] border-[#2e1065] text-white"
+                    : "bg-slate-50 border-slate-200 text-[#0f172a] hover:border-[#2e1065]"
+                }`}
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>Filter</span>
+                {activeFilterCount > 0 && (
+                  <span className="ml-0.5 px-1.5 py-0.2 rounded-full bg-white text-[#2e1065] text-[10px] font-bold">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                aria-label="Sort products"
+                className="px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-semibold text-[#0f172a] focus:outline-none focus:border-[#2e1065] cursor-pointer"
+              >
+                <option value="newest">Sort: Newest</option>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="low-stock">Stock: Low to High</option>
+              </select>
+            </div>
           </div>
 
           <div className="relative">
@@ -1468,40 +1586,79 @@ export default function ProductsPage() {
                 </div>
 
                 {attributes.length > 0 && (
-                  <div className="space-y-2">
-                    {attributes.map((attr, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          placeholder="Detail (e.g. Material)"
-                          value={attr.label}
-                          onChange={(e) => {
-                            const next = [...attributes];
-                            next[idx] = { ...next[idx], label: e.target.value };
-                            setAttributes(next);
-                          }}
-                          className="w-2/5 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065]"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Value (e.g. 100% Cotton)"
-                          value={attr.value}
-                          onChange={(e) => {
-                            const next = [...attributes];
-                            next[idx] = { ...next[idx], value: e.target.value };
-                            setAttributes(next);
-                          }}
-                          className="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065]"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeAttributeRow(idx)}
-                          className="h-8 w-8 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition cursor-pointer"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
+                  <div className="space-y-2.5">
+                    {attributes.map((attr, idx) => {
+                      const suggestions =
+                        existingAttrSuggestions.get(
+                          normalizeAttributeLabel(attr.label)
+                        ) || [];
+                      return (
+                        <div key={idx} className="space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              placeholder="Detail (e.g. Material)"
+                              value={attr.label}
+                              onChange={(e) => {
+                                const next = [...attributes];
+                                next[idx] = { ...next[idx], label: e.target.value };
+                                setAttributes(next);
+                              }}
+                              className="w-2/5 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065]"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Value (e.g. 100% Cotton)"
+                              value={attr.value}
+                              onChange={(e) => {
+                                const next = [...attributes];
+                                next[idx] = { ...next[idx], value: e.target.value };
+                                setAttributes(next);
+                              }}
+                              className="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-[#0f172a] placeholder-slate-400 focus:outline-none focus:border-[#2e1065]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeAttributeRow(idx)}
+                              className="h-8 w-8 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition cursor-pointer"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          {suggestions.length > 0 && (
+                            <div className="flex items-center gap-1.5 flex-wrap pl-1">
+                              <span className="text-[10px] font-medium text-slate-400">
+                                Existing:
+                              </span>
+                              {suggestions.map((val) => {
+                                const isActive =
+                                  normalizeAttributeValue(attr.value) ===
+                                  normalizeAttributeValue(val);
+                                return (
+                                  <button
+                                    key={val}
+                                    type="button"
+                                    onClick={() => {
+                                      const next = [...attributes];
+                                      next[idx] = { ...next[idx], value: val };
+                                      setAttributes(next);
+                                    }}
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border transition cursor-pointer ${
+                                      isActive
+                                        ? "bg-[#2e1065] border-[#2e1065] text-white"
+                                        : "bg-slate-50 border-slate-200 text-slate-600 hover:border-[#2e1065] hover:text-[#2e1065]"
+                                    }`}
+                                  >
+                                    {val}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -1689,6 +1846,18 @@ export default function ProductsPage() {
           </div>
         </div>
       )}
+
+      <FilterDrawer
+        isOpen={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        products={products as any}
+        filters={filters}
+        onChange={(next) => {
+          setFilters(next);
+          setCurrentPage(1);
+        }}
+        onReset={resetFilters}
+      />
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}

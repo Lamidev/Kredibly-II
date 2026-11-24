@@ -194,3 +194,62 @@ export function extractStoreCategories(products: StoreProduct[] = []) {
     count,
   }));
 }
+
+export function normalizeAttributeLabel(raw?: string | null): string {
+  if (!raw) return "";
+  return raw.trim().toLowerCase().replace(/[\s_-]+/g, " ");
+}
+
+export function normalizeAttributeValue(raw?: string | null): string {
+  if (!raw) return "";
+  // Strip parenthetical qualifiers like "(Grade A)" or "(Sealed)" and normalize hyphens/spaces/case
+  const withoutParens = raw.replace(/\([^)]*\)/g, " ").trim();
+  const base = (withoutParens || raw).trim().toLowerCase();
+  return base.replace(/[\s_-]+/g, " ").trim();
+}
+
+export function extractStoreAttributes(products: StoreProduct[] = []) {
+  // labelKey -> { label, values: Map<valKey, displayLabel> }
+  const labelMap = new Map<
+    string,
+    { label: string; values: Map<string, string> }
+  >();
+
+  const addPair = (rawLabel?: string | null, rawVal?: string | null) => {
+    const cleanLabel = rawLabel?.trim();
+    const cleanVal = rawVal?.trim();
+    if (!cleanLabel || !cleanVal) return;
+
+    const lKey = normalizeAttributeLabel(cleanLabel);
+    const vKey = normalizeAttributeValue(cleanVal);
+    if (!lKey || !vKey) return;
+
+    if (!labelMap.has(lKey)) {
+      labelMap.set(lKey, { label: cleanLabel, values: new Map() });
+    }
+    const group = labelMap.get(lKey)!;
+    const existingDisplay = group.values.get(vKey);
+    // Prefer shorter/cleaner display label without parenthetical notes (e.g. "UK-Used" over "UK-Used (Grade A)")
+    const strippedVal = cleanVal.replace(/\s*\([^)]*\)\s*/g, " ").trim() || cleanVal;
+    if (!existingDisplay) {
+      group.values.set(vKey, strippedVal);
+    } else if (strippedVal.length < existingDisplay.length) {
+      group.values.set(vKey, strippedVal);
+    }
+  };
+
+  products.forEach((p) => {
+    if (Array.isArray(p.attributes) && p.attributes.length > 0) {
+      p.attributes.forEach((a) => addPair(a?.label, a?.value));
+    } else if (p.brand && p.brand.trim()) {
+      addPair("Brand", p.brand);
+    }
+  });
+
+  return Array.from(labelMap.values())
+    .filter((g) => g.values.size > 0)
+    .map((g) => ({
+      label: g.label,
+      values: Array.from(g.values.values()).sort((a, b) => a.localeCompare(b)),
+    }));
+}

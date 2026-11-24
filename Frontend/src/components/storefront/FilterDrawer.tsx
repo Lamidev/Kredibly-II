@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { StoreProduct, extractStoreCategories } from "@/types/storefront";
+import {
+  StoreProduct,
+  extractStoreCategories,
+  extractStoreAttributes,
+} from "@/types/storefront";
 import { RotateCcw, X, Plus, Minus } from "lucide-react";
 
 export interface FilterState {
@@ -49,32 +53,11 @@ export function FilterDrawer({
     [products]
   );
 
-  // Automatically build filterable attribute groups from whatever attributes the merchant's products have
-  const dynamicAttributes = useMemo(() => {
-    const map = new Map<string, Set<string>>();
-    products.forEach((p) => {
-      if (Array.isArray(p.attributes)) {
-        p.attributes.forEach((a) => {
-          const label = a?.label?.trim();
-          const value = a?.value?.trim();
-          if (label && value) {
-            if (!map.has(label)) map.set(label, new Set());
-            map.get(label)!.add(value);
-          }
-        });
-      } else if (p.brand && p.brand.trim()) {
-        if (!map.has("Brand")) map.set("Brand", new Set());
-        map.get("Brand")!.add(p.brand.trim());
-      }
-    });
-
-    return Array.from(map.entries())
-      .filter(([, values]) => values.size > 0)
-      .map(([label, values]) => ({
-        label,
-        values: Array.from(values).sort(),
-      }));
-  }, [products]);
+  // Automatically build deduplicated filterable attribute groups from whatever attributes the merchant's products have
+  const dynamicAttributes = useMemo(
+    () => extractStoreAttributes(products),
+    [products]
+  );
 
   if (!isOpen) return null;
 
