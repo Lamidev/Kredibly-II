@@ -8,6 +8,7 @@ import { formatCurrency } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
   Search,
   RefreshCw,
@@ -49,6 +50,7 @@ export default function AdminStoresPage() {
   const [search, setSearch] = useState("");
   const [tierFilter, setTierFilter] = useState("ALL");
   const [selectedStore, setSelectedStore] = useState<AdminStore | null>(null);
+  const [deleteStoreTarget, setDeleteStoreTarget] = useState<AdminStore | null>(null);
   const [updating, setUpdating] = useState(false);
 
   const fetchStores = async () => {
@@ -92,13 +94,21 @@ export default function AdminStoresPage() {
     }
   };
 
-  const handleDeleteStore = async (id: string) => {
-    if (!confirm("Permanently delete this merchant account and store?")) return;
+  const handleDeleteStore = (id: string) => {
+    const target =
+      stores.find((s) => s.id === id) ||
+      (selectedStore?.id === id ? selectedStore : null);
+    if (target) setDeleteStoreTarget(target);
+  };
+
+  const confirmDeleteStore = async () => {
+    if (!deleteStoreTarget) return;
     setUpdating(true);
     try {
-      await api.delete(`/admin/stores/${id}`);
-      setStores((prev) => prev.filter((s) => s.id !== id));
+      await api.delete(`/admin/stores/${deleteStoreTarget.id}`);
+      setStores((prev) => prev.filter((s) => s.id !== deleteStoreTarget.id));
       setSelectedStore(null);
+      setDeleteStoreTarget(null);
       toast.success("Store deleted.");
     } catch {
       toast.error("Failed to delete store.");
@@ -337,6 +347,22 @@ export default function AdminStoresPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={Boolean(deleteStoreTarget)}
+        onClose={() => !updating && setDeleteStoreTarget(null)}
+        onConfirm={confirmDeleteStore}
+        title="Permanently Delete Store"
+        description={
+          deleteStoreTarget
+            ? `Permanently delete "${deleteStoreTarget.name}" (${deleteStoreTarget.owner.email})? This removes the merchant account, store, products, and wallet records and cannot be undone.`
+            : "Permanently delete this merchant account and store?"
+        }
+        confirmLabel={updating ? "Deleting..." : "Delete Store"}
+        variant="danger"
+        icon="trash"
+        loading={updating}
+      />
     </div>
   );
 }

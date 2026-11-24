@@ -31,6 +31,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface Variant {
   name: string;
@@ -85,6 +86,8 @@ export default function ProductsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [maxImages, setMaxImages] = useState(2);
 
@@ -507,14 +510,23 @@ export default function ProductsPage() {
     }
   };
 
-  const handleDeleteProduct = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this product?")) return;
+  const handleDeleteProduct = (id: string) => {
+    const prod = products.find((p) => p.id === id) || null;
+    if (prod) setDeleteTarget(prod);
+  };
+
+  const confirmDeleteProduct = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await api.delete(`/products/${id}`);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
+      await api.delete(`/products/${deleteTarget.id}`);
+      setProducts((prev) => prev.filter((p) => p.id !== deleteTarget.id));
       toast.success("Product deleted.");
+      setDeleteTarget(null);
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to delete product.");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -1618,6 +1630,22 @@ export default function ProductsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onClose={() => !deleting && setDeleteTarget(null)}
+        onConfirm={confirmDeleteProduct}
+        title="Delete Product"
+        description={
+          deleteTarget
+            ? `Are you sure you want to delete "${deleteTarget.title}"? This will remove it from your storefront permanently.`
+            : "Are you sure you want to delete this product?"
+        }
+        confirmLabel={deleting ? "Deleting..." : "Delete Product"}
+        variant="danger"
+        icon="trash"
+        loading={deleting}
+      />
     </div>
   );
 }
