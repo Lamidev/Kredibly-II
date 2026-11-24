@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -90,6 +91,14 @@ export default function ProductsPage() {
   const [deleting, setDeleting] = useState(false);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [maxImages, setMaxImages] = useState(2);
+  const [maxProducts, setMaxProducts] = useState<number>(() => {
+    const tier = store?.subscriptionTier;
+    if (tier === "BUSINESS") return 2000;
+    if (tier === "PRO") return 200;
+    if (tier === "STARTER_PLUS") return 50;
+    return 20;
+  });
+  const [planName, setPlanName] = useState<string>("Starter (Free)");
 
   // Form State
   const [title, setTitle] = useState("");
@@ -153,8 +162,20 @@ export default function ProductsPage() {
     api
       .get("/subscription/overview")
       .then((res) => {
-        const limit = Number(res.data?.data?.maxImagesPerProduct);
+        const data = res.data?.data;
+        const limit = Number(data?.maxImagesPerProduct);
         if (limit >= 1) setMaxImages(limit);
+        const activePlan = Array.isArray(data?.plans)
+          ? data.plans.find((p: any) => p.tier === data?.currentTier)
+          : null;
+        if (activePlan) {
+          if (Number(activePlan.maxProducts) > 0) {
+            setMaxProducts(Number(activePlan.maxProducts));
+          }
+          if (activePlan.name) {
+            setPlanName(activePlan.name);
+          }
+        }
       })
       .catch(() => {});
   }, []);
@@ -223,7 +244,15 @@ export default function ProductsPage() {
     setErrorMsg("");
   };
 
+  const isAtProductLimit = maxProducts > 0 && products.length >= maxProducts;
+
   const openCreateModal = () => {
+    if (isAtProductLimit) {
+      toast.info(
+        `${planName} limit reached (${products.length}/${maxProducts}). Delete a product or upgrade your plan to add more.`
+      );
+      return;
+    }
     resetForm();
     setModalOpen(true);
   };
@@ -590,12 +619,11 @@ export default function ProductsPage() {
               Product Catalog
             </h1>
             {!loading && (
-              <Badge variant="secondary" className="text-[10px] sm:text-xs">
-                {store?.subscriptionTier === "BUSINESS"
-                  ? `${products.length} products`
-                  : `${products.length} / ${
-                      store?.subscriptionTier === "PRO" ? 300 : 20
-                    } used`}
+              <Badge
+                variant={isAtProductLimit ? "destructive" : "secondary"}
+                className="text-[10px] sm:text-xs"
+              >
+                {`${products.length} / ${maxProducts} used`}
               </Badge>
             )}
           </div>
@@ -606,13 +634,44 @@ export default function ProductsPage() {
 
         <Button
           onClick={openCreateModal}
+          disabled={!loading && isAtProductLimit}
+          title={
+            isAtProductLimit
+              ? `Plan limit reached (${products.length}/${maxProducts}). Delete a product or upgrade to add more.`
+              : "Add a new product"
+          }
           size="sm"
-          className="shrink-0 h-9 px-3 sm:h-10 sm:px-4 text-xs sm:text-sm"
+          className={`shrink-0 h-9 px-3 sm:h-10 sm:px-4 text-xs sm:text-sm ${
+            !loading && isAtProductLimit
+              ? "opacity-45 cursor-not-allowed bg-slate-200 text-slate-500 hover:bg-slate-200 border border-slate-300 shadow-none"
+              : ""
+          }`}
         >
           <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          <span>Add Product</span>
+          <span>{!loading && isAtProductLimit ? "Limit Reached" : "Add Product"}</span>
         </Button>
       </div>
+
+      {/* Plan Limit Reached Notice */}
+      {!loading && isAtProductLimit && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-2.5 min-w-0">
+            <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+            <div className="text-xs text-amber-950 leading-relaxed">
+              <span className="font-bold">
+                {planName} limit reached ({products.length}/{maxProducts} products).
+              </span>{" "}
+              You can still edit, delete, or move products to Draft (drafts still count toward your plan limit). Upgrade your plan to add more items.
+            </div>
+          </div>
+          <Link
+            href="/dashboard/billing"
+            className="inline-flex items-center justify-center px-3.5 py-2 rounded-xl bg-[#2e1065] hover:bg-[#3b0764] text-white text-xs font-display font-bold shrink-0 transition shadow-xs"
+          >
+            Upgrade Plan
+          </Link>
+        </div>
+      )}
 
       {/* Filter Tabs + Search + Sort */}
       {!loading && products.length > 0 && (
