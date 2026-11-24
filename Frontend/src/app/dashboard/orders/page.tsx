@@ -33,6 +33,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface OrderItem {
   id: string;
@@ -77,6 +78,15 @@ export default function OrdersPage() {
   const PAGE_SIZE = 10;
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [pendingOrderAction, setPendingOrderAction] = useState<{
+    orderId: string;
+    status: string;
+    title: string;
+    description: string;
+    confirmLabel: string;
+    variant: "danger" | "default";
+    icon: "warning" | "reset";
+  } | null>(null);
 
   const fetchOrders = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -280,15 +290,18 @@ export default function OrdersPage() {
                     <button
                       type="button"
                       disabled={actionLoadingId === selectedOrder.id}
-                      onClick={() => {
-                        if (
-                          confirm(
-                            "Cancel this order? This restores item stock and notifies the buyer by email. Handle any refund directly with the buyer."
-                          )
-                        ) {
-                          handleStatusUpdate(selectedOrder.id, "CANCELLED");
-                        }
-                      }}
+                      onClick={() =>
+                        setPendingOrderAction({
+                          orderId: selectedOrder.id,
+                          status: "CANCELLED",
+                          title: "Cancel Order",
+                          description:
+                            "Cancel this order? This restores item stock and notifies the buyer by email. Handle any refund directly with the buyer.",
+                          confirmLabel: "Cancel Order",
+                          variant: "danger",
+                          icon: "warning",
+                        })
+                      }
                       className="px-3 py-1.5 rounded-full border border-red-200 bg-red-50/60 hover:bg-red-50 text-red-600 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition"
                     >
                       <AlertCircle className="w-3.5 h-3.5" />
@@ -300,15 +313,17 @@ export default function OrdersPage() {
                     <button
                       type="button"
                       disabled={actionLoadingId === selectedOrder.id}
-                      onClick={() => {
-                        if (
-                          confirm(
-                            `Reset status back to "${prevStage.label}"?`
-                          )
-                        ) {
-                          handleStatusUpdate(selectedOrder.id, prevStage.id);
-                        }
-                      }}
+                      onClick={() =>
+                        setPendingOrderAction({
+                          orderId: selectedOrder.id,
+                          status: prevStage.id,
+                          title: "Reset Fulfillment Status",
+                          description: `Reset this order's status back to "${prevStage.label}"?`,
+                          confirmLabel: "Reset Status",
+                          variant: "default",
+                          icon: "reset",
+                        })
+                      }
                       className="px-3 py-1.5 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
@@ -549,6 +564,27 @@ export default function OrdersPage() {
             </div>
           </CardContent>
         </Card>
+
+        <ConfirmDialog
+          open={Boolean(pendingOrderAction)}
+          onClose={() => !actionLoadingId && setPendingOrderAction(null)}
+          onConfirm={async () => {
+            if (!pendingOrderAction) return;
+            await handleStatusUpdate(
+              pendingOrderAction.orderId,
+              pendingOrderAction.status
+            );
+            setPendingOrderAction(null);
+          }}
+          title={pendingOrderAction?.title || "Confirm Action"}
+          description={pendingOrderAction?.description || ""}
+          confirmLabel={
+            actionLoadingId ? "Updating..." : pendingOrderAction?.confirmLabel || "Confirm"
+          }
+          variant={pendingOrderAction?.variant || "default"}
+          icon={pendingOrderAction?.icon || "warning"}
+          loading={Boolean(actionLoadingId)}
+        />
       </div>
     );
   }
