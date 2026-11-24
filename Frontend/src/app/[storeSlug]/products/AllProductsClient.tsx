@@ -15,6 +15,8 @@ import {
   StoreProduct,
   extractStoreCategories,
   normalizeCategoryKey,
+  normalizeAttributeLabel,
+  normalizeAttributeValue,
 } from "@/types/storefront";
 import { SlidersHorizontal, ChevronDown, Package, X } from "lucide-react";
 
@@ -145,15 +147,19 @@ export function AllProductsClient({
       list = list.filter((p) =>
         attrEntries.every(([label, allowedValues]) => {
           if (allowedValues.length === 0) return true;
+          const targetLabelKey = normalizeAttributeLabel(label);
+          const allowedKeys = allowedValues.map((v) =>
+            normalizeAttributeValue(v)
+          );
           if (Array.isArray(p.attributes) && p.attributes.length > 0) {
             return p.attributes.some(
               (a) =>
-                a.label?.trim() === label &&
-                allowedValues.includes(a.value?.trim())
+                normalizeAttributeLabel(a.label) === targetLabelKey &&
+                allowedKeys.includes(normalizeAttributeValue(a.value))
             );
           }
-          if (label === "Brand" && p.brand) {
-            return allowedValues.includes(p.brand.trim());
+          if (targetLabelKey === "brand" && p.brand) {
+            return allowedKeys.includes(normalizeAttributeValue(p.brand));
           }
           return false;
         })
