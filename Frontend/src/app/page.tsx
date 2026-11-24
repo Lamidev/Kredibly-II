@@ -901,7 +901,7 @@ export default function HomePage() {
                   },
                   {
                     step: "2",
-                    title: "Post at least 3 products",
+                    title: "Post at least 5 products",
                     desc: "Add your product photos, Naira prices, and details. Kredibly automatically prepares your store for Google and AI search.",
                     isDone: false,
                   },

@@ -301,7 +301,7 @@ export default function StoreSettingsPage() {
         (saved.description.trim() || saved.aboutText.trim()) &&
         saved.address.trim() &&
         hasSocialSaved &&
-        activeProductsCount >= 3
+        activeProductsCount >= 5
       ) {
         trackEvent("google_visibility_ready", { store_slug: saved.slug });
       }
@@ -657,7 +657,7 @@ export default function StoreSettingsPage() {
                     form.socialLinks.facebook.trim() ||
                     form.socialLinks.twitter.trim()
                 );
-                const hasProducts = activeProductsCount >= 3;
+                const hasProducts = activeProductsCount >= 5;
                 const meetsGoogleRequirements =
                   hasLogo && hasBio && hasAddress && hasSocial && hasProducts;
                 const isLiveOnGoogle =
@@ -731,7 +731,7 @@ export default function StoreSettingsPage() {
                         },
                         {
                           done: hasProducts,
-                          label: `Publish 3+ products (${Math.min(activeProductsCount, 3)}/3)`,
+                          label: `Publish 5+ products (${Math.min(activeProductsCount, 5)}/5)`,
                         },
                       ].map((req) => (
                         <div

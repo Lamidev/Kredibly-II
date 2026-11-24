@@ -203,7 +203,7 @@ export default function BlogArticlePage({
         <div className="mt-12">
           <EditorialCtaBanner
             heading="Put this into practice in 2 minutes."
-            description="Create your free Kredibly storefront, upload 3 products, and start accepting online orders via Nomba."
+            description="Create your free Kredibly storefront, upload 5 products, and start accepting online orders via Nomba."
             ctaLabel="Start Your Free Store"
             secondaryHref={post.relatedGuideHref}
             secondaryLabel={post.relatedGuideLabel}
