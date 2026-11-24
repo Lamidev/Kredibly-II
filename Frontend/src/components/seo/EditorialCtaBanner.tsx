@@ -17,7 +17,7 @@ interface EditorialCtaBannerProps {
 export function EditorialCtaBanner({
   eyebrow = "START SELLING TODAY",
   heading = "Ready to launch your official store?",
-  description = "Start free on Kredibly (₦0/month), upload your first 3 products, and get found on WhatsApp, Instagram, and Google.",
+  description = "Start free on Kredibly (₦0/month), upload your first 5 products, and get found on WhatsApp, Instagram, and Google.",
   ctaLabel = "Create Your Free Store",
   ctaHref = "/register",
   secondaryHref,

@@ -88,6 +88,6 @@ export function isStoreIndexable(store: StoreSeoInput | null | undefined): boole
       hasBio &&
       hasAddress &&
       hasSocial &&
-      productCount >= 3
+      productCount >= 5
   );
 }

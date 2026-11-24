@@ -338,7 +338,7 @@ export function SeoLandingPage({
             <EditorialCtaBanner
               eyebrow="START SELLING TODAY"
               heading="Ready to launch your official store?"
-              description="Start free on Kredibly (₦0/month), upload your first 3 products, and get found on WhatsApp, Instagram, and Google."
+              description="Start free on Kredibly (₦0/month), upload your first 5 products, and get found on WhatsApp, Instagram, and Google."
               ctaLabel={ctaLabel}
               ctaHref="/register"
               secondaryHref="/"

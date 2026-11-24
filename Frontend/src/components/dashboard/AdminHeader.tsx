@@ -42,7 +42,7 @@ export function AdminHeader({ setOpen }: { setOpen: (val: boolean) => void }) {
             sl.facebook?.trim() ||
             sl.twitter?.trim()
         );
-        const hasProducts = Number(s.activeProductsCount || 0) >= 3;
+        const hasProducts = Number(s.activeProductsCount || 0) >= 5;
         setNeedsGoogleSetup(
           !(hasLogo && hasBio && hasAddress && hasSocial && hasProducts)
         );

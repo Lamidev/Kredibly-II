@@ -72,7 +72,7 @@ export class PublicStoreService {
         hasBio &&
         hasAddress &&
         hasSocial &&
-        store.products.length >= 3
+        store.products.length >= 5
     );
 
     return {
@@ -144,7 +144,7 @@ export class PublicStoreService {
         hasBio &&
         hasAddress &&
         hasSocial &&
-        store._count.products >= 3
+        store._count.products >= 5
     );
 
     return {

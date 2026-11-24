@@ -250,7 +250,7 @@ export default function DashboardPage() {
     {
       id: "google",
       label: "Show My Business on Google",
-      desc: "Add logo, bio, address, 1+ social link & 3 products so buyers find you on Google.",
+      desc: "Add logo, bio, address, 1+ social link & 5 products so buyers find you on Google.",
       done: Boolean(
         activeStore?.allowSearchIndexing !== false &&
           activeStore?.logoUrl &&
@@ -260,7 +260,7 @@ export default function DashboardPage() {
             activeStore?.socialLinks?.tiktok ||
             activeStore?.socialLinks?.facebook ||
             activeStore?.socialLinks?.twitter) &&
-          totalProducts >= 3
+          totalProducts >= 5
       ),
       href: "/dashboard/settings#google-visibility",
     },
