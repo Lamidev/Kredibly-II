@@ -3,18 +3,18 @@ declare global {
     gtag?: (
       command: "config" | "event" | "js",
       targetOrEvent: string | Date,
-      params?: Record<string, string | number | boolean | undefined>
+      params?: Record<string, unknown>
     ) => void;
     dataLayer?: unknown[];
   }
 }
 
 /**
- * Safely dispatches a Google Analytics 4 custom event when gtag is loaded.
+ * Safely dispatches a Google Analytics 4 custom or e-commerce event when gtag is loaded.
  */
 export function trackEvent(
   eventName: string,
-  params?: Record<string, string | number | boolean | undefined>
+  params?: Record<string, unknown>
 ): void {
   if (typeof window === "undefined" || typeof window.gtag !== "function") {
     return;
