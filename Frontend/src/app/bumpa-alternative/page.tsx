@@ -36,7 +36,7 @@ export default function BumpaAlternativePage() {
         {
           title: "Truly free Starter plan (₦0/month)",
           description:
-            "List up to 20 products and start accepting real online orders immediately before paying any monthly subscription.",
+            "List up to 10 products and start accepting real online orders immediately before paying any monthly subscription.",
         },
         {
           title: "Zero commission on all paid tiers",
@@ -55,7 +55,7 @@ export default function BumpaAlternativePage() {
       comparisonRows={[
         {
           feature: "Free Starter tier",
-          kredibly: "₦0/month for up to 20 products (2.5% fee)",
+          kredibly: "₦0/month for up to 10 products (2.5% fee)",
           other: "Often limited trials or feature-locked",
         },
         {
@@ -84,7 +84,7 @@ export default function BumpaAlternativePage() {
         {
           title: "Add your top-selling products",
           description:
-            "Upload up to 20 products on the Starter plan with photos, prices, and variants.",
+            "Upload up to 10 products on the Starter plan with photos, prices, and variants.",
         },
         {
           title: "Share your new link everywhere",
@@ -96,7 +96,7 @@ export default function BumpaAlternativePage() {
         {
           question: "How much are Kredibly's pricing plans in Naira?",
           answer:
-            "Starter is ₦0/month (up to 20 products, 2.5% fee). Starter Plus is ₦5,000/month (50 products, 0% commission). Deluxe Pro is ₦10,000/month (200 products, 0% commission, custom domain). Ultimate Scale is ₦20,000/month (1,000+ products, 0% commission).",
+            "Starter is ₦0/month (up to 10 products, 2.5% fee). Starter Plus is ₦5,000/month (50 products, 0% commission). Deluxe Pro is ₦10,000/month (200 products, 0% commission, custom domain). Ultimate Scale is ₦20,000/month (1,000+ products, 0% commission).",
         },
         {
           question: "Can I start free and upgrade only when my store grows?",

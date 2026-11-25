@@ -92,7 +92,7 @@ const FAQS = [
   {
     value: "item-6",
     q: "Do I have to pay before testing Kredibly?",
-    a: "No. You can start completely free. You can add up to 20 products and start receiving customer orders with zero upfront cost. You only choose a paid subscription plan when your business is ready to grow.",
+    a: "No. You can start completely free. You can add up to 10 products and start receiving customer orders with zero upfront cost. You only choose a paid subscription plan when your business is ready to grow.",
   },
   {
     value: "item-7",
@@ -1010,14 +1010,14 @@ export default function HomePage() {
                     <span className="text-xs text-[#525B6C]">/ up to ₦200k sales</span>
                   </div>
                   <p className="text-xs text-[#525B6C] mt-2 leading-relaxed">
-                    Launch your official store and list up to 20 products with zero upfront cost.
+                    Launch your official store and list up to 10 products with zero upfront cost.
                   </p>
                 </div>
 
                 <ul className="space-y-2.5 text-xs text-[#090D16] pt-4 border-t border-slate-100">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />
-                    <span><strong>20 Products</strong> &amp; Unlimited Orders</span>
+                    <span><strong>10 Products</strong> &amp; Unlimited Orders</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3b0764] shrink-0" />

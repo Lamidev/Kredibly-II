@@ -23,10 +23,10 @@ export const DEFAULT_PLANS: Array<{
   {
     tier: "STARTER",
     name: "Starter (Free)",
-    tagline: "Test the waters — up to 20 products with 2.5% transaction fee.",
+    tagline: "Test the waters — up to 10 products with 2.5% transaction fee.",
     monthlyPrice: 0,
     annualPrice: 0,
-    maxProducts: 20,
+    maxProducts: 10,
     maxImagesPerProduct: 2,
     platformFeePercent: 2.5,
     allowPassFee: false,

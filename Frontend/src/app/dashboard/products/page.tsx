@@ -113,7 +113,7 @@ export default function ProductsPage() {
     if (tier === "BUSINESS") return 2000;
     if (tier === "PRO") return 200;
     if (tier === "STARTER_PLUS") return 50;
-    return 20;
+    return 10;
   });
   const [planName, setPlanName] = useState<string>("Starter (Free)");
 

@@ -219,7 +219,7 @@ export function SeoLandingPage({
             </Link>
           </div>
           <p className="mt-4 text-xs text-[#5A6577]">
-            Free Starter plan (₦0/mo) • Up to 20 products • Built-in Nomba checkout
+            Free Starter plan (₦0/mo) • Up to 10 products • Built-in Nomba checkout
           </p>
         </section>
 
