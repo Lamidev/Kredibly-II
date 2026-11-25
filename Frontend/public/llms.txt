@@ -9,7 +9,7 @@
 - Core Purpose: Help social media sellers launch an official online storefront in minutes, replace messy DM ordering with structured carts and instant checkout, track inventory, and receive payouts via Nomba.
 
 ## Pricing Plans (NGN)
-- Starter (Free): ₦0/month — up to 20 products, 2.5% transaction fee on checkout orders.
+- Starter (Free): ₦0/month — up to 10 products, 2.5% transaction fee on checkout orders.
 - Starter Plus: ₦5,000/month — up to 50 products, 0% Kredibly commission on orders.
 - Deluxe (Pro): ₦10,000/month — up to 200 products, 0% Kredibly commission, custom domain support, and advanced storefront features.
 - Ultimate (Scale): ₦20,000/month — 1,000+ products, 0% Kredibly commission, priority support, and full scale tooling.

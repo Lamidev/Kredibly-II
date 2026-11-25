@@ -84,7 +84,7 @@ export default function InstagramShopBuilderPage() {
         {
           title: "Add your catalog in Naira",
           description:
-            "Upload crisp photos, prices, and variants for up to 20 products free (or 1,000+ on Ultimate).",
+            "Upload crisp photos, prices, and variants for up to 10 products free (or 1,000+ on Ultimate).",
         },
         {
           title: "Drop the link in your IG bio & Stories",
@@ -106,7 +106,7 @@ export default function InstagramShopBuilderPage() {
         {
           question: "How much does it cost to start?",
           answer:
-            "You can launch completely free on the Starter plan (₦0/month, up to 20 products, 2.5% transaction fee).",
+            "You can launch completely free on the Starter plan (₦0/month, up to 10 products, 2.5% transaction fee).",
         },
       ]}
     />

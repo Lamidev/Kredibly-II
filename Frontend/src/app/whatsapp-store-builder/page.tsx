@@ -70,7 +70,7 @@ export default function WhatsAppStoreBuilderPage() {
         },
         {
           feature: "Starting cost",
-          kredibly: "₦0/month Starter plan (up to 20 products)",
+          kredibly: "₦0/month Starter plan (up to 10 products)",
           other: "Hours of manual admin every day",
         },
       ]}
@@ -96,7 +96,7 @@ export default function WhatsAppStoreBuilderPage() {
         {
           question: "Is Kredibly free for WhatsApp sellers in Nigeria?",
           answer:
-            "Yes. Kredibly's Starter plan is ₦0/month for up to 20 products with a 2.5% transaction fee on checkout orders. Paid plans start at ₦5,000/month with 0% Kredibly commission.",
+            "Yes. Kredibly's Starter plan is ₦0/month for up to 10 products with a 2.5% transaction fee on checkout orders. Paid plans start at ₦5,000/month with 0% Kredibly commission.",
         },
         {
           question: "Do my customers need to download an app to buy from my WhatsApp store?",

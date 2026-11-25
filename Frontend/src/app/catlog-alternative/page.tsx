@@ -41,7 +41,7 @@ export default function CatlogAlternativePage() {
         {
           title: "Flexible Naira plans up to 1,000+ products",
           description:
-            "Start free at ₦0/month for 20 products, or scale to 50, 200, or 1,000+ products with 0% Kredibly commission.",
+            "Start free at ₦0/month for 10 products, or scale to 50, 200, or 1,000+ products with 0% Kredibly commission.",
         },
         {
           title: "Built-in Nomba payment infrastructure",
@@ -55,7 +55,7 @@ export default function CatlogAlternativePage() {
       comparisonRows={[
         {
           feature: "Free plan allowance",
-          kredibly: "₦0/month • Up to 20 products",
+          kredibly: "₦0/month • Up to 10 products",
           other: "Often restricted on product count or checkout",
         },
         {
@@ -99,7 +99,7 @@ export default function CatlogAlternativePage() {
             "Kredibly is built for Nigerian social-commerce merchants—fashion brands, beauty sellers, gadget stores, food vendors, and creators—selling on WhatsApp, Instagram, and TikTok.",
         },
         {
-          question: "What happens if I outgrow 20 products on the free plan?",
+          question: "What happens if I outgrow 10 products on the free plan?",
           answer:
             "You can upgrade anytime to Starter Plus (50 products, ₦5,000/mo), Deluxe Pro (200 products, ₦10,000/mo), or Ultimate Scale (1,000+ products, ₦20,000/mo)—all with 0% Kredibly commission.",
         },

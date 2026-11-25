@@ -100,7 +100,7 @@ export const BLOG_POSTS: BlogPost[] = [
       {
         heading: "3. Start free and keep your workflow simple",
         paragraphs: [
-          "You can launch on Kredibly's Starter plan at ₦0/month for up to 20 products, and upgrade to Starter Plus (₦5,000/mo) or higher for 0% Kredibly commission as your daily orders grow.",
+          "You can launch on Kredibly's Starter plan at ₦0/month for up to 10 products, and upgrade to Starter Plus (₦5,000/mo) or higher for 0% Kredibly commission as your daily orders grow.",
         ],
       },
     ],
