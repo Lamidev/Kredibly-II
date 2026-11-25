@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
 import {
   formatCurrency,
   formatWhatsAppNumber,
@@ -135,6 +136,30 @@ export function OrderConfirmationClient({
     const timer = setInterval(poll, 5000);
     return () => clearInterval(timer);
   }, [order.orderNumber, order.paymentStatus]);
+
+  // GA4 e-commerce: purchase (deduplicated per orderNumber in sessionStorage)
+  useEffect(() => {
+    if (order.paymentStatus !== "PAID") return;
+    if (typeof window === "undefined") return;
+    const key = `kredibly_ga_purchase_${order.orderNumber}`;
+    if (sessionStorage.getItem(key) === "1") return;
+    sessionStorage.setItem(key, "1");
+
+    trackEvent("purchase", {
+      transaction_id: order.orderNumber,
+      currency: order.store.currency || "NGN",
+      value: Number(order.totalAmount || 0),
+      shipping: Number(order.shippingFee || 0),
+      store_slug: order.store.slug,
+      items: order.items.map((i) => ({
+        item_id: i.id,
+        item_name: i.productTitle,
+        item_variant: i.variantName || undefined,
+        price: Number(i.unitPrice || 0),
+        quantity: i.quantity,
+      })),
+    });
+  }, [order]);
 
   const whatsappNumber = formatWhatsAppNumber(order.store.whatsappNumber);
   const formattedItems = order.items

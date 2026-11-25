@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useCartStore } from "@/store/useCartStore";
+import { trackEvent } from "@/lib/analytics";
 import { StorefrontHeader } from "@/components/storefront/StorefrontHeader";
 import { StorefrontFooter } from "@/components/storefront/StorefrontFooter";
 import { CartDrawer } from "@/components/storefront/CartDrawer";
@@ -54,6 +55,26 @@ export function ProductDetailClient({
     : product.stockQuantity;
 
   const isSoldOut = maxStock <= 0;
+
+  // GA4 e-commerce: view_item
+  useEffect(() => {
+    const priceNum = Number(product.basePrice || 0);
+    trackEvent("view_item", {
+      currency: store.currency || "NGN",
+      value: priceNum,
+      store_slug: store.slug,
+      items: [
+        {
+          item_id: product.id,
+          item_name: product.title,
+          item_category: product.category || undefined,
+          item_brand: product.brand || store.name,
+          price: priceNum,
+          quantity: 1,
+        },
+      ],
+    });
+  }, [product.id, product.title, product.basePrice, product.category, product.brand, store.currency, store.slug, store.name]);
 
   // Similar products ("You May Also Like") — same category first, then other store products
   const similarProducts = useMemo(() => {

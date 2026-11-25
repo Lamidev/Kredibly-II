@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { trackEvent } from "@/lib/analytics";
 
 export interface CartItem {
   productId: string;
@@ -46,6 +47,20 @@ export const useCartStore = create<CartState>((set, get) => ({
       }
 
       return { items: updatedItems, isOpen: true };
+    });
+
+    trackEvent("add_to_cart", {
+      currency: "NGN",
+      value: Number(newItem.price || 0) * qty,
+      items: [
+        {
+          item_id: newItem.productId,
+          item_name: newItem.title,
+          item_variant: newItem.variantName || undefined,
+          price: Number(newItem.price || 0),
+          quantity: qty,
+        },
+      ],
     });
   },
 

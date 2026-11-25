@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/useCartStore";
 import { useShopperStore } from "@/store/useShopperStore";
 import { api } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
 import { formatCurrency, getImageUrl, getStorePath } from "@/lib/utils";
 import {
   ShippingConfig,
@@ -105,6 +106,23 @@ export function CheckoutDrawer({
     updateShopperProfile,
   } = useShopperStore();
   const subtotal = getSubtotal();
+
+  // GA4 e-commerce: begin_checkout when drawer opens with items
+  useEffect(() => {
+    if (!isOpen || items.length === 0) return;
+    trackEvent("begin_checkout", {
+      currency: "NGN",
+      value: subtotal,
+      store_slug: storeSlug,
+      items: items.map((i) => ({
+        item_id: i.productId,
+        item_name: i.title,
+        item_variant: i.variantName || undefined,
+        price: Number(i.price || 0),
+        quantity: i.quantity,
+      })),
+    });
+  }, [isOpen, storeSlug]);
 
   const [step, setStep] = useState<1 | 2>(1);
   const [editingAddress, setEditingAddress] = useState(true);
