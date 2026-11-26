@@ -12,6 +12,11 @@ export const ENV = {
   RESEND_API_KEY: process.env.RESEND_API_KEY || "",
   SENDER_EMAIL: process.env.SENDER_EMAIL || "hello@usekredibly.com",
   ADMIN_EMAIL: process.env.ADMIN_EMAIL || "usekredibly@gmail.com",
+  PAYMENT_PROVIDER: (process.env.PAYMENT_PROVIDER || "paystack").toLowerCase() as
+    | "paystack"
+    | "nomba",
+  PAYSTACK_SECRET_KEY: process.env.PAYSTACK_SECRET_KEY || "",
+  PAYSTACK_PUBLIC_KEY: process.env.PAYSTACK_PUBLIC_KEY || "",
   NOMBA_ENV: process.env.NOMBA_ENV || "production",
   NOMBA_ACCOUNT_ID: process.env.NOMBA_ACCOUNT_ID || "",
   NOMBA_CLIENT_ID: process.env.NOMBA_CLIENT_ID || "",

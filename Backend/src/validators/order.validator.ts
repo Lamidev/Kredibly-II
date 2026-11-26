@@ -22,7 +22,7 @@ export const initializeCheckoutSchema = z.object({
   items: z.array(checkoutItemSchema).min(1, "At least one item is required in cart"),
   notes: z.string().optional(),
   promoCode: z.string().trim().max(40).optional().nullable(),
-  paymentMethod: z.enum(["BANK_TRANSFER", "CARD"]).default("BANK_TRANSFER"),
+  paymentMethod: z.enum(["BANK_TRANSFER", "OPAY", "CARD"]).default("BANK_TRANSFER"),
 });
 
 export const validatePromoSchema = z.object({
