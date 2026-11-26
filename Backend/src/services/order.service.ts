@@ -4,7 +4,7 @@ import { ENV } from "../config/env";
 import { AppError } from "../middleware/errorHandler";
 import { InitializeCheckoutInput } from "../validators/order.validator";
 import { EmailService } from "./email.service";
-import { NombaService } from "./nomba.service";
+import { PaymentGateway } from "./payment.gateway";
 import { PushService } from "./push.service";
 import { calculateShippingFee } from "../utils/shipping";
 
@@ -257,7 +257,7 @@ export class OrderService {
     const customerEmail =
       input.customer.email || `customer-${customer.id}@kredibly.internal`;
 
-    // 7. Handle Payment Method: Bank Transfer (Nomba DVA) vs Card Checkout
+    // 7. Handle Payment Method: Bank Transfer (Dynamic Virtual Account) vs OPay / Card Checkout
     if (input.paymentMethod === "BANK_TRANSFER") {
       let virtualAccount: {
         accountNumber: string;
@@ -268,15 +268,15 @@ export class OrderService {
       };
 
       try {
-        if (ENV.NOMBA_CLIENT_ID && ENV.NOMBA_PRIVATE_KEY && ENV.NOMBA_ACCOUNT_ID) {
-          virtualAccount = await NombaService.createDynamicVirtualAccount({
+        if (PaymentGateway.isConfigured()) {
+          virtualAccount = await PaymentGateway.createDynamicVirtualAccount({
             amount: totalAmount,
             orderNumber,
             merchantName: store.name,
             customerEmail,
           });
 
-          // Update order with Nomba virtual account reference
+          // Update order with virtual account reference
           await prisma.order.update({
             where: { id: order.id },
             data: { paymentRef: virtualAccount.reference },
@@ -285,17 +285,26 @@ export class OrderService {
           // Dev fallback test virtual account
           virtualAccount = {
             accountNumber: `99${orderNumber.replace(/\D/g, "").padEnd(8, "0").slice(0, 8)}`,
-            bankName: "Nombank MFB (Dev Mode)",
+            bankName: "Kredibly Test Bank (Dev Mode)",
             accountName: `Kredibly / ${store.name}`,
             reference: paymentRef,
             expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
           };
         }
       } catch (err: any) {
-        console.warn("Nomba DVA creation fallback triggered:", err.message);
+        console.error(
+          `${PaymentGateway.getActiveProvider()} DVA creation failed:`,
+          err.message
+        );
+        if (ENV.NODE_ENV === "production") {
+          throw new AppError(
+            "Could not generate a bank transfer account right now. Please try OPay / Card or try again.",
+            502
+          );
+        }
         virtualAccount = {
           accountNumber: `99${orderNumber.replace(/\D/g, "").padEnd(8, "0").slice(0, 8)}`,
-          bankName: "Nombank MFB (Dev Mode)",
+          bankName: "Kredibly Test Bank (Dev Mode)",
           accountName: `Kredibly / ${store.name}`,
           reference: paymentRef,
           expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
@@ -312,20 +321,32 @@ export class OrderService {
       };
     }
 
-    // 8. Checkout Authorization (Nomba Hosted Checkout)
+    // 8. Checkout Authorization (OPay / Card Hosted Checkout via Active PaymentGateway)
     let authorizationUrl = "";
+    const callbackUrl = ENV.FRONTEND_URL.includes("localhost")
+      ? `${ENV.FRONTEND_URL}/${store.slug}/orders/${orderNumber}?confirmed=1`
+      : `https://${store.slug}.kredibly.shop/orders/${orderNumber}?confirmed=1`;
 
-    if (ENV.NOMBA_CLIENT_ID && ENV.NOMBA_PRIVATE_KEY && ENV.NOMBA_ACCOUNT_ID) {
+    const channels =
+      input.paymentMethod === "OPAY"
+        ? ["mobile_money", "bank_transfer", "card", "ussd", "qr"]
+        : ["card", "bank_transfer", "mobile_money", "ussd"];
+
+    if (PaymentGateway.isConfigured()) {
       try {
-        authorizationUrl = await NombaService.createCheckoutOrder({
+        authorizationUrl = await PaymentGateway.createCheckoutOrder({
           amount: totalAmount,
           orderReference: paymentRef,
           customerEmail,
           customerName: customer.fullName,
-          callbackUrl: `${ENV.FRONTEND_URL}/${store.slug}/orders/${orderNumber}`,
+          callbackUrl,
+          channels,
         });
       } catch (err: any) {
-        console.error("Nomba checkout initialization error:", err.message);
+        console.error(
+          `${PaymentGateway.getActiveProvider()} checkout initialization error:`,
+          err.message
+        );
         throw new AppError("Payment gateway initialization failed. Try again.", 502);
       }
     } else {
@@ -338,7 +359,7 @@ export class OrderService {
       orderNumber: order.orderNumber,
       paymentRef: order.paymentRef,
       totalAmount,
-      paymentMethod: "CARD",
+      paymentMethod: input.paymentMethod,
       authorizationUrl,
     };
   }
@@ -616,13 +637,13 @@ export class OrderService {
     if (
       order.paymentStatus !== "PAID" &&
       order.paymentRef &&
-      order.paymentRef.startsWith("KRD-")
+      (order.paymentRef.startsWith("KRD-") || order.paymentRef.startsWith("REF-"))
     ) {
-      const isPaidOnNomba = await NombaService.verifyVirtualAccountPayment(
+      const isPaidOnGateway = await PaymentGateway.verifyPayment(
         order.paymentRef,
         Number(order.totalAmount)
       );
-      if (isPaidOnNomba) {
+      if (isPaidOnGateway) {
         await OrderService.completePayment(order.paymentRef);
         const refreshed = await prisma.order.findUnique({
           where: { orderNumber },

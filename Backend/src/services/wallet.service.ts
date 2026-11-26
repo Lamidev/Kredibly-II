@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { prisma } from "../config/db";
 import { ENV } from "../config/env";
 import { AppError } from "../middleware/errorHandler";
-import { NombaService } from "./nomba.service";
+import { PaymentGateway } from "./payment.gateway";
 import { EmailService } from "./email.service";
 import { DojahService } from "./dojah.service";
 import { PushService } from "./push.service";
@@ -84,9 +84,9 @@ export class WalletService {
       throw new AppError("Valid bank code and 10-digit account number required", 400);
     }
 
-    if (ENV.NOMBA_CLIENT_ID && ENV.NOMBA_PRIVATE_KEY && ENV.NOMBA_ACCOUNT_ID) {
+    if (PaymentGateway.isConfigured()) {
       try {
-        const resolved = await NombaService.resolveAccount(
+        const resolved = await PaymentGateway.resolveAccount(
           accountNumber,
           bankCode
         );
@@ -520,18 +520,19 @@ export class WalletService {
       return { updatedWallet, transaction };
     });
 
-    // 2. Dispatch Payout via Nomba Transfer Engine (net of ₦100 transfer fee)
+    // 2. Dispatch Payout via Active Payment Gateway Transfer Engine
     try {
-      if (ENV.NOMBA_CLIENT_ID && ENV.NOMBA_PRIVATE_KEY && ENV.NOMBA_ACCOUNT_ID) {
-        await NombaService.initiateTransfer({
+      if (PaymentGateway.isConfigured()) {
+        await PaymentGateway.initiateTransfer({
           amount: netPayout,
           bankCode: store.bankCode || "058",
           accountNumber: store.accountNumber,
           accountName: store.accountName || store.name,
           narration: `KREDIBLY - ${store.name}`,
+          reference,
         });
       } else {
-        console.log(`[Nomba Dev Transfer] Simulated payout of ₦${netPayout} (fee ₦${TRANSFER_FEE}) to ${store.bankName} (${store.accountNumber})`);
+        console.log(`[Gateway Dev Transfer] Simulated payout of ₦${netPayout} (fee ₦${TRANSFER_FEE}) to ${store.bankName} (${store.accountNumber})`);
       }
 
       // Mark transaction completed
@@ -700,17 +701,18 @@ export class WalletService {
           if (!txRecord) continue;
 
           try {
-            if (ENV.NOMBA_CLIENT_ID && ENV.NOMBA_PRIVATE_KEY && ENV.NOMBA_ACCOUNT_ID) {
-              await NombaService.initiateTransfer({
+            if (PaymentGateway.isConfigured()) {
+              await PaymentGateway.initiateTransfer({
                 amount: netPayout,
                 bankCode: store.bankCode || "058",
                 accountNumber: store.accountNumber,
                 accountName: store.accountName || store.name,
                 narration: `KREDIBLY T1 - ${store.name}`,
+                reference,
               });
             } else {
               console.log(
-                `[Nomba Dev T+1] Simulated auto-settlement of ₦${netPayout} (fee ₦${transferFee}) to ${store.bankName} (${store.accountNumber})`
+                `[Gateway Dev T+1] Simulated auto-settlement of ₦${netPayout} (fee ₦${transferFee}) to ${store.bankName} (${store.accountNumber})`
               );
             }
 

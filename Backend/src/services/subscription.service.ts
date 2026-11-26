@@ -4,7 +4,7 @@ import { ENV } from "../config/env";
 import { AppError } from "../middleware/errorHandler";
 import { PushService } from "./push.service";
 import { EmailService } from "./email.service";
-import { NombaService } from "./nomba.service";
+import { PaymentGateway } from "./payment.gateway";
 
 export const DEFAULT_PLANS: Array<{
   tier: SubscriptionTier;
@@ -309,8 +309,8 @@ export class SubscriptionService {
       expiresAt: string;
     };
 
-    if (ENV.NOMBA_CLIENT_ID && ENV.NOMBA_PRIVATE_KEY && ENV.NOMBA_ACCOUNT_ID) {
-      dva = await NombaService.createDynamicVirtualAccount({
+    if (PaymentGateway.isConfigured()) {
+      dva = await PaymentGateway.createDynamicVirtualAccount({
         amount,
         orderNumber: reference,
         merchantName: `Kredibly - ${store.name}`,
@@ -319,7 +319,7 @@ export class SubscriptionService {
     } else {
       dva = {
         accountNumber: "9001234567",
-        bankName: "Nomba MFB (Dev)",
+        bankName: "Kredibly Test Bank (Dev)",
         accountName: `KREDIBLY / ${store.name.toUpperCase()}`,
         reference,
         expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
@@ -364,8 +364,8 @@ export class SubscriptionService {
       return { alreadyProcessed: true, ...store };
     }
 
-    if (ENV.NOMBA_CLIENT_ID && ENV.NOMBA_PRIVATE_KEY && ENV.NOMBA_ACCOUNT_ID) {
-      const paid = await NombaService.verifyVirtualAccountPayment(
+    if (PaymentGateway.isConfigured()) {
+      const paid = await PaymentGateway.verifyPayment(
         reference,
         Number(payment.amount)
       );
