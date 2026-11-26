@@ -347,9 +347,9 @@ export class OrderService {
       : `https://${store.slug}.kredibly.shop/orders/${orderNumber}?confirmed=1`;
 
     const channels =
-      input.paymentMethod === "OPAY"
-        ? ["mobile_money", "bank_transfer", "card", "ussd", "qr"]
-        : ["card", "bank_transfer", "mobile_money", "ussd"];
+      input.paymentMethod === "OPAY" || input.paymentMethod === "CARD"
+        ? ["bank_transfer", "mobile_money", "card", "ussd", "bank", "qr"]
+        : ["bank_transfer", "card", "mobile_money", "ussd"];
 
     if (PaymentGateway.isConfigured()) {
       try {
