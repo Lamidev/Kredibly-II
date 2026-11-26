@@ -135,9 +135,7 @@ export function CheckoutDrawer({
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoError, setPromoError] = useState("");
 
-  const [paymentMethod, setPaymentMethod] = useState<"BANK_TRANSFER" | "OPAY">(
-    "BANK_TRANSFER"
-  );
+  const [paymentMethod] = useState<"OPAY">("OPAY");
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -1015,100 +1013,44 @@ export function CheckoutDrawer({
                   </div>
                 </div>
 
-                {/* Payment Method: Bank Transfer (DVA) vs OPay / Card */}
+                {/* Payment Method: Unified Paystack Checkout (Transfer, OPay, Card, USSD) */}
                 <div className="bg-white border border-[#e2e8f0] rounded-2xl p-5 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="inline-flex items-center gap-2 font-display text-sm font-bold text-[#0f172a]">
-                      <Landmark className="w-4 h-4 text-[#0f172a]" />
+                      <CreditCard className="w-4 h-4 text-[#0f172a]" />
                       <span>Payment Method</span>
                     </span>
                     <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
-                      Instant Verification
+                      Secured by Paystack
                     </span>
                   </div>
 
-                  <div className="space-y-2.5">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("BANK_TRANSFER")}
-                      className={`w-full text-left p-3.5 rounded-xl border-2 transition flex items-center justify-between gap-3 cursor-pointer ${
-                        paymentMethod === "BANK_TRANSFER"
-                          ? "border-[#2e1065] bg-[#2e1065]/[0.03]"
-                          : "border-[#e2e8f0] bg-white hover:border-[#cbd5e1]"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div
-                          className={`w-9 h-9 rounded-full flex items-center justify-center font-display font-extrabold text-sm shrink-0 ${
-                            paymentMethod === "BANK_TRANSFER"
-                              ? "bg-[#2e1065] text-white"
-                              : "bg-slate-100 text-[#0f172a]"
-                          }`}
-                        >
-                          ₦
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-[#0f172a]">
-                            Pay with Bank Transfer (DVA)
-                          </p>
-                          <p className="text-[11px] text-[#64748b]">
-                            Unique bank account generated for this order
-                          </p>
-                        </div>
+                  <div className="p-3.5 rounded-xl border-2 border-[#2e1065] bg-[#2e1065]/[0.03] space-y-2.5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-[#2e1065] text-white flex items-center justify-center font-display font-extrabold text-sm shrink-0">
+                        ₦
                       </div>
-                      <span
-                        className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${
-                          paymentMethod === "BANK_TRANSFER"
-                            ? "border-[#2e1065]"
-                            : "border-slate-300"
-                        }`}
-                      >
-                        {paymentMethod === "BANK_TRANSFER" && (
-                          <span className="w-2 h-2 rounded-full bg-[#2e1065]" />
-                        )}
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("OPAY")}
-                      className={`w-full text-left p-3.5 rounded-xl border-2 transition flex items-center justify-between gap-3 cursor-pointer ${
-                        paymentMethod === "OPAY"
-                          ? "border-[#2e1065] bg-[#2e1065]/[0.03]"
-                          : "border-[#e2e8f0] bg-white hover:border-[#cbd5e1]"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div
-                          className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
-                            paymentMethod === "OPAY"
-                              ? "bg-emerald-600 text-white"
-                              : "bg-emerald-50 text-emerald-700"
-                          }`}
-                        >
-                          <CreditCard className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-[#0f172a]">
-                            Pay with OPay / Card
-                          </p>
-                          <p className="text-[11px] text-[#64748b]">
-                            Instant checkout with OPay wallet, debit card, or USSD
-                          </p>
-                        </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-[#0f172a]">
+                          Transfer, OPay, Card or USSD
+                        </p>
+                        <p className="text-[11px] text-[#64748b]">
+                          Pick your preferred option on the secure checkout screen
+                        </p>
                       </div>
-                      <span
-                        className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${
-                          paymentMethod === "OPAY"
-                            ? "border-[#2e1065]"
-                            : "border-slate-300"
-                        }`}
-                      >
-                        {paymentMethod === "OPAY" && (
-                          <span className="w-2 h-2 rounded-full bg-[#2e1065]" />
-                        )}
-                      </span>
-                    </button>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                      {["Bank Transfer", "OPay", "Debit Card", "USSD"].map(
+                        (label) => (
+                          <span
+                            key={label}
+                            className="px-2 py-0.5 rounded-md bg-white border border-[#e2e8f0] text-[10px] font-semibold text-[#0f172a]"
+                          >
+                            {label}
+                          </span>
+                        )
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -1171,18 +1113,10 @@ export function CheckoutDrawer({
                     {loading ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>
-                          {paymentMethod === "OPAY"
-                            ? "Opening Secure Checkout..."
-                            : "Generating Account..."}
-                        </span>
+                        <span>Opening Secure Checkout...</span>
                       </>
                     ) : (
-                      <span>
-                        {paymentMethod === "OPAY"
-                          ? `Pay ${formatCurrency(totalDue)} with OPay / Card`
-                          : `Pay ${formatCurrency(totalDue)} with Transfer`}
-                      </span>
+                      <span>Pay {formatCurrency(totalDue)} Now</span>
                     )}
                   </button>
 
