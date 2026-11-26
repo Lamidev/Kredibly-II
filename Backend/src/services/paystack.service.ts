@@ -249,6 +249,31 @@ export class PaystackService {
   }
 
   /**
+   * Fetch live spendable NGN balance in Paystack (in Naira).
+   * Used by the T+1 settlement scheduler so we never release/disburse before Paystack clears.
+   */
+  static async getNgnBalance(): Promise<number | null> {
+    try {
+      const response = await axios.get(`${PAYSTACK_BASE_URL}/balance`, {
+        headers: getHeaders(),
+        timeout: 15000,
+      });
+      const balances = response.data?.data;
+      if (!response.data?.status || !Array.isArray(balances)) return null;
+      const ngn = balances.find(
+        (b: any) => String(b.currency || "").toUpperCase() === "NGN"
+      );
+      return ngn ? Number(ngn.balance || 0) / 100 : 0;
+    } catch (err: any) {
+      console.warn(
+        "Paystack balance check failed:",
+        err.response?.data?.message || err.message
+      );
+      return null;
+    }
+  }
+
+  /**
    * Initiate a bank transfer payout to a merchant via Paystack Transfers API.
    */
   static async initiateTransfer(params: {

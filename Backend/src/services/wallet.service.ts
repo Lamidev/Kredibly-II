@@ -615,6 +615,47 @@ export class WalletService {
           60 * 60 * 1000
       );
 
+      // Step 1: On Paystack, check live Paystack Balance before releasing prior-day escrowBalance -> availableBalance
+      let gatewayBalance = await PaymentGateway.getAvailableGatewayBalance();
+      if (PaymentGateway.getActiveProvider() === "paystack") {
+        const walletsWithPending = await prisma.wallet.findMany({
+          where: { escrowBalance: { gt: 0 } },
+        });
+        for (const w of walletsWithPending) {
+          const todayPendingAgg = await prisma.transaction.aggregate({
+            where: {
+              walletId: w.id,
+              type: "SALE",
+              status: "COMPLETED",
+              createdAt: { gte: todayStartWat },
+            },
+            _sum: { netAmount: true },
+          });
+          const todayPending = Number(todayPendingAgg._sum.netAmount || 0);
+          const releasable = Math.floor((Number(w.escrowBalance) - todayPending) * 100) / 100;
+          if (releasable <= 0) continue;
+
+          // Guard: do NOT release into availableBalance if Paystack hasn't settled funds yet (e.g. weekend/holiday)
+          if (gatewayBalance !== null && gatewayBalance < releasable) {
+            console.log(
+              `[Auto T+1] Holding ₦${releasable} pending for wallet ${w.id} — Paystack balance (₦${gatewayBalance}) not settled yet.`
+            );
+            continue;
+          }
+
+          await prisma.wallet.update({
+            where: { id: w.id },
+            data: {
+              escrowBalance: { decrement: releasable },
+              availableBalance: { increment: releasable },
+            },
+          });
+          if (gatewayBalance !== null) {
+            gatewayBalance = Math.max(0, gatewayBalance - releasable);
+          }
+        }
+      }
+
       const candidateWallets = await prisma.wallet.findMany({
         where: {
           availableBalance: { gte: 1000 },

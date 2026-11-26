@@ -125,4 +125,26 @@ export class PaymentGateway {
     }
     return NombaService.initiateTransfer(params);
   }
+
+  /**
+   * Gateway processing fee estimate for a given NGN amount:
+   * - Paystack: 1.5% (< ₦2,500), or 1.5% + ₦100 capped at ₦2,000 (>= ₦2,500)
+   * - Nomba DVA: 1% min ₦10, max ₦150
+   */
+  static calculateGatewayFee(amount: number): number {
+    if (this.getActiveProvider() === "paystack") {
+      if (amount < 2500) {
+        return Math.round(amount * 0.015 * 100) / 100;
+      }
+      return Math.min(2000, Math.round((amount * 0.015 + 100) * 100) / 100);
+    }
+    return Math.max(10, Math.min(150, Math.round(amount * 0.01 * 100) / 100));
+  }
+
+  static async getAvailableGatewayBalance(): Promise<number | null> {
+    if (this.getActiveProvider() === "paystack" && this.hasPaystackCredentials()) {
+      return PaystackService.getNgnBalance();
+    }
+    return null;
+  }
 }
