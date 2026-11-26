@@ -207,14 +207,11 @@ export class OrderService {
 
     const discountedSubtotal = Math.max(0, subtotal - discountAmount);
 
-    // Nomba DVA fee: max(₦10, min(₦150, 1% of amount)). On Pro & Business with passFeeToCustomer, buyer covers this DVA fee so merchant gets 100%.
+    // Gateway fee: on paid tiers with passFeeToCustomer, buyer covers gateway fee so merchant gets 100%.
     let protectionFee = 0;
     if (store.subscriptionTier !== "STARTER" && store.passFeeToCustomer) {
       const baseCharge = discountedSubtotal + shippingFee;
-      protectionFee = Math.max(
-        10,
-        Math.min(150, Math.round(baseCharge * 0.01 * 100) / 100)
-      );
+      protectionFee = PaymentGateway.calculateGatewayFee(baseCharge);
     }
     const totalAmount = discountedSubtotal + shippingFee + protectionFee;
 
@@ -497,12 +494,9 @@ export class OrderService {
         );
         netAmount = Math.round((totalAmount - platformFee) * 100) / 100;
       } else {
-        // Paid tier absorbing gateway fee: 0% Kredibly commission, only Nomba DVA fee
-        const nombaDvaFee = Math.max(
-          10,
-          Math.min(150, Math.round(totalAmount * 0.01 * 100) / 100)
-        );
-        platformFee = Math.min(totalAmount, nombaDvaFee);
+        // Paid tier absorbing gateway fee: 0% Kredibly commission, only gateway processing fee
+        const gatewayFee = PaymentGateway.calculateGatewayFee(totalAmount);
+        platformFee = Math.min(totalAmount, gatewayFee);
         netAmount = Math.round((totalAmount - platformFee) * 100) / 100;
       }
 
@@ -521,14 +515,15 @@ export class OrderService {
         },
       });
 
-      // 6. Deposit net amount directly into Merchant Available Balance
+      // 6. On Paystack (T+1 settlement), hold new sales in escrowBalance (Pending Settlement)
+      //    until next business day 11:00 AM WAT when Paystack clears into Paystack Balance.
+      //    On Nomba (instant wallet), credit availableBalance directly.
+      const useT1Pending = PaymentGateway.getActiveProvider() === "paystack";
       await tx.wallet.update({
         where: { id: walletId },
-        data: {
-          availableBalance: {
-            increment: netAmount,
-          },
-        },
+        data: useT1Pending
+          ? { escrowBalance: { increment: netAmount } }
+          : { availableBalance: { increment: netAmount } },
       });
 
       return {

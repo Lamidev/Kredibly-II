@@ -60,8 +60,9 @@ app.use(errorHandler);
 function scheduleDailyAutoT1() {
   const scheduleNext = () => {
     const now = new Date();
+    // 10:00 UTC = 11:00 AM WAT (runs after Paystack's 8:00-10:00 AM T+1 settlement batch clears)
     const nextRun = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 7, 0, 0, 0)
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 10, 0, 0, 0)
     );
     if (nextRun.getTime() <= now.getTime()) {
       nextRun.setUTCDate(nextRun.getUTCDate() + 1);

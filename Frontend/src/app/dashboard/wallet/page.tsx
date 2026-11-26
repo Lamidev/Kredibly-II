@@ -438,9 +438,15 @@ export default function WalletPage() {
                   <p className="font-display text-xl sm:text-3xl font-bold text-[#0f172a] truncate">
                     {formatCurrency(available)}
                   </p>
+                  {Number(wallet?.escrowBalance || 0) > 0 && (
+                    <p className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1 inline-block">
+                      Pending Settlement (T+1):{" "}
+                      {formatCurrency(Number(wallet?.escrowBalance || 0))}
+                    </p>
+                  )}
                 </div>
                 <p className="text-[10.5px] sm:text-[11px] text-slate-500">
-                  Min. withdrawal ₦1,000 via Nomba transfer.
+                  Min. withdrawal ₦1,000. New sales clear next business day (11:00 AM WAT).
                 </p>
               </CardContent>
             </Card>
