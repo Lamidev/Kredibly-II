@@ -135,32 +135,51 @@ export class OrderService {
       });
     }
 
-    // 3. Upsert Customer by Phone Number & Store
+    // 3. Find or Upsert Customer safely by Phone Number OR Email (prevents P2002 unique email collision)
     const cleanPhone = input.customer.phoneNumber.trim();
-    const customer = await prisma.customer.upsert({
+    const cleanEmail = input.customer.email?.trim().toLowerCase() || null;
+
+    let existingCustomer = await prisma.customer.findUnique({
       where: {
         storeId_phoneNumber: {
           storeId: store.id,
           phoneNumber: cleanPhone,
         },
       },
-      update: {
-        fullName: input.customer.fullName.trim(),
-        address: input.customer.address.trim(),
-        state: input.customer.state.trim(),
-        city: input.customer.city?.trim() || null,
-        email: input.customer.email?.trim() || null,
-      },
-      create: {
-        storeId: store.id,
-        fullName: input.customer.fullName.trim(),
-        phoneNumber: cleanPhone,
-        address: input.customer.address.trim(),
-        state: input.customer.state.trim(),
-        city: input.customer.city?.trim() || null,
-        email: input.customer.email?.trim() || null,
-      },
     });
+
+    if (!existingCustomer && cleanEmail) {
+      existingCustomer = await prisma.customer.findFirst({
+        where: {
+          storeId: store.id,
+          email: { equals: cleanEmail, mode: "insensitive" },
+        },
+      });
+    }
+
+    const customer = existingCustomer
+      ? await prisma.customer.update({
+          where: { id: existingCustomer.id },
+          data: {
+            fullName: input.customer.fullName.trim(),
+            address: input.customer.address.trim(),
+            state: input.customer.state.trim(),
+            city: input.customer.city?.trim() || null,
+            // Only update email if it doesn't belong to another customer in this store
+            ...(cleanEmail && !existingCustomer.email ? { email: cleanEmail } : {}),
+          },
+        })
+      : await prisma.customer.create({
+          data: {
+            storeId: store.id,
+            fullName: input.customer.fullName.trim(),
+            phoneNumber: cleanPhone,
+            address: input.customer.address.trim(),
+            state: input.customer.state.trim(),
+            city: input.customer.city?.trim() || null,
+            email: cleanEmail,
+          },
+        });
 
     // 4. Generate unique Order Number & Payment Reference
     const orderNumber = `KRD-${Date.now().toString().slice(-4)}${Math.floor(100 + Math.random() * 900)}`;
