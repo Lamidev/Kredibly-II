@@ -96,16 +96,17 @@ export class PaystackService {
   }
 
   /**
-   * Initialize Paystack Hosted Checkout (supports OPay, Debit/Credit Cards, Bank Transfer, USSD).
+   * Initialize Paystack Checkout and return both authorizationUrl and accessCode
+   * (used by Paystack Inline Popup modal `resumeTransaction(accessCode)`).
    */
-  static async createCheckoutOrder(params: {
+  static async initializeCheckout(params: {
     amount: number;
     orderReference: string;
     customerEmail: string;
     customerName: string;
     callbackUrl: string;
     channels?: string[];
-  }): Promise<string> {
+  }): Promise<{ authorizationUrl: string; accessCode: string; reference: string }> {
     const amountKobo = Math.round(params.amount * 100);
     const payload: Record<string, unknown> = {
       email: sanitizeEmail(params.customerEmail, params.orderReference),
@@ -132,13 +133,18 @@ export class PaystackService {
         }
       );
 
-      const authUrl = response.data?.data?.authorization_url;
-      if (!response.data?.status || !authUrl) {
+      const data = response.data?.data;
+      if (!response.data?.status || !data?.authorization_url || !data?.access_code) {
         throw new Error(
           response.data?.message || "Paystack checkout initialization failed"
         );
       }
-      return authUrl;
+
+      return {
+        authorizationUrl: data.authorization_url,
+        accessCode: data.access_code,
+        reference: data.reference || params.orderReference,
+      };
     } catch (err: any) {
       console.error(
         "❌ Paystack Checkout Init Error:",
@@ -148,6 +154,21 @@ export class PaystackService {
         err.response?.data?.message || "Failed to initialize Paystack checkout"
       );
     }
+  }
+
+  /**
+   * Initialize Paystack Hosted Checkout (supports OPay, Debit/Credit Cards, Bank Transfer, USSD).
+   */
+  static async createCheckoutOrder(params: {
+    amount: number;
+    orderReference: string;
+    customerEmail: string;
+    customerName: string;
+    callbackUrl: string;
+    channels?: string[];
+  }): Promise<string> {
+    const res = await this.initializeCheckout(params);
+    return res.authorizationUrl;
   }
 
   /**

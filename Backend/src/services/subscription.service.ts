@@ -5,6 +5,7 @@ import { AppError } from "../middleware/errorHandler";
 import { PushService } from "./push.service";
 import { EmailService } from "./email.service";
 import { PaymentGateway } from "./payment.gateway";
+import { PaystackService } from "./paystack.service";
 
 export const DEFAULT_PLANS: Array<{
   tier: SubscriptionTier;
@@ -274,6 +275,71 @@ export class SubscriptionService {
     };
   }
 
+  static async initializePaystackCheckoutUpgrade(
+    storeId: string,
+    tier: SubscriptionTier,
+    billingCycle: "MONTHLY" | "ANNUAL",
+    email: string
+  ) {
+    if (tier === "STARTER") {
+      throw new AppError("Starter is already free.", 400);
+    }
+
+    const plan = await this.getPlanForTier(tier);
+    const amount = billingCycle === "ANNUAL" ? plan.annualPrice : plan.monthlyPrice;
+    if (amount <= 0) {
+      throw new AppError("Invalid plan pricing configuration", 400);
+    }
+
+    const store = await prisma.store.findUnique({
+      where: { id: storeId },
+      select: { name: true },
+    });
+    if (!store) throw new AppError("Store not found", 404);
+
+    if (!PaymentGateway.hasPaystackCredentials()) {
+      throw new AppError("Paystack checkout is not configured on the server.", 503);
+    }
+
+    const reference = `SUB-PS-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const now = new Date();
+    const durationDays = billingCycle === "ANNUAL" ? 365 : 30;
+    const periodEnd = new Date(now.getTime() + durationDays * DAY_MS);
+
+    const callbackUrl = `${ENV.FRONTEND_URL.replace(/\/$/, "")}/dashboard/billing?sub_ref=${encodeURIComponent(reference)}`;
+
+    const checkout = await PaystackService.initializeCheckout({
+      amount,
+      orderReference: reference,
+      customerEmail: email,
+      customerName: store.name,
+      callbackUrl,
+      channels: ["card", "bank_transfer", "bank", "ussd", "mobile_money"],
+    });
+
+    await prisma.subscriptionPayment.create({
+      data: {
+        storeId,
+        tier,
+        billingCycle,
+        amount,
+        paymentMethod: "PAYSTACK_CHECKOUT",
+        reference: checkout.reference,
+        status: "PENDING",
+        periodStart: now,
+        periodEnd,
+      },
+    });
+
+    return {
+      reference: checkout.reference,
+      accessCode: checkout.accessCode,
+      authorizationUrl: checkout.authorizationUrl,
+      amount,
+      planName: plan.name,
+    };
+  }
+
   static async initializeNombaTransferUpgrade(
     storeId: string,
     tier: SubscriptionTier,
@@ -421,12 +487,17 @@ export class SubscriptionService {
       url: "/dashboard/billing",
     }).catch(() => {});
 
+    const methodLabel =
+      payment.paymentMethod === "PAYSTACK_CHECKOUT"
+        ? "Paystack Checkout"
+        : "Bank Transfer";
+
     PushService.sendAdminPush({
       title: `New Paid Plan: ${plan.name}`,
       body: `${updated.name} · ₦${Number(payment.amount).toLocaleString("en-NG", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
-      })} via Nomba Transfer`,
+      })} via ${methodLabel}`,
       url: "/admin/subscriptions",
     }).catch(() => {});
 
