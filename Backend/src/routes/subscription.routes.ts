@@ -51,6 +51,31 @@ router.post(
 );
 
 router.post(
+  "/upgrade-checkout",
+  subscriptionActionLimiter,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const body = z
+        .object({
+          tier: z.enum(["STARTER_PLUS", "PRO", "BUSINESS"]),
+          billingCycle: z.enum(["MONTHLY", "ANNUAL"]).default("MONTHLY"),
+        })
+        .parse(req.body);
+
+      const data = await SubscriptionService.initializePaystackCheckoutUpgrade(
+        req.storeId!,
+        body.tier,
+        body.billingCycle,
+        req.user!.email
+      );
+      return res.status(200).json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
   "/upgrade-transfer",
   subscriptionActionLimiter,
   async (req: Request, res: Response, next: NextFunction) => {

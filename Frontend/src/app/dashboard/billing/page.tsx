@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
@@ -10,20 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
   Check,
-  Landmark,
+  CreditCard,
   Loader2,
   Wallet,
   Clock,
-  Copy,
 } from "lucide-react";
 
 type TierKey = "STARTER" | "STARTER_PLUS" | "PRO" | "BUSINESS";
@@ -63,14 +54,59 @@ interface BillingOverview {
   }>;
 }
 
-interface NombaTransferModalState {
-  reference: string;
-  amount: number;
-  planName: string;
-  accountNumber: string;
-  bankName: string;
-  accountName: string;
-  expiresAt: string;
+declare global {
+  interface Window {
+    PaystackPop?: new () => {
+      resumeTransaction: (
+        accessCode: string,
+        callbacks?: {
+          onSuccess?: (transaction: { reference?: string }) => void;
+          onCancel?: () => void;
+          onError?: (error: { message?: string }) => void;
+        }
+      ) => void;
+    };
+  }
+}
+
+function loadPaystackInlineScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") return resolve(false);
+    if (window.PaystackPop) return resolve(true);
+
+    const existing = document.querySelector<HTMLScriptElement>(
+      'script[src="https://js.paystack.co/v2/inline.js"]'
+    );
+    if (existing) {
+      existing.addEventListener("load", () => resolve(Boolean(window.PaystackPop)), {
+        once: true,
+      });
+      existing.addEventListener("error", () => resolve(false), { once: true });
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://js.paystack.co/v2/inline.js";
+    script.async = true;
+    script.onload = () => resolve(Boolean(window.PaystackPop));
+    script.onerror = () => resolve(false);
+    document.head.appendChild(script);
+  });
+}
+
+function formatPaymentMethodLabel(method: string): string {
+  switch (method) {
+    case "PAYSTACK_CHECKOUT":
+      return "Paystack Checkout";
+    case "WALLET":
+      return "Kredibly Wallet";
+    case "NOMBA_TRANSFER":
+      return "Bank Transfer";
+    case "ADMIN_GRANT":
+      return "Admin Grant";
+    default:
+      return method;
+  }
 }
 
 export default function MerchantBillingPage() {
@@ -79,11 +115,9 @@ export default function MerchantBillingPage() {
   const [loading, setLoading] = useState(true);
   const [billingCycle, setBillingCycle] = useState<"MONTHLY" | "ANNUAL">("MONTHLY");
   const [processingTier, setProcessingTier] = useState<string | null>(null);
+  const [verifyingRef, setVerifyingRef] = useState(false);
 
-  const [transferModal, setTransferModal] = useState<NombaTransferModalState | null>(null);
-  const [verifyingTransfer, setVerifyingTransfer] = useState(false);
-
-  const fetchOverview = async () => {
+  const fetchOverview = useCallback(async () => {
     try {
       const res = await api.get("/subscription/overview");
       setData(res.data.data);
@@ -92,11 +126,51 @@ export default function MerchantBillingPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  const verifyCheckoutReference = useCallback(
+    async (reference: string, cycle: "MONTHLY" | "ANNUAL" = "MONTHLY") => {
+      setVerifyingRef(true);
+      try {
+        const res = await api.post("/subscription/verify-transfer", {
+          reference,
+        });
+        toast.success(res.data?.message || "Payment confirmed and plan activated!");
+        if (res.data?.data?.tier) {
+          trackEvent("paid_plan_upgraded", {
+            tier: res.data.data.tier,
+            method: "paystack_checkout",
+            billing_cycle: cycle,
+          });
+          updateStore({ subscriptionTier: res.data.data.tier });
+        }
+        await fetchOverview();
+      } catch (err: any) {
+        toast.error(
+          err.response?.data?.message ||
+            "Payment is still confirming. Please refresh in a few seconds."
+        );
+      } finally {
+        setVerifyingRef(false);
+      }
+    },
+    [fetchOverview, updateStore]
+  );
 
   useEffect(() => {
     fetchOverview();
-  }, []);
+    loadPaystackInlineScript();
+
+    // Handle fallback redirect callback (?sub_ref=... or ?reference=...)
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const ref = params.get("sub_ref") || params.get("reference") || params.get("trxref");
+      if (ref && ref.startsWith("SUB-")) {
+        window.history.replaceState({}, "", window.location.pathname);
+        verifyCheckoutReference(ref);
+      }
+    }
+  }, [fetchOverview, verifyCheckoutReference]);
 
   const handleWalletUpgrade = async (tier: TierKey) => {
     if (tier === "STARTER") return;
@@ -121,51 +195,55 @@ export default function MerchantBillingPage() {
     }
   };
 
-  const handleTransferUpgrade = async (tier: TierKey) => {
+  const handlePaystackUpgrade = async (tier: TierKey) => {
     if (tier === "STARTER") return;
-    setProcessingTier(`${tier}-transfer`);
+    setProcessingTier(`${tier}-paystack`);
     try {
-      const res = await api.post("/subscription/upgrade-transfer", {
-        tier,
-        billingCycle,
-      });
+      const [res, inlineReady] = await Promise.all([
+        api.post("/subscription/upgrade-checkout", {
+          tier,
+          billingCycle,
+        }),
+        loadPaystackInlineScript(),
+      ]);
+
+      const { accessCode, authorizationUrl, reference } = res.data.data as {
+        accessCode: string;
+        authorizationUrl: string;
+        reference: string;
+      };
+
       trackEvent("paid_plan_checkout_started", {
         tier,
+        method: "paystack_checkout",
         billing_cycle: billingCycle,
       });
-      setTransferModal(res.data.data);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Could not generate transfer account.");
-    } finally {
-      setProcessingTier(null);
-    }
-  };
 
-  const handleVerifyTransfer = async () => {
-    if (!transferModal) return;
-    setVerifyingTransfer(true);
-    try {
-      const res = await api.post("/subscription/verify-transfer", {
-        reference: transferModal.reference,
-      });
-      toast.success(res.data?.message || "Transfer confirmed and plan activated!");
-      if (res.data?.data?.tier) {
-        trackEvent("paid_plan_upgraded", {
-          tier: res.data.data.tier,
-          method: "transfer",
-          billing_cycle: billingCycle,
+      if (inlineReady && window.PaystackPop && accessCode) {
+        const popup = new window.PaystackPop();
+        popup.resumeTransaction(accessCode, {
+          onSuccess: (tx) => {
+            verifyCheckoutReference(tx?.reference || reference, billingCycle);
+          },
+          onCancel: () => {
+            toast.info("Checkout closed. You can complete your upgrade anytime.");
+          },
+          onError: (err) => {
+            toast.error(err?.message || "Paystack checkout encountered an error.");
+          },
         });
-        updateStore({ subscriptionTier: res.data.data.tier });
+      } else if (authorizationUrl) {
+        // Fallback to hosted checkout if inline script is blocked by browser extensions
+        window.location.href = authorizationUrl;
+      } else {
+        toast.error("Could not launch Paystack checkout.");
       }
-      setTransferModal(null);
-      await fetchOverview();
     } catch (err: any) {
       toast.error(
-        err.response?.data?.message ||
-          "Transfer not confirmed yet. Wait a moment and try again."
+        err.response?.data?.message || "Could not initialize Paystack checkout."
       );
     } finally {
-      setVerifyingTransfer(false);
+      setProcessingTier(null);
     }
   };
 
@@ -216,6 +294,13 @@ export default function MerchantBillingPage() {
           </button>
         </div>
       </div>
+
+      {verifyingRef && (
+        <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+          <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+          Confirming your Paystack payment and activating your plan...
+        </div>
+      )}
 
       {/* Current Plan Summary */}
       <Card className="border-slate-200 bg-white">
@@ -331,9 +416,25 @@ export default function MerchantBillingPage() {
                   <div className="space-y-2 pt-2">
                     <Button
                       type="button"
-                      disabled={!canAffordWallet || processingTier !== null}
-                      onClick={() => handleWalletUpgrade(plan.tier)}
+                      disabled={processingTier !== null || verifyingRef}
+                      onClick={() => handlePaystackUpgrade(plan.tier)}
                       className="w-full bg-[#2e1065] hover:bg-[#3b0764] text-white text-xs"
+                    >
+                      {processingTier === `${plan.tier}-paystack` ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <>
+                          <CreditCard className="w-3.5 h-3.5 mr-1.5" />
+                          {isCurrent ? "Renew with Paystack" : "Pay with Paystack"}
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={!canAffordWallet || processingTier !== null || verifyingRef}
+                      onClick={() => handleWalletUpgrade(plan.tier)}
+                      className="w-full text-xs"
                     >
                       {processingTier === `${plan.tier}-wallet` ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -341,22 +442,6 @@ export default function MerchantBillingPage() {
                         <>
                           <Wallet className="w-3.5 h-3.5 mr-1.5" />
                           {isCurrent ? "Renew from Wallet" : "Pay from Wallet"}
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={processingTier !== null}
-                      onClick={() => handleTransferUpgrade(plan.tier)}
-                      className="w-full text-xs"
-                    >
-                      {processingTier === `${plan.tier}-transfer` ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <>
-                          <Landmark className="w-3.5 h-3.5 mr-1.5" />
-                          Pay via Bank Transfer
                         </>
                       )}
                     </Button>
@@ -385,7 +470,7 @@ export default function MerchantBillingPage() {
                     {p.tier} ({p.billingCycle})
                   </p>
                   <p className="text-[11px] font-mono text-slate-500">
-                    {p.reference} · {p.paymentMethod} ·{" "}
+                    {p.reference} · {formatPaymentMethodLabel(p.paymentMethod)} ·{" "}
                     {new Date(p.createdAt).toLocaleDateString("en-NG")}
                   </p>
                 </div>
@@ -397,78 +482,6 @@ export default function MerchantBillingPage() {
           </CardContent>
         </Card>
       )}
-
-      {/* Nomba Bank Transfer Modal */}
-      <Dialog open={Boolean(transferModal)} onOpenChange={(v) => !v && setTransferModal(null)}>
-        <DialogContent className="sm:max-w-md bg-white">
-          <DialogHeader>
-            <DialogTitle>Activate {transferModal?.planName}</DialogTitle>
-            <DialogDescription>
-              Transfer the exact amount below to activate your plan immediately.
-            </DialogDescription>
-          </DialogHeader>
-          {transferModal && (
-            <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Amount to Transfer</span>
-                  <span className="font-mono text-base font-extrabold text-[#2e1065]">
-                    {formatCurrency(transferModal.amount)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Bank Name</span>
-                  <span className="font-semibold text-[#0f172a]">
-                    {transferModal.bankName}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Account Number</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(transferModal.accountNumber);
-                      toast.success("Account number copied!");
-                    }}
-                    className="inline-flex items-center gap-1.5 font-mono text-sm font-bold text-[#0f172a] hover:text-[#2e1065] cursor-pointer"
-                  >
-                    <span>{transferModal.accountNumber}</span>
-                    <Copy className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Account Name</span>
-                  <span className="font-semibold text-[#0f172a] text-right">
-                    {transferModal.accountName}
-                  </span>
-                </div>
-              </div>
-
-              <DialogFooter className="gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setTransferModal(null)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  disabled={verifyingTransfer}
-                  onClick={handleVerifyTransfer}
-                  className="bg-[#2e1065] hover:bg-[#3b0764] text-white"
-                >
-                  {verifyingTransfer ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    "I Have Transferred — Activate Plan"
-                  )}
-                </Button>
-              </DialogFooter>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
